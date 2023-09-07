@@ -109,7 +109,7 @@ class Beetle():
         while True:
             if time.time() - start_time > timeout:
                 print("Handshake timed out after", timeout, "seconds")
-                return 
+                raise btle.BTLEException(message="Timed out")
             # Check for the completion of _init_handshake
             if self._is_init_handshake_completed():
                 break
@@ -159,6 +159,8 @@ class Beetle():
                     # Error handling
                     pass
             except btle.BTLEException:
+                self.disconnect()
+                self._reset_flags()
                 self.set_to_connect()
 
     def disconnect(self):
