@@ -1,16 +1,14 @@
-from __future__ import annotations
 from bluepy import btle
 from enum import Enum
-from multiprocessing import Process, Queue
-import logging
+from multiprocessing import Process
 import time
-import asyncio
 
 BEETLE1_MAC = "D0:39:72:E4:8E:67"
 BEETLE2_MAC = "D0:39:72:E4:8E:07"
 BEETLE_MACS = [BEETLE1_MAC, BEETLE2_MAC]
 SERVICE_UUID = "0000dfb0-0000-1000-8000-00805f9b34fb"
 CHAR_UUID = "0000dfb1-0000-1000-8000-00805f9b34fb"
+INTERVAL_RATE = 0.04 #25Hz
 
 
 """
@@ -40,12 +38,11 @@ class Packet(Enum):
 
 class Beetle():
 
-    def __init__(self, mac_address: str, access_queue: Queue):
+    def __init__(self, mac_address: str):
         
         # Properties
         self.beetle = None
         self.mac_address = mac_address
-        self.access_queue = access_queue
 
         # Flags
         self.ble_connected = False
@@ -130,11 +127,12 @@ class Beetle():
             except btle.BTLEException as e:
                 print("Failed to connect to BLE")
             
-    def receive_data(self, duration=0, time_interval=0):
+    def receive_data(self, duration=10000000000, polling_interval=INTERVAL_RATE):
 
         end_time = time.time() + duration
         while time.time() < end_time:
-            if self.beetle.waitForNotifications(time_interval):
+            # Need to check again on the timeout, can be longer and recover the packets
+            if self.beetle.waitForNotifications(timeout=polling_interval):
                 continue
 
     def initiate_program(self):
@@ -143,22 +141,24 @@ class Beetle():
 
             try:
                 if self.state == States.connect:
-                    self.access_queue.put(self.mac_address)
+
                     self.connect_ble()
                     self.handshake()
                     if self.handshake_complete: 
                         self.set_to_receive()
-                    self.access_queue.get()
+
                 elif self.state == States.receive:
-                    self.access_queue.put(self.mac_address)
-                    self.receive_data(duration=500, time_interval=0.05)
-                    self.access_queue.get()
+
+                    self.receive_data()
+
                 elif self.state == States.ack:
                     pass
                 else:
                     # Error handling
                     pass
+
             except btle.BTLEException:
+                print(f"Beetle with {self.mac_address} has ")
                 self.disconnect()
                 self._reset_flags()
                 self.set_to_connect()
@@ -176,9 +176,11 @@ class ReadDelegate(btle.DefaultDelegate):
 
     def handleNotification(self, cHandle, data):
         self.packet_buffer += data
+        # take out first 20 bytes of packet
+        # reset buffer to remaining bytes
         if self.is_packet_complete(self.packet_buffer):
-            self.process_packet(data)
-            self.packet_buffer = b""
+            self.process_packet(self.packet_buffer[:20])
+            self.packet_buffer = self.packet_buffer[20:]
 
     def process_packet(self, data):
         self.count +=1
@@ -206,17 +208,16 @@ class ReadDelegate(btle.DefaultDelegate):
             pass
 
     def is_packet_complete(self, data):
-        return len(data) == 20
+        return len(data) >= 20
 
 
 
 if __name__ == "__main__":
 
-    access_queue = Queue()
     processes = []
 
     for mac in BEETLE_MACS:
-        beetle = Beetle(mac, access_queue)
+        beetle = Beetle(mac)
         process = Process(target=beetle.initiate_program)
         processes.append(process)
         process.start()
@@ -230,6 +231,9 @@ if __name__ == "__main__":
             process.terminate()
         for process in processes:
             process.join()
+
+    # beetle = Beetle(BEETLE2_MAC, access_queue=access_queue)
+    # beetle.initiate_program()
 
 # Notes from TA:
 # Threads can identify packet id
