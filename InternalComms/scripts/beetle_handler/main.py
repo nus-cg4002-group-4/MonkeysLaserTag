@@ -1,29 +1,32 @@
 from multiprocessing import Process
 from beetle import Beetle
-from constants import BEETLE_MACS
+from constants import BEETLE_MACS, BEETLE1_MAC
 
 if __name__ == "__main__":
 
-    processes = []
+    # processes = []
 
-    for mac in BEETLE_MACS:
-        beetle = Beetle(mac)
-        process = Process(target=beetle.initiate_program)
-        processes.append(process)
-        process.start()
+    # for mac in BEETLE_MACS:
+    #     beetle = Beetle(mac)
+    #     process = Process(target=beetle.initiate_program)
+    #     processes.append(process)
+    #     process.start()
+
+    # try:
+    #     for process in processes:
+    #         process.join()
+    # except KeyboardInterrupt:
+    #     print("Terminating processes...")
+    #     for process in processes:
+    #         process.terminate()
+    #     for process in processes:
+    #         process.join()
 
     try:
-        for process in processes:
-            process.join()
+        beetle = Beetle(BEETLE1_MAC)
+        beetle.initiate_program()
     except KeyboardInterrupt:
-        print("Terminating processes...")
-        for process in processes:
-            process.terminate()
-        for process in processes:
-            process.join()
-
-    # beetle = Beetle(BEETLE2_MAC, access_queue=access_queue)
-    # beetle.initiate_program()
+        print("Stopping...")
 
 # Notes from TA:
 # Threads can identify packet id

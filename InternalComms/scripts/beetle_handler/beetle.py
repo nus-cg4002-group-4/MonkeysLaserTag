@@ -1,10 +1,12 @@
 from bluepy import btle
 
-from packets import PacketId
-from states import State
+from packet import PacketId
+from state import State
+from crc import custom_crc16, custom_crc32
 from constants import *
 
 from time import time
+import struct
 
 class Beetle():
 
@@ -46,7 +48,6 @@ class Beetle():
         self.handshake_replied = False
         self.handshake_complete = False
         self.ble_connected = False
-        self.set_to_connect()
     
     def _is_init_handshake_completed(self):
         return self.handshake_replied
@@ -91,11 +92,11 @@ class Beetle():
                     return
                 self.beetle = btle.Peripheral(self.mac_address)
                 self.beetle.setDelegate(ReadDelegate(self))
-                print("Successfully connected to BLE")
+                print(f"Successfully connected to {self.mac_address}")
                 self.ble_connected = True
                 return
             except btle.BTLEException as e:
-                print("Failed to connect to BLE")
+                print(f"Failed to connect to {self.mac_address}")
             
     def receive_data(self, duration=10000000000, polling_interval=INTERVAL_RATE):
 
@@ -145,25 +146,28 @@ class ReadDelegate(btle.DefaultDelegate):
         self.packet_buffer = b""
 
     def handleNotification(self, cHandle, data):
+        # Append data to buffer
         self.packet_buffer += data
-        # take out first 20 bytes of packet
-        # reset buffer to remaining bytes
+
+
         if self.is_packet_complete(self.packet_buffer):
+            # take out first 20 bytes of packet
             self.process_packet(self.packet_buffer[:20])
+            # reset buffer to remaining bytes
             self.packet_buffer = self.packet_buffer[20:]
-            return
         
-        # Discard packets that were sent before handshake
-        self.packet_buffer = b""
 
     def process_packet(self, data):
         self.count +=1
         print("Received packet " + str(self.count) + ":" + str(repr(data)))
         try:
             pkt_id = PacketId(data[0])
-
             if (pkt_id == PacketId.GV_PKT):
-                pass
+                pkt = struct.unpack('BBBBBB', data[:6])
+                pkt_data = gvPacket(*pkt)
+                crc = struct.unpack('I', data[16:])[0]
+                assert crc == custom_crc32(data[:6])
+                print(f"gvPacket received successfully: {pkt_data}")
             elif (pkt_id == PacketId.RHAND_PKT):
                 pass
             elif (pkt_id == PacketId.LHAND_PKT):
@@ -174,12 +178,17 @@ class ReadDelegate(btle.DefaultDelegate):
                 pass
             elif (pkt_id == PacketId.H_PKT):
                 self.beetle.handshake_replied = True
-                print("Setting flag to True")
             else:
-                pass
-        except:
-            print("Packet id not found")
-            pass
+                pass 
+        except struct.error as e:
+            print(f"Struct cannot be unpacked: {e}")
+        except AssertionError as e:
+            # Handle NAK/ACK here
+            print("CRC do not match, packet corrupted.")
+        except Exception as e:
+            print(f"Oops something went wrong")
 
     def is_packet_complete(self, data):
         return len(data) >= 20
+    
+
