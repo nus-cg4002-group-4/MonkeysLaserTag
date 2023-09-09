@@ -32,14 +32,14 @@ class Beetle():
     def _init_handshake(self):
         self.service = self.beetle.getServiceByUUID(SERVICE_UUID)
         self.characteristic = self.service.getCharacteristics(forUUID=CHAR_UUID)[0]
-        message = 'h'
+        message = HANDSHAKE_MSG_INIT
         self.characteristic.write(bytes(message, "utf-8"))
-        self.receive_data(0.1, 0.1)
+        self.receive_data(0.2, 0.1)
 
     def _complete_handshake(self):
         while(not self.handshake_replied):
             pass
-        message = 'd'
+        message = HANDSHAKE_MSG_ACK
         self.characteristic.write(bytes(message, "utf-8"))
         print("Handshake success")
         self.handshake_complete = True
@@ -68,7 +68,7 @@ class Beetle():
         print("Setting to ack state")
         self.state = State.ack
 
-    def handshake(self, timeout=5):
+    def handshake(self, timeout=3):
         start_time = time()
         print("Initiating handshake...")
 
@@ -194,7 +194,8 @@ class ReadDelegate(btle.DefaultDelegate):
             elif (pkt_id == PacketId.H_PKT):
                 self.beetle.handshake_replied = True
             else:
-                pass 
+                # self.beetle.handshake()
+                pass
         except struct.error as e:
             print(f"Struct cannot be unpacked: {e}")
         except AssertionError as e:
@@ -212,4 +213,3 @@ class ReadDelegate(btle.DefaultDelegate):
     
         
     
-

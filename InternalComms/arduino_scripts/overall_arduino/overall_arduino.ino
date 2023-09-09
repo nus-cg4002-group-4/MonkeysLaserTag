@@ -5,7 +5,7 @@
 #define ACK_PKT 4
 #define H_PKT 5
 
-#define INTERVAL 40 // Make sure this syncs up with the timeout/interval on Python
+#define INTERVAL 20 // Make sure this syncs up with the timeout/interval on Python
 
 //Gyro and accelerometer will have signed values
 struct ackPacket {
@@ -77,11 +77,15 @@ char msg;
 void setup() {
 	// For actual configurations, set up pins here
 	// MPU6050 library if im not wrong
-	Serial.begin(115200); 
+	// Serial.begin(115200); 
 	resetFlags();
 }
 
 void loop() {
+
+  if (Serial.available()) {
+    Serial.print("6 " + Serial.peek());
+  }
 
 	if (Serial.available()) {
 	  if (Serial.peek() == 'g') 
@@ -89,10 +93,6 @@ void loop() {
 	  if (Serial.peek() == 'h') 
 	    currentState = Serial.read(); // Clears the serial
 	}
-
-	// if (Serial.available()) {
-	// 	currentState = Serial.read();
-	// }
 
   if (currentState != 'x') {
     switch(currentState) {
@@ -105,9 +105,11 @@ void loop() {
         setStateToSend();
         break;
       case 'g':
-        setStateToSend();
+        // setStateToSend();
+        Serial.print("state g");
         break;
       case 'h':
+        // resetFlags();
         sendHandshakeAck();
         waitForHandshakeAck();
         setStateToSend();
@@ -118,14 +120,15 @@ void loop() {
     }
     
   }
-  // if (sentHandshakeAck) Serial.print(currentState);
 }
 
 void resetFlags() {
+  Serial.begin(115200); 
   currentState = 'x';
   sentHandshakeAck = false;
   ackReceived = false;
   seq_no = 0;
+  delay(50);
 }
 
 void setStateToHandshake() {
@@ -134,15 +137,18 @@ void setStateToHandshake() {
 }
 
 void setStateToSend() {
-  currentState = 's';
+  if (sentHandshakeAck)
+    currentState = 's';
 }
 
 void setStateToAck() {
-  currentState = 'a';
+  if (sentHandshakeAck)
+    currentState = 'a';
 }
 
 void setStateToGamestate(){
-  currentState = 'g';
+  if (sentHandshakeAck)
+    currentState = 'g';
 }
 
 void sendDummyAck() {
@@ -174,10 +180,16 @@ void sendDummyGvDataPacket(){
 void waitForAck() {
   while (!Serial.available());
 
+  if (Serial.peek() == 'h') {
+    Serial.read();
+    resetFlags();
+    return;
+  }
+
   uint8_t ack_seq_no = Serial.parseInt();
 
   if (ack_seq_no == seq_no) {
-    ackReceived = true;
+    // ackReceived = true;
     seq_no++;
   }
 }
