@@ -10,10 +10,39 @@ class PacketId(Enum):
     H_PKT = 5
 
 @dataclass
-class gvPacket:
+class GvPacket:
     pkt_id: int
     seq_no: int
+    # IR Receivers
     ir_rcv_1: int
     ir_rcv_2: int
+    # IR Transmitters
     ir_trm_1: int
     ir_trm_2: int
+
+@dataclass
+class RHandDataPacket:
+    pkt_id: int
+    seq_no: int
+    # Gyro
+    yaw: int
+    pitch: int
+    roll: int
+    # Accel
+    x: int
+    y: int
+    z: int
+
+@dataclass
+class LHandDataPacket:
+    pkt_id: int
+    seq_no: int
+    # Gyro
+    yaw: int
+    pitch: int
+    roll: int
+    # Accel
+    x: int
+    y: int
+    z: int
+

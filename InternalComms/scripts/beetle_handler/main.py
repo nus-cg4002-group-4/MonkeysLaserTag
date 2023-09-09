@@ -1,6 +1,6 @@
 from multiprocessing import Process
 from beetle import Beetle
-from constants import BEETLE_MACS, BEETLE1_MAC
+from constants import BEETLE_MACS, BEETLE1_MAC, BEETLE2_MAC
 
 if __name__ == "__main__":
 
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     #         process.join()
 
     try:
-        beetle = Beetle(BEETLE1_MAC)
+        beetle = Beetle(BEETLE2_MAC)
         beetle.initiate_program()
     except KeyboardInterrupt:
         print("Stopping...")

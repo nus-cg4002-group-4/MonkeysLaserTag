@@ -7,105 +7,125 @@
 
 #define INTERVAL 40 // Make sure this syncs up with the timeout/interval on Python
 
-char currentState = 'x';
-bool sentHandshakeAck = false;
-
 //Gyro and accelerometer will have signed values
-
-
 struct ackPacket {
-  uint8_t id;
-  uint8_t seq;
-  uint64_t padding_1;
-  uint64_t padding_2;
-//  uint32_t crc;
-  uint16_t crc;
+	uint8_t id;
+	uint8_t seq;
+	uint64_t padding_1;
+	uint64_t padding_2;
+	//  uint32_t crc;
+	uint16_t crc;
 };
 
 struct hPacket {
-  uint8_t id;
-  uint64_t padding_1;
-  uint64_t padding_2;
-  uint16_t padding_3;
-  uint8_t padding_4;
+	uint8_t id;
+	uint64_t padding_1;
+	uint64_t padding_2;
+	uint16_t padding_3;
+	uint8_t padding_4;
 };
-//
-//struct rightHandDataPacket {
-//  uint8_t id;
-//  uint8_t seq_no;
-//  uint16_t flex_sensor;
-//  // Gyro
-//  int16_t y;
-//  int16_t p;
-//  int16_t r;
-//  // Accelerometer
-//  int16_t x;
-//  int16_t y;
-//  int16_t z;
-//  uint32_t padding; // Assign it to 0
-//}
-//
-//struct leftHandDataPacket {
-//  uint8_t id;
-//  uint8_t seq_no;
-//  // Gyro
-//  int16_t y;
-//  int16_t p;
-//  int16_t r;
-//  // Accelerometer
-//  int16_t x;
-//  int16_t y;
-//  int16_t z;
-//  uint32_t padding_1; // Assign it to 0
-//  uint16_t padding_2; // Assign it to 0
-//}
-//
+
+struct rightHandDataPacket {
+	uint8_t id;
+	uint8_t seq_no;
+	uint16_t flex_sensor;
+	// Gyro
+	int16_t yaw;
+	int16_t pitch;
+	int16_t roll;
+	// Accelerometer
+	int16_t x;
+	int16_t y;
+	int16_t z;
+	uint32_t padding; // Assign it to 0
+};
+
+struct leftHandDataPacket {
+	uint8_t id;
+	uint8_t seq_no;
+	// Gyro
+	int16_t yaw;
+	int16_t pitch;
+	int16_t roll;
+	// Accelerometer
+	int16_t x;
+	int16_t y;
+	int16_t z;
+	uint32_t padding_1; // Assign it to 0
+	uint16_t padding_2; // Assign it to 0
+};
+
 struct gvDataPacket {
-  uint8_t id; //B
-  uint8_t seq_no; //B
-  uint8_t ir_rcv_1; //B
-  uint8_t ir_rcv_2; //B
-  uint8_t ir_trm_1; //B
-  uint8_t ir_trm_2; //B
-  uint64_t padding_1; // Assign it to 0 // I
-  uint16_t padding_2; // Assign it to 0 // H
-  uint32_t crc; // 
+	uint8_t id; //B
+	uint8_t seq_no; //B
+	uint8_t ir_rcv_1; //B
+	uint8_t ir_rcv_2; //B
+	uint8_t ir_trm_1; //B
+	uint8_t ir_trm_2; //B
+	uint64_t padding_1; // Assign it to 0 // I
+	uint16_t padding_2; // Assign it to 0 // H
+	uint32_t crc; // 
 };
 
 uint8_t seq_no;
+unsigned long ack_timer;
+char currentState;
+bool sentHandshakeAck;
+bool ackReceived;
+char msg;
 
 void setup() {
-  // For actual configurations, set up pins here
-  // MPU6050 library if im not wrong
-  Serial.begin(115200); 
-  seq_no = 0;
+	// For actual configurations, set up pins here
+	// MPU6050 library if im not wrong
+	Serial.begin(115200); 
+	resetFlags();
 }
 
 void loop() {
 
-  if (Serial.available()) {
-    currentState = Serial.read();
-  }
+	if (Serial.available()) {
+	  if (Serial.peek() == 'g') 
+	    currentState = Serial.peek(); // Takes the first byte as its state
+	  if (Serial.peek() == 'h') 
+	    currentState = Serial.read(); // Clears the serial
+	}
+
+	// if (Serial.available()) {
+	// 	currentState = Serial.read();
+	// }
 
   if (currentState != 'x') {
     switch(currentState) {
+      case 's':
+        sendDummyGvDataPacket();
+        setStateToAck();
+        break;
+      case 'a':
+        waitForAck();
+        setStateToSend();
+        break;
+      case 'g':
+        setStateToSend();
+        break;
       case 'h':
         sendHandshakeAck();
         waitForHandshakeAck();
-      case 's':
-        sendDummyGvDataPacket();
-        break;
-      case 'a':
-        sendDummyAck();
-        break;
-      case 'g':
-        // Handle gamestate
+        setStateToSend();
         break;
       default:
         resetFlags();
         break;
     }
+    
   }
+  // if (sentHandshakeAck) Serial.print(currentState);
+}
+
+void resetFlags() {
+  currentState = 'x';
+  sentHandshakeAck = false;
+  ackReceived = false;
+  seq_no = 0;
 }
 
 void setStateToHandshake() {
@@ -139,7 +159,7 @@ void sendDummyAck() {
 void sendDummyGvDataPacket(){
   gvDataPacket pkt;
   pkt.id = 0;
-  pkt.seq_no = ++seq_no;
+  pkt.seq_no = seq_no;
   pkt.ir_rcv_1 = 0;
   pkt.ir_rcv_2 = 0;
   pkt.ir_trm_1 = 0;
@@ -151,18 +171,18 @@ void sendDummyGvDataPacket(){
   delay(INTERVAL);
 }
 
-void resetFlags() {
-  currentState = 'x';
-  sentHandshakeAck = false;
-  seq_no = 0;
-}
+void waitForAck() {
+  while (!Serial.available());
 
+  uint8_t ack_seq_no = Serial.parseInt();
+
+  if (ack_seq_no == seq_no) {
+    ackReceived = true;
+    seq_no++;
+  }
+}
 
 //================ Handshake =================
-
-void waitForHandshake() {
-  while (currentState != 'h');
-}
 
 void sendHandshakeAck() {
   if (sentHandshakeAck) return;
@@ -190,7 +210,7 @@ void waitForHandshakeAck(){
     resetFlags();
     return;
   }
-  setStateToSend();
+
 }
 
 //=======================================================

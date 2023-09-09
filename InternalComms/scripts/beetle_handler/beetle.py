@@ -1,6 +1,6 @@
 from bluepy import btle
 
-from packet import PacketId
+from packet import PacketId, GvPacket
 from state import State
 from crc import custom_crc16, custom_crc32
 from constants import *
@@ -106,6 +106,12 @@ class Beetle():
             if self.beetle.waitForNotifications(timeout=polling_interval):
                 continue
 
+    def send_ack(self, seq_no):
+        self.characteristic.write(bytes(str(seq_no), "utf-8"))
+
+    def disconnect(self):
+        self.beetle.disconnect()
+
     def initiate_program(self):
 
         while True:
@@ -128,14 +134,13 @@ class Beetle():
                     # Error handling
                     pass
 
-            except btle.BTLEException:
+            except btle.BTLEException as e:
                 print(f"Beetle with {self.mac_address} has disconnected")
+                print(f"{e}")
                 self.disconnect()
                 self._reset_flags()
                 self.set_to_connect()
 
-    def disconnect(self):
-        self.beetle.disconnect()
 
 class ReadDelegate(btle.DefaultDelegate):
 
@@ -144,18 +149,17 @@ class ReadDelegate(btle.DefaultDelegate):
         self.count = 0
         self.beetle = beetle_instance
         self.packet_buffer = b""
+        self.seq_no = 0
 
     def handleNotification(self, cHandle, data):
         # Append data to buffer
         self.packet_buffer += data
-
 
         if self.is_packet_complete(self.packet_buffer):
             # take out first 20 bytes of packet
             self.process_packet(self.packet_buffer[:20])
             # reset buffer to remaining bytes
             self.packet_buffer = self.packet_buffer[20:]
-        
 
     def process_packet(self, data):
         self.count +=1
@@ -163,11 +167,22 @@ class ReadDelegate(btle.DefaultDelegate):
         try:
             pkt_id = PacketId(data[0])
             if (pkt_id == PacketId.GV_PKT):
+
                 pkt = struct.unpack('BBBBBB', data[:6])
-                pkt_data = gvPacket(*pkt)
+                pkt_data = GvPacket(*pkt)
+                
                 crc = struct.unpack('I', data[16:])[0]
                 assert crc == custom_crc32(data[:6])
-                print(f"gvPacket received successfully: {pkt_data}")
+                
+                # Update sequence number afterwards to send ack
+                self.seq_no = pkt_data.seq_no
+                if self.beetle.handshake_complete:
+                    self.beetle.send_ack(self.seq_no)
+
+                # TODO: Write data to ssh server
+
+                print(f"GvPacket received successfully: {pkt_data}")
+
             elif (pkt_id == PacketId.RHAND_PKT):
                 pass
             elif (pkt_id == PacketId.LHAND_PKT):
@@ -183,12 +198,18 @@ class ReadDelegate(btle.DefaultDelegate):
         except struct.error as e:
             print(f"Struct cannot be unpacked: {e}")
         except AssertionError as e:
-            # Handle NAK/ACK here
+            # Since assertion error, it will send the ack of the previous frame
+            self.beetle.send_ack(self.seq_no) 
             print("CRC do not match, packet corrupted.")
+        except btle.BTLEException as e: 
+            # Error will be thrown if we try to ack but beetle is not connected
+            print(f"Beetle error: {e}") 
         except Exception as e:
-            print(f"Oops something went wrong")
+            print(f"Error occured and not handled: {e}")
 
     def is_packet_complete(self, data):
         return len(data) >= 20
+    
+        
     
 
