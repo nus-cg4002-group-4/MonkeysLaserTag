@@ -6,6 +6,11 @@
 #define H_PKT 5
 
 #define INTERVAL 20 // Make sure this syncs up with the timeout/interval on Python
+#define STATE_HANDSHAKE 'h'
+#define STATE_HANDSHAKE_ACK 'd'
+#define STATE_SEND 's'
+#define STATE_GAMESTATE 'g'
+#define STATE_INIT 'x'
 
 //Gyro and accelerometer will have signed values
 struct ackPacket {
@@ -88,15 +93,15 @@ void loop() {
   }
 
 	if (Serial.available()) {
-	  if (Serial.peek() == 'g') 
+	  if (Serial.peek() == STATE_GAMESTATE) 
 	    currentState = Serial.peek(); // Takes the first byte as its state
-	  if (Serial.peek() == 'h') 
+	  if (Serial.peek() == STATE_HANDSHAKE) 
 	    currentState = Serial.read(); // Clears the serial
 	}
 
-  if (currentState != 'x') {
+  if (currentState != STATE_INIT) {
     switch(currentState) {
-      case 's':
+      case STATE_SEND:
         sendDummyGvDataPacket();
         setStateToAck();
         break;
@@ -104,12 +109,10 @@ void loop() {
         waitForAck();
         setStateToSend();
         break;
-      case 'g':
-        // setStateToSend();
+      case STATE_GAMESTATE:
         Serial.print("state g");
         break;
-      case 'h':
-        // resetFlags();
+      case STATE_HANDSHAKE:
         sendHandshakeAck();
         waitForHandshakeAck();
         setStateToSend();
@@ -124,7 +127,7 @@ void loop() {
 
 void resetFlags() {
   Serial.begin(115200); 
-  currentState = 'x';
+  currentState = STATE_INIT;
   sentHandshakeAck = false;
   ackReceived = false;
   seq_no = 0;
@@ -132,13 +135,13 @@ void resetFlags() {
 }
 
 void setStateToHandshake() {
-  currentState = 'h';
+  currentState = STATE_HANDSHAKE;
   sentHandshakeAck = false;
 }
 
 void setStateToSend() {
   if (sentHandshakeAck)
-    currentState = 's';
+    currentState = STATE_SEND;
 }
 
 void setStateToAck() {
@@ -148,7 +151,7 @@ void setStateToAck() {
 
 void setStateToGamestate(){
   if (sentHandshakeAck)
-    currentState = 'g';
+    currentState = STATE_GAMESTATE;
 }
 
 void sendDummyAck() {
@@ -180,7 +183,7 @@ void sendDummyGvDataPacket(){
 void waitForAck() {
   while (!Serial.available());
 
-  if (Serial.peek() == 'h') {
+  if (Serial.peek() == STATE_HANDSHAKE) {
     Serial.read();
     resetFlags();
     return;
@@ -218,7 +221,7 @@ void waitForHandshakeAck(){
 
   ack_msg = Serial.read();
 
-  if (ack_msg != 'd') {
+  if (ack_msg != STATE_HANDSHAKE_ACK) {
     resetFlags();
     return;
   }
