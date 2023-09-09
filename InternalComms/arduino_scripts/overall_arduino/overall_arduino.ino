@@ -5,12 +5,12 @@
 #define ACK_PKT 4
 #define H_PKT 5
 
-#define INTERVAL 20 // Make sure this syncs up with the timeout/interval on Python
+#define INTERVAL 10 // Make sure this syncs up with the timeout/interval on Python
 #define STATE_HANDSHAKE 'h'
 #define STATE_HANDSHAKE_ACK 'd'
-#define STATE_SEND 's'
+#define STATE_ACK 'a'
 #define STATE_GAMESTATE 'g'
-#define STATE_INIT 'x'
+#define STATE_SEND 's'
 
 //Gyro and accelerometer will have signed values
 struct ackPacket {
@@ -88,10 +88,6 @@ void setup() {
 
 void loop() {
 
-  if (Serial.available()) {
-    Serial.print("6 " + Serial.peek());
-  }
-
 	if (Serial.available()) {
 	  if (Serial.peek() == STATE_GAMESTATE) 
 	    currentState = Serial.peek(); // Takes the first byte as its state
@@ -99,20 +95,22 @@ void loop() {
 	    currentState = Serial.read(); // Clears the serial
 	}
 
-  if (currentState != STATE_INIT) {
+  if (currentState != 'x') {
     switch(currentState) {
       case STATE_SEND:
         sendDummyGvDataPacket();
         setStateToAck();
         break;
-      case 'a':
+      case STATE_ACK:
         waitForAck();
         setStateToSend();
         break;
       case STATE_GAMESTATE:
+        // setStateToSend();
         Serial.print("state g");
         break;
-      case STATE_HANDSHAKE:
+      case 'h':
+        // resetFlags();
         sendHandshakeAck();
         waitForHandshakeAck();
         setStateToSend();
@@ -127,7 +125,7 @@ void loop() {
 
 void resetFlags() {
   Serial.begin(115200); 
-  currentState = STATE_INIT;
+  currentState = 'x';
   sentHandshakeAck = false;
   ackReceived = false;
   seq_no = 0;
@@ -146,7 +144,7 @@ void setStateToSend() {
 
 void setStateToAck() {
   if (sentHandshakeAck)
-    currentState = 'a';
+    currentState = STATE_ACK;
 }
 
 void setStateToGamestate(){
@@ -221,7 +219,7 @@ void waitForHandshakeAck(){
 
   ack_msg = Serial.read();
 
-  if (ack_msg != STATE_HANDSHAKE_ACK) {
+  if (ack_msg != 'd') {
     resetFlags();
     return;
   }
