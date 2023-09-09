@@ -14,12 +14,12 @@
 
 //Gyro and accelerometer will have signed values
 struct ackPacket {
-	uint8_t id;
-	uint8_t seq;
-	uint64_t padding_1;
-	uint64_t padding_2;
-	//  uint32_t crc;
-	uint16_t crc;
+  uint8_t id;
+  uint8_t seq;
+  uint64_t padding_1;
+  uint64_t padding_2;
+  //  uint32_t crc;
+  uint16_t crc;
 };
 
 struct hPacket {
