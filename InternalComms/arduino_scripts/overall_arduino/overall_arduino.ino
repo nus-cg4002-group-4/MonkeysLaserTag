@@ -154,7 +154,7 @@ void setStateToGamestate(){
 
 void sendDummyAck() {
   ackPacket pkt;
-  pkt.id = 1;
+  pkt.id = 4;
   pkt.seq = 1;
   pkt.padding_1 = 0;
   pkt.padding_2 = 0;
@@ -271,5 +271,5 @@ uint32_t custom_crc32(const uint8_t *data, size_t len) {
     }
   }
   
-  return crc;
+  return crc ^ 0xFFFFFFFF;
 }

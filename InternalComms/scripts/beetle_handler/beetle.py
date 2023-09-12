@@ -1,6 +1,6 @@
 from bluepy import btle
 
-from packet import PacketId, GvPacket
+from packet import PacketId, GvPacket, RHandDataPacket
 from state import State
 from crc import custom_crc16, custom_crc32
 from constants import *
@@ -184,7 +184,21 @@ class ReadDelegate(btle.DefaultDelegate):
                 print(f"GvPacket received successfully: {pkt_data}")
 
             elif (pkt_id == PacketId.RHAND_PKT):
-                pass
+                
+                crc = struct.unpack('H', data[18:])[0]
+                assert crc == custom_crc16(data[:18])
+
+                pkt = struct.unpack('BBBBHHHHHHH', data[:18])
+                pkt_data = RHandDataPacket(*pkt)
+
+                # Update sequence number afterwards to send ack
+                self.seq_no = pkt_data.seq_no
+                if self.beetle.handshake_complete:
+                    self.beetle.send_ack(self.seq_no)
+
+                # TODO: Write data to ssh server
+
+                print(f"GvPacket received successfully: {pkt_data}")
             elif (pkt_id == PacketId.LHAND_PKT):
                 pass
             elif (pkt_id == PacketId.GAMESTATE_PKT):

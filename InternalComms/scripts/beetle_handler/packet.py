@@ -24,6 +24,9 @@ class GvPacket:
 class RHandDataPacket:
     pkt_id: int
     seq_no: int
+    ir_trm: int
+    button: int
+    flex: int
     # Gyro
     yaw: int
     pitch: int
