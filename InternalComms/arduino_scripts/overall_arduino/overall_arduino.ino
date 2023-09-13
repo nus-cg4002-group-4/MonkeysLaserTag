@@ -271,5 +271,5 @@ uint32_t custom_crc32(const uint8_t *data, size_t len) {
     }
   }
   
-  return crc ^ 0xFFFFFFFF;
+  return crc;
 }

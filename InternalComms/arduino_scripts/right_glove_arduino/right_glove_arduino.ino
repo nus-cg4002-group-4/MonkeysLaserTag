@@ -12,9 +12,9 @@
 #define STATE_GAMESTATE 'g'
 #define STATE_SEND 's'
 
-#define WINDOW_SIZE 3
+#define WINDOW_SIZE 4
 #define MAX_SEQ_NUM 7
-#define TIMEOUT 500
+#define TIMEOUT 1000
 
 //Gyro and accelerometer will have signed values
 struct ackPacket {
@@ -37,8 +37,8 @@ struct hPacket {
 struct rightHandDataPacket {
 	uint8_t id; // B
 	uint8_t seq_no; // B
-    uint8_t ir_trm; // B
-    uint8_t button; // B
+  uint8_t ir_trm; // B
+  uint8_t button; // B
 	uint16_t flex_sensor; // H
 	// Gyro
 	int16_t yaw; // H
@@ -70,50 +70,53 @@ void setup() {
 
 void loop() {
 
-	if (Serial.available()) {
-	    if (Serial.peek() == STATE_GAMESTATE) {
-	        currentState = Serial.peek(); // Takes the first byte as its state
-        } else if (Serial.peek() == STATE_HANDSHAKE) {
-	        currentState = Serial.read();  // Clears the serial
-        } else {
-            // Wait for acknowledgements
-            while (Serial.available()) {
-                int ackNum = Serial.read();
-                if (ackNum >= baseSeqNum) {
-                    ackReceived[ackNum] = true;
-                    if (ackNum == baseSeqNum) baseSeqNum++;
-                }
-            }
+  if (Serial.available()) {
+    if (Serial.peek() == STATE_GAMESTATE) {
+        currentState = Serial.peek(); // Takes the first byte as its state
+      } else if (Serial.peek() == STATE_HANDSHAKE) {
+        currentState = Serial.read();  // Clears the serial
+      } else {
+        // Wait for acknowledgements
+        while (Serial.available()) {
+          int ackNum = Serial.read();
+          // int difference = baseSeqNum - ackNum < 0 ? baseSeqNum + MAX_SEQ_NUM - ackNum : (baseSeqNum - ackNum) % (MAX_SEQ_NUM + 1);
+          int i = (baseSeqNum - ackNum) % MAX_SEQ_NUM + 1;
+          while (i >= 0 && i <= WINDOW_SIZE) { 
+            ackReceived[baseSeqNum] = true;
+            baseSeqNum = (baseSeqNum + 1) % (MAX_SEQ_NUM + 1);
+            i -= 1;
+          }
         }
-	}
+      }
+  }
 
-    // Send packets and handshake protocol
-    if (currentState != 'x') {
-        switch(currentState) {
-            case STATE_SEND:
-                while (nextSeqNum < (baseSeqNum + WINDOW_SIZE) % 8) {
-                    sendRightHandPacket(nextSeqNum);
-                    nextSeqNum = nextSeqNum >= 7 ? 0 : nextSeqNum++;
-                }
-                break;
-            case STATE_HANDSHAKE:
-                // resetFlags();
-                sendHandshakeAck();
-                waitForHandshakeAck();
-                setStateToSend();
-                break;
-            default:
-                resetFlags();
-                break;
-            }
+  // Send packets and handshake protocol
+  if (currentState != 'x') {
+    switch(currentState) {
+      case STATE_SEND:
+        if (nextSeqNum < (baseSeqNum + WINDOW_SIZE) % (MAX_SEQ_NUM + 1)) {
+            sendRightHandPacket(nextSeqNum);
+            nextSeqNum = (nextSeqNum + 1) % (MAX_SEQ_NUM + 1);
+        }
+        break;
+      case STATE_HANDSHAKE:
+        resetFlags();
+        sendHandshakeAck();
+        waitForHandshakeAck();
+        setStateToSend();
+        break;
+      default:
+        resetFlags();
+        break;
     }
+  }
 
-    // Check for base timeout
-    if (isAckTimedOut(baseSeqNum)) {
-        // Send packet again and reset timer
-        Serial.write((uint8_t *) &packets[baseSeqNum], sizeof(rightHandDataPacket));
-        startTimer(baseSeqNum);
-    }
+  // Check for base timeout
+  // if (isAckTimedOut(baseSeqNum)) {
+  //     // Send packet again and reset timer
+  //     Serial.write((uint8_t *) &packets[baseSeqNum], sizeof(rightHandDataPacket));
+  //     startTimer(baseSeqNum);
+  // }
 
 }
 
@@ -123,10 +126,8 @@ void resetFlags() {
     seq_no = 0;
     baseSeqNum = 0;
     nextSeqNum = 0;
-    ackReceived[MAX_SEQ_NUM + 1] = {false}; 
-    ackTimers[MAX_SEQ_NUM + 1] = {0};
-    for (int i = 0; i < MAX_SEQ_NUM; i++) {
-        packets[i].id = 0;
+    for (int i = 0; i < MAX_SEQ_NUM + 1; i++) {
+        packets[i].id = 1;
         packets[i].seq_no = 0;
         packets[i].ir_trm = 0;
         packets[i].button = 0;
@@ -138,6 +139,9 @@ void resetFlags() {
         packets[i].y = 0;
         packets[i].z = 0;
         packets[i].crc = 0;
+
+        ackReceived[i] = false; 
+        ackTimers[i] = 0;
     }
 
     delay(50);
