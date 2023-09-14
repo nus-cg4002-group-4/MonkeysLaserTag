@@ -26,6 +26,8 @@ if __name__ == "__main__":
         beetle = Beetle(BEETLE3_MAC)
         beetle.initiate_program()
     except KeyboardInterrupt:
+        if beetle.ble_connected: 
+            beetle.disconnect()
         print("Stopping...")
 
 # Notes from TA:

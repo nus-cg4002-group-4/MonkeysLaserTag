@@ -80,7 +80,8 @@ bool sentHandshakeAck;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  /* Uncomment this for data collecting 
+
+  // Uncomment this for data collecting 
 
   if (!mpu.begin()) {
     Serial.println("Failed to find MPU6050 chip");
@@ -97,7 +98,7 @@ void setup() {
   IrSender.begin(IR_PIN);//Initialise IR sensor pin
 
   button_prev = digitalRead(2);//Initialise button_prev
-  */
+  
 
   // for (int i = 0; i < SAMPLE_WINDOW; i++) {
   //   q.push(&rec_zeropad);
@@ -153,10 +154,15 @@ void loop() {
 /*WEIDA IMPLEMENTATION*/
 
   if (Serial.available()) {
-    if (Serial.peek() == STATUS) {
+    switch (Serial.peek()){
+      case STATUS:
         // TODO: Handle reload status here in the future
-    } else if (Serial.peek() == STATE_HANDSHAKE) {
-      currentState = Serial.read();  // Clears the serial
+        break;
+      case STATE_HANDSHAKE:
+        currentState = Serial.read();  // Clears the serial, set handshake
+        break;
+      default:
+        Serial.read(); // Clear serial to remove unwanted data
     }
   }
 
@@ -200,8 +206,9 @@ void loop() {
   // Serial.print(",");
   // Serial.print(bullets);  
   // Serial.println("");  
-  // delay(10);
 }
+
+// Internal Comms functions
 
 void resetFlags() {
     seqNum = 0;
@@ -288,3 +295,4 @@ uint16_t custom_crc16(const uint8_t* data, size_t len) {
   return crc;
 }
 
+// end internal comms

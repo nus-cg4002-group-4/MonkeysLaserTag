@@ -1,10 +1,12 @@
 from bluepy import btle
+from keyboard import is_pressed
 
 from packet import PacketId, GvPacket, RHandDataPacket
 from state import State
 from crc import custom_crc16, custom_crc32
 from constants import *
 from write import write_to_csv
+from exceptions import DisconnectException, HandshakeException, PacketIDException, CRCException
 
 import time
 import struct
@@ -41,54 +43,46 @@ class Beetle():
         self.receive_data(0.2, 0.1)
 
     def complete_handshake(self):
-        while(not self.handshake_replied):
-            pass
         message = HANDSHAKE_MSG_ACK
         self.characteristic.write(bytes(message, "utf-8"))
-        print("Handshake successful!")
         self.handshake_complete = True
+        print("Handshake successful!")
 
-    def _reset_flags(self):
+    def reset_flags(self):
         self.handshake_replied = False
         self.handshake_complete = False
         self.ble_connected = False
     
-    def is_init_handshake_completed(self):
-        return self.handshake_replied
+    def wait_handshake_reply(self, timeout, start_time):
+        while not self.handshake_replied:
+            if time.time() - start_time > timeout:
+                raise HandshakeException(message="Beetle handshake timed out.")
+    
 
     """
     Others
     """
 
-    def set_to_connect(self):
-        print("Setting to connect state")
-        self.state = State.connect
-
-    def set_to_receive(self):
-        print("Setting to receive state, ready to receive data.")
-        self.state = State.receive
-
-    def set_to_wait_ack(self):
-        print("Setting to ack state")
-        self.state = State.ack
-
     def handshake(self, timeout=3):
+
+        # Reset flags for redundancy
+        self.handshake_replied = False
+        self.handshake_complete = False
+
         start_time = time.time()
+
         print("Initiating handshake...")
 
+        # Send a init over to beetle
         self.init_handshake()
 
-        while True:
-            if time.time() - start_time > timeout:
-                print(f"Handshake timed out after {timeout} seconds")
-                raise btle.BTLEException(message="Timed out")
-            # Check for the completion of _init_handshake
-            if self.is_init_handshake_completed():
-                break
-
+        # Wait for reply. If timeout, restart connection protocol again
+        self.wait_handshake_reply(timeout, start_time)
+        
+        # Send ack and complete handshake
         self.complete_handshake()
 
-    def connect_ble(self, max_retries=3):
+    def connect_ble(self, max_retries=20):
         for _ in range(max_retries):
             try: 
                 if self.ble_connected:
@@ -113,37 +107,83 @@ class Beetle():
 
     def send_ack(self, seq_no) -> None:
         self.characteristic.write(bytes(str(seq_no), "utf-8"))
+    
+    """Dumps a BTLEException when there is a power loss"""
+    def try_reading_from_beetle(self):
+        self.characteristic.write(bytes("x", "utf-8"))
 
     def disconnect(self) -> None:
         self.beetle.disconnect()
 
     def initiate_program(self):
 
+        """Main function to run the program."""
+
         while True:
 
-            try:
-                if self.state == State.connect:
-                    self._reset_flags()
+            # user_input = input("Press enter to continue: ")
+            # if user_input == "":
+            #     break
+
+            try:                    
+
+                if self.state == State.RECEIVE:
+
+                    self.beetle.waitForNotifications(timeout=INTERVAL_RATE)
+
+                elif self.state == State.CONNECT:
+
+                    self.reset_flags()
                     self.connect_ble()
+
+                    # Redundant check but hopefully it will prevent unforeseen errors
+                    if self.ble_connected:
+                        self.set_to_handshake()
+
+                elif self.state == State.HANDSHAKE:
+                    
                     self.handshake()
+
+                    # Redundant check but hopefully it will prevent unforeseen errors
                     if self.handshake_complete: 
                         self.set_to_receive()
 
-                elif self.state == State.receive:
-
-                    if not self.busy_processing:
-                        self.receive_data()
                 else:
                     # Raise error and reconnect
-                    raise btle.BTLEException
+                    raise btle.BTLEException(message="Invalid state.")
                 
+                if self.handshake_complete:
+                    # This continuously checks if the beetle is still connected.
+                    self.try_reading_from_beetle()
+
+            except HandshakeException as e:
+                print(f"{e}")
+                print(f"Restarting HANDSHAKE for {self.mac_address}")
+                self.set_to_handshake()   
+
 
             except btle.BTLEException as e:
-                print(f"Beetle with {self.mac_address} has disconnected")
-                print(f"{e}")
+                print(f"BTLEException: {e}")
+                print(f"Restarting CONNECT for {self.mac_address}")
                 self.disconnect()
-                self._reset_flags()
+                self.reset_flags()
                 self.set_to_connect()
+
+    
+    def set_to_connect(self):
+        print("Setting to connect state")
+        self.state = State.CONNECT
+
+    def set_to_handshake(self):
+        self.state = State.HANDSHAKE
+
+    def set_to_receive(self):
+        print("Setting to receive state, ready to receive data.")
+        self.state = State.RECEIVE
+
+    def set_to_wait_ack(self):
+        print("Setting to ack state")
+        self.state = State.ACK
 
 
 class ReadDelegate(btle.DefaultDelegate):
@@ -173,7 +213,12 @@ class ReadDelegate(btle.DefaultDelegate):
     def process_packet(self, data):
         # print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
         try:
-            pkt_id = PacketId(data[0])
+            # Check packet id
+            if data[0] < 0 or data[0] > 5:
+                raise PacketIDException()
+            
+            pkt_id = PacketId(data[0])  
+
             if (pkt_id == PacketId.GV_PKT):
 
                 pass
@@ -201,7 +246,8 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 crc = struct.unpack('H', data[18:])[0]
 
-                assert crc == custom_crc16(data[:17])
+                if crc != custom_crc16(data[:17]):
+                    raise CRCException()
 
                 # Resets error count
                 self.error_packetid_count = 0
@@ -245,32 +291,43 @@ class ReadDelegate(btle.DefaultDelegate):
                 pass
         except struct.error as e:
             print(f"Struct cannot be unpacked: {e}")
-        except AssertionError as e:
+        except PacketIDException or AssertionError as e:
+            # PacketId conversion failed
+            print("Packet id not found.")
+            # Accounting packet loss for action window
+            # Can be modified to just track packet loss
+            self.account_packet_loss()
+
+            # If there are 5 consecutive packets that do not match the CRC, 
+            # we assume that the packets are jumbled and we need to re-handshake
+            self.track_corrupted_packets()
+        except CRCException as e:
             # Since assertion error, it will send the ack of the previous frame
             # self.beetle.send_ack(self.seq_no) 
 
+            print("CRC do not match, packet corrupted.")
+            # Accounting packet loss for action window
+            # Can be modified to just track packet loss
             self.account_packet_loss()
 
-            self.error_packetid_count += 1
-            if self.error_packetid_count >= 5:
-                print("Packet fragmented and sequence is messed up. Please restart application")
-                self.error_packetid_count = 0
+            # If there are 5 consecutive packets that do not match the CRC, 
+            # we assume that the packets are jumbled and we need to re-handshake
+            self.track_corrupted_packets()
 
-            print("CRC do not match, packet corrupted.")
         except btle.BTLEException as e: 
             # Error will be thrown if we try to ack but beetle is not connected
+            # Should not have this error since we are able to catch it in the initiate program fn.
             print(f"Beetle error: {e}") 
-        # PacketId conversion failed
-        except ValueError as e:
-            self.account_packet_loss()
-
-            self.error_packetid_count += 1
-            if self.error_packetid_count >= 5:
-                print("Packet fragmented and sequence is messed up. Please restart application")
-                self.error_packetid_count = 0
 
         except Exception as e:
             print(f"Error occured: {e}")
+
+    def track_corrupted_packets(self):
+        self.error_packetid_count += 1
+        if self.error_packetid_count >= 5:
+            print("Packet fragmented and sequence is messed up. Re-handshaking...")
+            self.error_packetid_count = 0
+            self.beetle.set_to_handshake()
 
     def is_packet_complete(self, data):
         return len(data) >= 20
