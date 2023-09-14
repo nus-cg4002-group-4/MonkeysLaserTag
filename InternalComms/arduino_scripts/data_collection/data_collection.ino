@@ -125,22 +125,22 @@ void loop() {
 
   // Uncomment for actual collection:
 
-  //   float ax = a.acceleration.x;
-  //   float ay = a.acceleration.y;
-  //   float az = a.acceleration.z;
-  //   float gx = g.gyro.x;
-  //   float gy = g.gyro.y;
-  //   float gz = g.gyro.z;
-  //   flex = analogRead(A0);
+    float ax = a.acceleration.x;
+    float ay = a.acceleration.y;
+    float az = a.acceleration.z;
+    float gx = g.gyro.x;
+    float gy = g.gyro.y;
+    float gz = g.gyro.z;
+    flex = analogRead(A0);
 
   // Dummy data   
-  float ax = 0.71;
-  float ay = -0.98;
-  float az = 10.80;
-  float gx = -0.08;
-  float gy = 0.01;
-  float gz = 0.01;
-  flex = 594;
+  // float ax = 0.71;
+  // float ay = -0.98;
+  // float az = 10.80;
+  // float gx = -0.08;
+  // float gy = 0.01;
+  // float gz = 0.01;
+  // flex = 594;
 
   // Rec sample = {ax, ay, az, gx, gy, gz, flex};
   // q.push(&sample);
@@ -184,23 +184,23 @@ void loop() {
 
 
   /* Print out the values */
-//   Serial.print(ax);
-//   Serial.print(",");
-//   Serial.print(ay);
-//   Serial.print(",");
-//   Serial.print(az);
-//   Serial.print(", ");
-//   Serial.print(gx);
-//   Serial.print(",");
-//   Serial.print(gy);
-//   Serial.print(",");
-//   Serial.print(gz);
-//   Serial.print(",");
-//   Serial.print(flex);
-//   Serial.print(",");
-//   Serial.print(bullets);  
-//   Serial.println("");  
-//   delay(10);
+  // Serial.print(ax);
+  // Serial.print(",");
+  // Serial.print(ay);
+  // Serial.print(",");
+  // Serial.print(az);
+  // Serial.print(", ");
+  // Serial.print(gx);
+  // Serial.print(",");
+  // Serial.print(gy);
+  // Serial.print(",");
+  // Serial.print(gz);
+  // Serial.print(",");
+  // Serial.print(flex);
+  // Serial.print(",");
+  // Serial.print(bullets);  
+  // Serial.println("");  
+  // delay(10);
 }
 
 void resetFlags() {
@@ -224,7 +224,9 @@ void sendRightHandPacket(float ax, float ay, float az, float gx, float gy, float
     pkt.gx = static_cast<int16_t>(gx * 100);
     pkt.gy = static_cast<int16_t>(gy * 100);
     pkt.gz = static_cast<int16_t>(gz * 100);
-    pkt.bullets = bullets;
+    // pkt.bullets = bullets; For actual data
+    // For data collection, bullets = button for now.
+    pkt.bullets = !button_prev; // 0 when pressed, 1 when not pressed
     pkt.flex = flex;
     pkt.padding = 0;
     pkt.crc = calculateRightHandCrc16(&pkt);

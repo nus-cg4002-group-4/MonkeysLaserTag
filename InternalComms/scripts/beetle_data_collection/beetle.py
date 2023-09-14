@@ -6,7 +6,7 @@ from crc import custom_crc16, custom_crc32
 from constants import *
 from write import write_to_csv
 
-from time import time
+import time
 import struct
 
 class Beetle():
@@ -73,13 +73,13 @@ class Beetle():
         self.state = State.ack
 
     def handshake(self, timeout=3):
-        start_time = time()
+        start_time = time.time()
         print("Initiating handshake...")
 
         self.init_handshake()
 
         while True:
-            if time() - start_time > timeout:
+            if time.time() - start_time > timeout:
                 print(f"Handshake timed out after {timeout} seconds")
                 raise btle.BTLEException(message="Timed out")
             # Check for the completion of _init_handshake
@@ -104,16 +104,17 @@ class Beetle():
             
     def receive_data(self, duration=10000000000, polling_interval=INTERVAL_RATE):
 
-        end_time = time() + duration
-        while time() < end_time:
+        end_time = time.time() + duration
+        # Reminder to use this to break the loop
+        while time.time() < end_time:
             # Need to check again on the timeout, can be longer and recover the packets
             if self.beetle.waitForNotifications(timeout=polling_interval):
                 continue
 
-    def send_ack(self, seq_no):
+    def send_ack(self, seq_no) -> None:
         self.characteristic.write(bytes(str(seq_no), "utf-8"))
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         self.beetle.disconnect()
 
     def initiate_program(self):
@@ -136,9 +137,6 @@ class Beetle():
                     # Raise error and reconnect
                     raise btle.BTLEException
                 
-                if self.busy_processing:
-                    write_to_csv(packets=self.packet_window, beetle=self.beetle)
-                    print("Write done")
 
             except btle.BTLEException as e:
                 print(f"Beetle with {self.mac_address} has disconnected")
@@ -159,6 +157,7 @@ class ReadDelegate(btle.DefaultDelegate):
         self.seq_no = 0
         self.trigger_record = 0
         self.file_count = 0
+        self.timer = 0
 
     def handleNotification(self, cHandle, data):
         
@@ -210,23 +209,27 @@ class ReadDelegate(btle.DefaultDelegate):
                 # CRC is correct and button is pressed
                 if pkt_data.bullets == 1 and self.beetle.handshake_complete: 
                     # Assuming bullets == button for recording purposes
+                    if not self.trigger_record: # Print it once only
+                        print("Action window triggered. Please perform action now.")
                     self.trigger_record = True
 
                 if self.trigger_record:
                     # print(f"Right Hand Packet received successfully: {pkt_data}")
                     self.count += 1
+                    if self.count == 1:
+                        self.timer = time.time()
                     if len(self.beetle.packet_window) <= RECORD_PACKETS_LIMIT:
                         self.beetle.packet_window.append(pkt_data)
-                        print(f"Packet window length: {len(self.beetle.packet_window)}")
+                        # print(f"Packet window length: {len(self.beetle.packet_window)}")
                         # Record 200 packets into a csv file
                         if len(self.beetle.packet_window) == RECORD_PACKETS_LIMIT: 
+                            print(f"Action saved. Time taken: {time.time()-self.timer}")
                             self.file_count += 1
                             self.trigger_record = False
                             self.count = 0
                             packets = self.beetle.packet_window
                             self.beetle.packet_window = []
                             write_to_csv(packets, self.file_count)
-
 
                 # TODO: Write data to ssh server
 
