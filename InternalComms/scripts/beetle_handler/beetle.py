@@ -1,7 +1,7 @@
 from bluepy import btle
 import keyboard
 
-from packet import PacketId, GvPacket, RHandDataPacket
+from packet import PacketId, VestPacket, RHandDataPacket
 from state import State
 from crc import custom_crc16, custom_crc32
 from constants import *
@@ -234,25 +234,24 @@ class ReadDelegate(btle.DefaultDelegate):
             
             pkt_id = PacketId(data[0])  
 
-            if (pkt_id == PacketId.GV_PKT):
+            if (pkt_id == PacketId.VEST_PKT):
 
-                pass
-
-                # pkt = struct.unpack('BBBBBB', data[:6])
-                # pkt_data = GvPacket(*pkt)
+                pkt = struct.unpack('BBBB', data[:4])
+                pkt_data = VestPacket(*pkt)
                 
-                # crc = struct.unpack('I', data[16:])[0]
-                # assert crc == custom_crc32(data[:6])
+                crc = struct.unpack('I', data[16:])[0]
+                if crc != custom_crc32(data[:4]):
+                    raise CRCException()
                 
                 # # Update sequence number afterwards to send ack
-                # self.seq_no = pkt_data.seq_no
-                # if self.beetle.handshake_complete:
-                #     self.beetle.send_ack(self.seq_no)
-                #     print(f"Ack sent for {self.seq_no}")
+                self.seq_no = pkt_data.seq_no
+                if self.beetle.handshake_complete:
+                    self.beetle.send_ack(self.seq_no)
+                    print(f"Ack sent for {self.seq_no}")
 
                 # # TODO: Write data to ssh server
 
-                # print(f"GvPacket received successfully: {pkt_data}")
+                print(f"VestPacket received successfully: {pkt_data}")
 
             elif (pkt_id == PacketId.RHAND_PKT):
                 
@@ -320,6 +319,7 @@ class ReadDelegate(btle.DefaultDelegate):
         if self.error_packetid_count >= 5:
             print("Packet fragmented and sequence is messed up. Re-handshaking...")
             self.error_packetid_count = 0
+            self.beetle.disconnect()
             self.beetle.set_to_connect()
 
     def is_packet_complete(self, data):

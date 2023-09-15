@@ -2,7 +2,7 @@ from enum import Enum
 from dataclasses import dataclass
 
 class PacketId(Enum):
-    GV_PKT = 0
+    VEST_PKT = 0
     RHAND_PKT = 1
     LHAND_PKT = 2
     GAMESTATE_PKT = 3
@@ -10,15 +10,13 @@ class PacketId(Enum):
     H_PKT = 5
 
 @dataclass
-class GvPacket:
+class VestPacket:
     pkt_id: int
     seq_no: int
     # IR Receivers
     ir_rcv_1: int
     ir_rcv_2: int
-    # IR Transmitters
-    ir_trm_1: int
-    ir_trm_2: int
+    
 
 @dataclass
 class RHandDataPacket:
