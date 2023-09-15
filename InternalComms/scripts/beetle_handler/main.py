@@ -1,16 +1,18 @@
 from multiprocessing import Process
 from beetle import Beetle
-from constants import BEETLE_MACS, BEETLE1_MAC, BEETLE2_MAC
+from constants import BEETLE_MACS, BEETLE1_MAC, BEETLE2_MAC, BEETLE3_MAC
 
 if __name__ == "__main__":
 
     # processes = []
+    # beetle_id = 1
 
     # for mac in BEETLE_MACS:
-    #     beetle = Beetle(mac)
+    #     beetle = Beetle(mac, beetle_id=beetle_id)
     #     process = Process(target=beetle.initiate_program)
     #     processes.append(process)
     #     process.start()
+    #     beetle_id += 1
 
     # try:
     #     for process in processes:
@@ -23,9 +25,11 @@ if __name__ == "__main__":
     #         process.join()
 
     try:
-        beetle = Beetle(BEETLE1_MAC)
+        beetle = Beetle(BEETLE3_MAC)
         beetle.initiate_program()
     except KeyboardInterrupt:
+        if beetle.ble_connected: 
+            beetle.disconnect()
         print("Stopping...")
 
 # Notes from TA:

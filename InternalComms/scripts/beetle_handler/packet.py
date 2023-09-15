@@ -32,8 +32,8 @@ class RHandDataPacket:
     gx: int
     gy: int
     gz: int
-    bullets: int
     flex: int
+    bullets: int
 
 @dataclass
 class LHandDataPacket:

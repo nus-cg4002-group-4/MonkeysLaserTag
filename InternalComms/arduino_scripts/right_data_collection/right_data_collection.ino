@@ -3,49 +3,60 @@
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
 #include <IRremote.h>
-// #include <cppQueue.h>
+#include <cppQueue.h>
 #define IR_PIN 3
+#define BUZZER_PIN 5
 #define SAMPLE_WINDOW 60
 
 /* Internal Comms */
 #define RHAND_PKT 1
 #define H_PKT 5
 
-#define STATUS 'g'
+#define RELOAD 'r'
 #define STATE_HANDSHAKE 'h'
 #define STATE_HANDSHAKE_ACK 'd'
 #define STATE_SEND 's'
 
-#define INTERVAL 20 // 25Hz
+#define INTERVAL 50 
 
+//Initialise IR and IMU
 IRsend irsend;
 Adafruit_MPU6050 mpu;
 
-const uint8_t sCommand = 0x36;
+//Define IR inputs
+const uint8_t sCommand = 0x36;//sensor value to be sent
 const uint8_t sRepeats = 0;
 
-int bullets = 1; // track remaining bullets, initialised to 30
+//Declare game state values
+int bullets = 6; // track remaining bullets, initialised to 6 according to requirement
 
-int16_t flex = 0; //initialise flex sensor to 0
+int flex = 0; //initialise flex sensor to 0
 int button_prev = 0;//Declare button press to 0
+float ax = 0.0;
+float ay = 0.0;
+float az = 0.0;
+float gx = 0.0;
+float gy = 0.0;
+float gz = 0.0;
+
 int initial_action_pred = 0;//declare initial action prediction, actions will be enumerated
 
 // //struct containing data for initial prediction
-// typedef struct strRec {
-//   float ax;
-//   float ay;
-//   float az;
-//   float gx;
-//   float gy;
-//   float gz;
-//   int flex;
-// } Rec;
+typedef struct strRec {
+  float ax;
+  float ay;
+  float az;
+  float gx;
+  float gy;
+  float gz;
+  int flex;
+} Rec;
 
-// Rec rec_zeropad = {0.0,0.0,0.0,0.0,0.0,0.0,0};
+Rec rec_zeropad = {0.0,0.0,0.0,0.0,0.0,0.0,0};
 
-// cppQueue q(sizeof(Rec), SAMPLE_WINDOW, FIFO, true);//initiate queue used for initial prediction
+cppQueue q(sizeof(Rec), SAMPLE_WINDOW, FIFO, true);//initiate queue used for initial prediction
 
-// Internal comms
+// Internal comms init
 
 struct hPacket {
 	uint8_t id;
@@ -77,11 +88,11 @@ uint8_t seqNum;
 char currentState;
 bool sentHandshakeAck;
 
-void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(115200);
+// End internal comms init
 
-  // Uncomment this for data collecting 
+void setup() {
+
+  Serial.begin(115200);
 
   if (!mpu.begin()) {
     Serial.println("Failed to find MPU6050 chip");
@@ -89,21 +100,20 @@ void setup() {
       delay(10);
     }
   }
-
   mpu.setAccelerometerRange(MPU6050_RANGE_16_G);//initialise MPU6050
   mpu.setGyroRange(MPU6050_RANGE_250_DEG);
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
-
   
   IrSender.begin(IR_PIN);//Initialise IR sensor pin
+  pinMode(BUZZER_PIN, OUTPUT);
 
-  button_prev = digitalRead(2);//Initialise button_prev
-  
+  button_prev = digitalRead(2); // Initialise button_prev
 
   // for (int i = 0; i < SAMPLE_WINDOW; i++) {
   //   q.push(&rec_zeropad);
   // }
 
+  // Internal comms flag reset
   resetFlags();
 
   delay(100);
@@ -155,13 +165,14 @@ void loop() {
 
   if (Serial.available()) {
     switch (Serial.peek()){
-      case STATUS:
-        // TODO: Handle reload status here in the future
+      case RELOAD:
+        Serial.read();
+        bullets = 6; // Reload
         break;
       case STATE_HANDSHAKE:
         currentState = Serial.read();  // Clears the serial, set handshake
         break;
-      default:
+      default: // Should have an ack implementation here
         Serial.read(); // Clear serial to remove unwanted data
     }
   }
@@ -171,7 +182,7 @@ void loop() {
     switch(currentState) {
       case STATE_SEND:
         sendRightHandPacket(ax,ay,az,gx,gy,gz);
-        seqNum  = seqNum >= 255 ? 0 : seqNum += 1;
+        seqNum += 1;
         break;
       case STATE_HANDSHAKE:
         resetFlags();
@@ -185,7 +196,6 @@ void loop() {
     }
   }
 
-//poll for reload action ##WEIDA
 /*WEIDA IMPLEMENTATION*/
 
 
@@ -207,6 +217,47 @@ void loop() {
   // Serial.print(bullets);  
   // Serial.println("");  
 }
+
+// Hardware Functions
+
+/*check button read, handle firing*/
+void gun_handler() 
+{
+  int button_read = digitalRead(2);
+  if(!button_read && button_prev != button_read) {
+    if (bullets > 0) {
+      IrSender.sendNEC(0x00, sCommand, sRepeats);// shoot if button pressed (does not shoot more than once if held)
+      digitalWrite(BUZZER_PIN, HIGH);
+      delay(10);
+      digitalWrite(BUZZER_PIN, LOW);
+      bullets -= 1;
+    } else {
+      digitalWrite(BUZZER_PIN, HIGH);
+      delay(10);
+      digitalWrite(BUZZER_PIN, LOW);
+      delay(30);
+      digitalWrite(BUZZER_PIN, HIGH);
+      delay(10);
+      digitalWrite(BUZZER_PIN, LOW);
+    }
+  }
+  button_prev = button_read;
+}
+
+/* Get new sensor events with the readings */
+void IMU_handler()
+{
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
+  ax = a.acceleration.x;
+  ay = a.acceleration.y;
+  az = a.acceleration.z;
+  gx = g.gyro.x;
+  gy = g.gyro.y;
+  gz = g.gyro.z;  
+}
+
+// end hardware functions
 
 // Internal Comms functions
 
@@ -231,9 +282,9 @@ void sendRightHandPacket(float ax, float ay, float az, float gx, float gy, float
     pkt.gx = static_cast<int16_t>(gx * 100);
     pkt.gy = static_cast<int16_t>(gy * 100);
     pkt.gz = static_cast<int16_t>(gz * 100);
-    // pkt.bullets = bullets; For actual data
+    pkt.bullets = bullets; // For actual data
     // For data collection, bullets = button for now.
-    pkt.bullets = !button_prev; // 0 when pressed, 1 when not pressed
+    // pkt.bullets = !button_prev; // 0 when pressed, 1 when not pressed
     pkt.flex = flex;
     pkt.padding = 0;
     pkt.crc = calculateRightHandCrc16(&pkt);
