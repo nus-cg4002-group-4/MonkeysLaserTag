@@ -1,5 +1,5 @@
 #include "CNN.h"
-#include <cstring>
+#include <cmath>
 #include <iostream>
 
 float input[INPUTLENGTH * INPUTAXES];
@@ -51,7 +51,7 @@ Matrix::Matrix(int samples, int axes, float* val) {
 }
 
 float Matrix::getValue(int sample, int axis) {
-    return values[axis + sample * this->nAxes];
+    return this->values[axis + sample * this->nAxes];
 }
 
 void Matrix::print() {
@@ -117,7 +117,7 @@ DenseLayer::DenseLayer(Matrix w, float* b) {
     this->biases = b;
 }
 
-void DenseLayer::output(float* input, float* output) {
+void DenseLayer::output(float* input, float* output, bool useActivation) {
     for (int i = 0; i < this->weights.nAxes; i++) {
         float total = 0.0F;
         for (int j = 0; j < this->weights.nSamples; j++) {
@@ -125,7 +125,9 @@ void DenseLayer::output(float* input, float* output) {
         }
         output[i] = total + this->biases[i];
     }
-    this->activation(output);
+
+    if (useActivation)
+        this->activation(output);
 }
 
 void DenseLayer::activation(float* input) {
@@ -133,6 +135,55 @@ void DenseLayer::activation(float* input) {
     for (int i = 0; i < this->weights.nAxes; i++) {
         if (input[i] < 0) {
             input[i] = 0;
+        }
+    }
+}
+
+void linearDetrend(Matrix* mat) {
+    float N = (float)mat->nSamples;
+    float sumX = (float)((mat->nSamples - 1) * mat->nSamples) / 2.0F;
+    float sumXSqu = sumX * sumX;
+    float sumOfXSqu = (float)((N * (N + 1) * (2 * N + 1)) / 6);
+
+    for (int i = 0; i < mat->nAxes; i++) {
+        float sumXY = 0.0F;
+        float sumY = 0.0F;
+
+        for (int j = 0; j < mat->nSamples; j++) {
+            sumY += mat->getValue(j, i);
+            sumXY += (float)j * mat->getValue(j, i);
+        }
+
+        float m = (N * sumXY - sumX * sumY) / (N * sumOfXSqu - sumXSqu);
+        float c = (sumY - m * sumX) / N;
+
+        for (int j = 0; j < mat->nSamples; j++) {
+            mat->values[mat->nAxes * j + i] = mat->getValue(j, i) - (m * j + c);
+        }
+    }
+}
+
+void zScore(Matrix* mat) {
+    for (int i = 0; i < mat->nAxes; i++) {
+        float mean = 0.0F;
+
+        for (int j = 0; j < mat->nSamples; j++) {
+            mean += mat->getValue(j, i);
+        }
+
+        mean /= (float)mat->nSamples;
+        float sumDiffSqu = 0.0F;
+
+        for (int j = 0; j < mat->nSamples; j++) {
+            float diff = mat->getValue(j, i) - mean;
+            sumDiffSqu += diff * diff;
+        }
+
+        float stdDev = std::sqrt(sumDiffSqu / (float)mat->nSamples);
+
+        for (int j = 0; j < mat->nSamples; j++) {
+            float z = (mat->getValue(j, i) - mean) / stdDev;
+            mat->values[mat->nAxes * j + i] = z;
         }
     }
 }
@@ -153,6 +204,10 @@ int main() {
 
     Matrix inputMat = Matrix(INPUTLENGTH, INPUTAXES, input);
 
+    // For some reason NN performs better without preprocessing...
+    // linearDetrend(&inputMat);
+    // zScore(&inputMat);
+
     Matrix conv1OutputMat = Matrix(CONV1OUTPUTLENGTH, CONV1OUTPUTAXES, conv1Output);
     Tensor conv1Tensor = Tensor(CONV1LENGTH, CONV1AXES, CONV1FILTERS, conv1Weights);
     Conv1DLayer layer1 = Conv1DLayer(conv1Tensor, conv1Biases);
@@ -165,11 +220,11 @@ int main() {
 
     Matrix dense1Mat = Matrix(DENSE1LENGTH, DENSE1AXES, dense1Weights);
     DenseLayer layer4 = DenseLayer(dense1Mat, dense1Biases);
-    layer4.output(conv2OutputMat.values, dense1Output);
+    layer4.output(conv2OutputMat.values, dense1Output, true);
 
     Matrix dense2Mat = Matrix(DENSE2LENGTH, DENSE2AXES, dense2Weights);
     DenseLayer layer5 = DenseLayer(dense2Mat, dense2Biases);
-    layer5.output(dense1Output, dense2Output);
+    layer5.output(dense1Output, dense2Output, false);
 
     argmax(dense2Output, DENSE2OUTPUTLENGTH);
 

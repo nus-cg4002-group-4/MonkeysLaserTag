@@ -114,3 +114,7 @@ $$
 # Porting to HLS
 
 https://www.youtube.com/watch?v=EjjzIimyiM0
+
+Quantization-aware training
+
+xczu3eg-sbva484-1-i with 150MHz clock

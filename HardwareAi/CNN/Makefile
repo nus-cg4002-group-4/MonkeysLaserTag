@@ -2,12 +2,12 @@
 CC = gcc
 CXX = g++
 # compiler flags:
-CFLAGS  = -g -Wfatal-errors -Werror -Wpedantic -pedantic-errors -Wall -Wextra
+CFLAGS  = -g -Wfatal-errors -Wpedantic -pedantic-errors -Wall -Wextra
 LINKING = 
 TARGET = *
 
 all:
-	$(CXX) $(CFLAGS) -o out $(TARGET).cpp $(LINKING)
+	$(CXX) $(CFLAGS) $(TARGET).cpp $(LINKING)
 
 clean:
 	$(RM) $(TARGET)

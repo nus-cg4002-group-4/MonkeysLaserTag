@@ -66,5 +66,5 @@ class DenseLayer {
 public:
     DenseLayer(Matrix w, float* b);
     void activation(float* input);
-    void output(float* input, float* output);
+    void output(float* input, float* output, bool useActivation);
 };

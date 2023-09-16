@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+
 class MainApp:
     def __init__(self):
         self.home_dir = sys.path[0]
@@ -16,7 +17,7 @@ class MainApp:
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser.add_argument('input', help='Input .csv file. Will view if no options provided')
         parser.add_argument('-t', '--trim', nargs=2, help='Trim .csv file. Syntax: -t [Start frame] [Window size]', type=int)
-        parser.add_argument('-e', '--expand', nargs=4, help='Trim .csv file based on window of x samples, then expand to y samples in steps of z. Syntax: -t [Start frame] [x] [y] [z]', type=int)
+        parser.add_argument('-e', '--expand', nargs=4, help='Trim .csv file based on window of x samples, then expand to y samples in steps of z. Syntax: -e [Start frame] [x] [y] [z]', type=int)
         parser.add_argument('-o', '--output', help='Output of trimmed .csv file')
         args = parser.parse_args()
         self.args_dict = vars(args)
@@ -34,7 +35,7 @@ class MainApp:
             wiggle = self.args_dict['expand'][2] - self.args_dict['expand'][1]
             step_size = self.args_dict['expand'][3]
 
-            if start - wiggle < 0 or (start + expand) > self.data_df['acc_x'].size or wiggle < 0:
+            if start - wiggle < 0 or (start + expand + wiggle) > self.data_df['acc_x'].size or wiggle < 0:
                 print('Error: Index out of range.')
                 return
 
@@ -83,7 +84,7 @@ class MainApp:
         ax.plot(self.data_df['acc_x'], self.data_df['acc_y'], self.data_df['acc_z'])
 
         plt.rc('font', size=8) 
-        ax.text2D(0, 1, self.data_df['id'][0], transform=ax.transAxes)
+        #ax.text2D(0, 1, self.data_df['id'][0], transform=ax.transAxes)
         for i in range(self.data_df['acc_x'].size):
             if i % 5 == 0:
                 ax.text(self.data_df['acc_x'][i], self.data_df['acc_y'][i], self.data_df['acc_z'][i], i)
