@@ -5,12 +5,14 @@
 #define ACK_PKT 4
 #define H_PKT 5
 
-#define INTERVAL 10 // Make sure this syncs up with the timeout/interval on Python
+#define INTERVAL 100 // Make sure this syncs up with the timeout/interval on Python
 #define STATE_HANDSHAKE 'h'
 #define STATE_HANDSHAKE_ACK 'd'
-#define STATE_ACK 'a'
-#define GAMESTATE 'g'
 #define STATE_SEND 's'
+#define STATE_ACK 'a'
+
+#define KEEP_ALIVE 'x'
+#define GAMESTATE 'g'
 
 //Gyro and accelerometer will have signed values
 struct ackPacket {
@@ -80,13 +82,21 @@ char msg;
 
 vestDataPacket prevPacket;
 
+unsigned long send_timer;
+
 void setup() {
 	// For actual configurations, set up pins here
   Serial.begin(115200); 
+  send_timer = millis();
 	resetFlags();
 }
 
 void loop() {
+
+  // if (sentHandshakeAck && millis() - send_timer > 1000) {
+  //   send_timer = millis();
+  //   setStateToHandshake();
+  // }
 
   if (Serial.available()) {
     switch (Serial.peek()){
@@ -97,28 +107,37 @@ void loop() {
       case STATE_HANDSHAKE:
         currentState = Serial.read();  // Clears the serial, set handshake
         break;
-      default: // Default should be ack messages
-        Serial.read(); // Clear serial to remove unwanted data
-
-        uint8_t ackSeqNum = Serial.parseInt();
-
-        if (ackSeqNum == seqNum) {
-          ackReceived = true;
-          seqNum++;
-        }
+      default:
         break;
+      // case KEEP_ALIVE:
+      //   Serial.read();
+      // default: // Default should be ack messages
+
+      //   Serial.read();
+        // uint8_t ackNum = Serial.parseInt();
+
+        // if (ackNum == seqNum) {
+        //   ackReceived = true;
+        //   seqNum = seqNum >= 7 ? 0 : seqNum + 1;
+        // }
+        // break;
     }
   }
 
   if (currentState != 'x') {
     switch(currentState) {
       case STATE_SEND:
-        sendDummyvestDataPacket();
+        sendDummyVestDataPacket();
+        setStateToAck();
         break;
       case STATE_HANDSHAKE:
         resetFlags();
         sendHandshakeAck();
         waitForHandshakeAck();
+        setStateToSend();
+        break;
+      case STATE_ACK:
+        waitForAck();
         setStateToSend();
         break;
       default:
@@ -133,7 +152,6 @@ void resetFlags() {
   sentHandshakeAck = false;
   ackReceived = false;
   seqNum = 0;
-  delay(50);
 }
 
 void setStateToHandshake() {
@@ -146,18 +164,30 @@ void setStateToSend() {
     currentState = STATE_SEND;
 }
 
-void sendDummyAck() {
-  ackPacket pkt;
-  pkt.id = 4;
-  pkt.seq = 1;
-  pkt.padding_1 = 0;
-  pkt.padding_2 = 0;
-  pkt.crc = calculateAckCrc16(&pkt);
-  Serial.write((uint8_t *)&pkt, sizeof(pkt)); 
-  delay(INTERVAL);
+void setStateToAck() {
+  if (sentHandshakeAck)
+    currentState = STATE_ACK;
 }
 
-void sendDummyvestDataPacket(){
+void waitForAck() {
+  while (!Serial.available());
+
+  if (Serial.peek() == STATE_HANDSHAKE) {
+    Serial.read();
+    resetFlags();
+    return;
+  }
+
+  uint8_t ack_seq_no = Serial.parseInt();
+
+  if (ack_seq_no == seqNum) {
+    ackReceived = true;
+    seqNum += 1;
+  }
+}
+
+void sendDummyVestDataPacket(){
+  send_timer = millis();
   if (!ackReceived && sentHandshakeAck) {
     Serial.write((uint8_t *)&prevPacket, sizeof(prevPacket));
     return;
@@ -171,6 +201,7 @@ void sendDummyvestDataPacket(){
   pkt.padding_1 = 0;
   pkt.padding_2 = 0;
   pkt.crc = calculateGvCrc32(&pkt);
+  ackReceived = false;
   Serial.write((uint8_t *)&pkt, sizeof(pkt)); 
   delay(INTERVAL);
 }

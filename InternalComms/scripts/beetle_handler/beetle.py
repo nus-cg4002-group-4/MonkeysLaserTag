@@ -4,12 +4,13 @@ import keyboard
 from packet import PacketId, VestPacket, RHandDataPacket
 from state import State
 from crc import custom_crc16, custom_crc32
-from constants import *
+
 from write import write_to_csv
 from exceptions import DisconnectException, HandshakeException, PacketIDException, CRCException
 
 import time
 import struct
+from constants import *
 
 class Beetle():
 
@@ -22,6 +23,8 @@ class Beetle():
         self.packet_dropped = 0
         self.packet_window = []
         self.keep_alive_timer = 0
+        self.prev_receive_timer = 0
+        self.receive_timer = 0
         self.beetle_id = beetle_id
 
         # Flags
@@ -137,17 +140,21 @@ class Beetle():
         """Main function to run the program."""
         last_press_time = 0
         self.keep_alive_timer = time.time()
+        self.receive_timer = time.time()
 
         while True:
 
             try:
+                if self.handshake_complete and time.time() - self.receive_timer >= 3:
+                    self.set_to_connect()
 
                 if self.state == State.RECEIVE:
 
                     self.beetle.waitForNotifications(timeout=INTERVAL_RATE)
 
                 elif self.state == State.CONNECT:
-
+                    if self.ble_connected:
+                        self.disconnect()
                     self.reset_flags()
                     self.connect_ble()
 
@@ -213,8 +220,14 @@ class ReadDelegate(btle.DefaultDelegate):
         self.trigger_record = 0
         self.file_count = 0
         self.timer = 0
+        self.fragmented_count = 0
 
     def handleNotification(self, cHandle, data):
+
+        self.beetle.receive_timer = time.time() # Update current time
+
+        if len(data) < 20:
+            self.fragmented_count += 1
         
         # Append data to buffer
         self.packet_buffer += data
@@ -226,7 +239,7 @@ class ReadDelegate(btle.DefaultDelegate):
             self.packet_buffer = self.packet_buffer[20:]
 
     def process_packet(self, data):
-        # print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
+        print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
         try:
             # Check packet id
             if data[0] < 0 or data[0] > 5:
@@ -268,7 +281,6 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 print(f"{self.beetle.beetle_id}: Right Hand Packet received successfully: {pkt_data}")
                 
-                print(f"{len(str(pkt_data))}")
                 # TODO: Write data to ssh server
 
             elif (pkt_id == PacketId.LHAND_PKT):
@@ -319,7 +331,6 @@ class ReadDelegate(btle.DefaultDelegate):
         if self.error_packetid_count >= 5:
             print("Packet fragmented and sequence is messed up. Re-handshaking...")
             self.error_packetid_count = 0
-            self.beetle.disconnect()
             self.beetle.set_to_connect()
 
     def is_packet_complete(self, data):
