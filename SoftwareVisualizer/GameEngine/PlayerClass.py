@@ -22,6 +22,10 @@ class Player:
         self.kill = 0
         self.death = 0
 
+    def updateState(self, action, visibility):
+        self.gestureID = action
+        self.enemyDetected = visibility
+
     def reduceHP(self, dmg):
         if self.shieldHP > 0:
             remainingShieldHP = self.shieldHP - dmg

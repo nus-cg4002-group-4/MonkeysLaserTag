@@ -1,40 +1,71 @@
+import json
+
 from enum import Enum
 from PlayerClass import Player
 
 class GameEngine:
     
     def __init__(self) -> None:
-        player_1 = Player(1)
-        player_2 = Player(2)
+        # player_1 = Player(1)
+        # player_2 = Player(2)
+        # player_list = [player_1, player_2]
+        pass
 
     #logic
     def run(self):
+        player_1 = Player(1)
+        player_2 = Player(2)
+        player_list = [player_1, player_2]
+
+        # read gamestate from json
         while True:
-            if self.player_2.gestureID == 1:
-                self.player_2.shoot(self.player_1)
+            userInput = input("Please enter playerID, action and enemy visibility: ") 
+            arguments = userInput.split()
+            print("playerID: ", arguments[0])
+            print("Player Action: ", arguments[1])
+            print("Enemy Visible: ", arguments[2])
+
+            if (int(arguments[0]) - 1 == 0):
+                player_1.updateState(arguments[1], arguments[2])
+            elif (int(arguments[1]) - 1 == 1):
+                player_2.updateState(arguments[1], arguments[2])
+
+            if player_2.gestureID == 1:
+                player_2.shoot(player_1)
                 pass
-            elif self.player_2.gestureID == 2:
-                self.player_2.grenadeThrow(self.player_1)
+            elif player_2.gestureID == 2:
+                player_2.grenadeThrow(player_1)
                 pass
-            elif self.player_2.gestureID > 2 or self.player_2.gestureID <= 7:
-                self.player_2.skillActivate(self.player_1)
-            elif self.player_2.gestureID == 8:
-                self.player_2.shieldActivate()
-            elif self.player_2.gestureID == 9:
-                self.player_2.reload()
-            elif self.player_1.gestureID == 1:
-                self.player_1.shoot(self.player_2)
+            elif player_2.gestureID > 2 or player_2.gestureID <= 7:
+                player_2.skillActivate(player_1)
+            elif player_2.gestureID == 8:
+                player_2.shieldActivate()
+            elif player_2.gestureID == 9:
+                player_2.reload()
+            elif player_1.gestureID == 1:
+                player_1.shoot(player_2)
                 pass
-            elif self.player_1.gestureID == 2:
-                self.player_1.grenadeThrow(self.player_2)
+            elif player_1.gestureID == 2:
+                player_1.grenadeThrow(player_2)
                 pass
-            elif self.player_1.gestureID > 2 or self.player_1.gestureID <= 7:
-                self.player_1.skillActivate(self.player_2)
-            elif self.player_1.gestureID == 8:
-                self.player_1.shieldActivate()
-            elif self.player_1.gestureID == 9:
-                self.player_1.reload()
+            elif player_1.gestureID > 2 or player_1.gestureID <= 7:
+                player_1.skillActivate(player_2)
+            elif player_1.gestureID == 8:
+                player_1.shieldActivate()
+            elif player_1.gestureID == 9:
+                player_1.reload()
             pass
+            
+            player1JSONString = json.dump(player_1)
+            player2JSONString = json.dump(player_2)
+            print(player1JSONString)
+            print(player2JSONString)
+        # save gamestate to json
+
+game = GameEngine()
+game.run()
+
+    #userInput = Input(playerID, action) 
         
 
 # class Player:
