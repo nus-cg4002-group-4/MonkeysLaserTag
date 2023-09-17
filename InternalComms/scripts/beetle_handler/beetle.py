@@ -176,7 +176,7 @@ class Beetle():
             #     'Packets fragmented': self.beetle.delegate.fragmented_count if self.handshake_complete else 0
             # }
 
-            # self.print_table(df)
+            self.print_table(df)
             
             try:
                 if self.handshake_complete and time.time() - self.receive_timer >= 3:
@@ -272,9 +272,7 @@ class ReadDelegate(btle.DefaultDelegate):
         self.count = 0
         self.beetle = beetle_instance
 
-        self.count_to_50 = 0
-        self.t50_timer = 0
-        self.t50 = 1
+        self.ack_count = 0
 
         # Keeps track of the sequence number sent for vestpackets
         self.seq_no = 0
@@ -311,7 +309,7 @@ class ReadDelegate(btle.DefaultDelegate):
         self.count += 1 # Number of packets processed
         self.fragmented_count = self.total_calls - self.count # Number of fragmented packets
 
-        print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
+        # print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
         try:
             # Check packet id
             if data[0] < 0 or data[0] > 5:
@@ -325,18 +323,18 @@ class ReadDelegate(btle.DefaultDelegate):
                 pkt_data = VestPacket(*pkt)
                 
                 crc = struct.unpack('I', data[16:])[0]
-                # if crc != custom_crc32(data[:4]):
-                #     raise CRCException()
+                if crc != custom_crc32(data[:4]):
+                    raise CRCException()
+                
                 
                 # # Update sequence number afterwards to send ack
                 self.seq_no = pkt_data.seq_no
                 if self.beetle.handshake_complete:
-                    self.beetle.characteristic.write(bytes(str(pkt_data.seq_no), "utf-8"))
-                    print(f"Ack sent for {self.seq_no}")
+                    self.beetle.send_ack(self.seq_no)
 
                 # # TODO: Write data to ssh server
 
-                print(f"VestPacket received successfully: {pkt_data}", end = "\r")
+                print(f"VestPacket received successfully: {pkt_data}")
 
             elif (pkt_id == PacketId.RHAND_PKT):
                 
@@ -368,6 +366,9 @@ class ReadDelegate(btle.DefaultDelegate):
         except struct.error as e:
             print(f"Struct cannot be unpacked: {e}")
         except PacketIDException or CRCException as e:
+            # Send old ack to get new packet again
+            if self.beetle.beetle_id == 1: # ID of beetle for Vest
+                self.beetle.send_ack(self.seq_no) 
             self.corrupted_count += 1
             # PacketId conversion failed
             print("Packet id not found.")

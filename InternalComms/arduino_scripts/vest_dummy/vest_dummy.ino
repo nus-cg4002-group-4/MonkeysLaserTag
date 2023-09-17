@@ -82,15 +82,16 @@ char msg;
 
 vestDataPacket prevPacket;
 
-#define MAX_SEQ_NUM 7
+// #define MAX_SEQ_NUM 40
+// #define WINDOW_SIZE 4
 
 unsigned long send_timer;
-rightHandDataPacket packets[MAX_SEQ_NUM + 1];
-bool ackReceived[MAX_SEQ_NUM + 1] = {false}; 
-unsigned long ackTimers[MAX_SEQ_NUM + 1] = {0};
+// vestDataPacket packets[MAX_SEQ_NUM + 1];
+// bool ackReceived[MAX_SEQ_NUM + 1] = {false}; 
+// unsigned long ackTimers[MAX_SEQ_NUM + 1] = {0};
 
-uint8_t baseSeqNum = 0;
-uint8_t nextSeqNum = 0;
+// uint8_t baseSeqNum = 0;
+// uint8_t nextSeqNum = 0;
 
 void setup() {
 	// For actual configurations, set up pins here
@@ -116,27 +117,7 @@ void loop() {
         currentState = Serial.read();  // Clears the serial, set handshake
         break;
       default:
-        // int ackNum = Serial.read();
-        // // int difference = baseSeqNum - ackNum < 0 ? baseSeqNum + MAX_SEQ_NUM - ackNum : (baseSeqNum - ackNum) % (MAX_SEQ_NUM + 1);
-        // int i = (baseSeqNum - ackNum) % MAX_SEQ_NUM + 1;
-        // while (i >= 0 && i <= WINDOW_SIZE) { 
-        //   ackReceived[baseSeqNum] = true;
-        //   baseSeqNum = (baseSeqNum + 1) % (MAX_SEQ_NUM + 1);
-        //   i -= 1;
-        // }
         break;
-      // case KEEP_ALIVE:
-      //   Serial.read();
-      // default: // Default should be ack messages
-
-      //   Serial.read();
-        // uint8_t ackNum = Serial.parseInt();
-
-        // if (ackNum == seqNum) {
-        //   ackReceived = true;
-        //   seqNum = seqNum >= 7 ? 0 : seqNum + 1;
-        // }
-        // break;
     }
   }
 
@@ -144,23 +125,24 @@ void loop() {
     switch(currentState) {
       case STATE_SEND:
         sendDummyVestDataPacket();
-        // setStateToAck();
+        setStateToAck();
         break;
       case STATE_HANDSHAKE:
         resetFlags();
         sendHandshakeAck();
         setStateToSend();
         break;
-      case STATE_ACK:
+      case 'a':
         waitForAck();
-        setStateToSend();
+        if (ackReceived) 
+          setStateToSend();
         break;
       default:
         resetFlags();
         break;
     }
+    // DO NOT USE PARSEINT! Very slow BRUH
   }
-  if (sentHandshakeAck && !ackReceived) waitForAck();
 }
 
 
@@ -169,6 +151,11 @@ void resetFlags() {
   sentHandshakeAck = false;
   ackReceived = false;
   seqNum = 0;
+  prevPacket.id = NULL;
+  prevPacket.seq_no = NULL;
+  prevPacket.ir_rcv_1 = NULL;
+  prevPacket.ir_rcv_2 = NULL;
+  delay(50);
 }
 
 void setStateToHandshake() {
@@ -195,32 +182,33 @@ void waitForAck() {
     return;
   }
 
-  uint8_t ack_seq_no = Serial.parseInt();
+  char ackNum = Serial.read();
 
-  if (ack_seq_no == seqNum) {
+  if (ackNum - '0' == seqNum) {
     ackReceived = true;
-    seqNum += 1;
+    seqNum = (seqNum + 1) % 8;
   }
 }
 
 void sendDummyVestDataPacket(){
-  if (sentHandshakeAck && !ackReceived && seqNum > 0) {
+  if (!ackReceived && (sentHandshakeAck && prevPacket.id != NULL)) {
     Serial.write((uint8_t *)&prevPacket, sizeof(prevPacket));
-    return;
+    delay(10);
+  } else {
+    vestDataPacket pkt;
+    pkt.id = VEST_PKT;
+    pkt.seq_no = seqNum;
+    pkt.ir_rcv_1 = randomint(0, 1);
+    pkt.ir_rcv_2 = randomint(0, 1);
+    pkt.padding_0 = 0;
+    pkt.padding_1 = 0;
+    pkt.padding_2 = 0;
+    pkt.crc = calculateGvCrc32(&pkt);
+    prevPacket = pkt;
+    ackReceived = false;
+    Serial.write((uint8_t *)&pkt, sizeof(pkt)); 
+    delay(10);
   }
-  vestDataPacket pkt;
-  pkt.id = VEST_PKT;
-  pkt.seq_no = seqNum;
-  pkt.ir_rcv_1 = randomint(0, 1);
-  pkt.ir_rcv_2 = randomint(0, 1);
-  pkt.padding_0 = 0;
-  pkt.padding_1 = 0;
-  pkt.padding_2 = 0;
-  pkt.crc = calculateGvCrc32(&pkt);
-  // pkt.crc = 0;
-  ackReceived = false;
-  Serial.write((uint8_t *)&pkt, sizeof(pkt)); 
-  // delay(100);
 }
 
 int randomint(int min, int max) {
