@@ -13,6 +13,7 @@ import sys
 import time
 import struct
 from tabulate import tabulate
+from multiprocessing import Queue
 
 class bcolors:
     HEADER = '\033[95m'
@@ -48,6 +49,8 @@ class Beetle():
         self.ble_connected = False
         self.handshake_replied = False
         self.handshake_complete = False
+
+        self.queue = queue
 
         # Initialize
         self.set_to_connect()
@@ -148,7 +151,7 @@ class Beetle():
     def disconnect(self) -> None:
         self.beetle.disconnect()
 
-    def initiate_program(self):
+    def initiate_program(self, data_queue: Queue):
         """Main function to run the program."""
         last_press_time = 0
         self.keep_alive_timer = time.time()
@@ -164,19 +167,22 @@ class Beetle():
             'Packets discarded (Corrupt)': 0
             }
         df = pd.DataFrame(statistics, index=[self.beetle_id])
-        print(tabulate(df, headers='keys', tablefmt='psql'))
+        print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
 
         while True:
 
-            # statistics = {
-            #     'Connected': self.ble_connected,
-            #     'Handshake': self.handshake_complete,
-            #     'Packets received': self.beetle.delegate.count if self.handshake_complete else 0,
-            #     'kbps': self.beetle.delegate.count * 20 * 8 / 1000 * (time.time() - self.start_timer) if self.handshake_complete else 0,
-            #     'Packets fragmented': self.beetle.delegate.fragmented_count if self.handshake_complete else 0
-            # }
+            statistics = { self.beetle_id: {
+                'Connected': self.ble_connected,
+                'Handshake': self.handshake_complete,
+                'Packets received': self.beetle.delegate.count if self.handshake_complete else 0,
+                'kbps': self.beetle.delegate.count * 20 * 8 / 1000 * (time.time() - self.start_timer) if self.handshake_complete else 0,
+                'Packets fragmented': self.beetle.delegate.fragmented_count if self.handshake_complete else 0
+               }
+            }
 
-            self.print_table(df)
+            data_queue.put(statistics)
+
+            # self.print_table(df)
             
             try:
                 if self.handshake_complete and time.time() - self.receive_timer >= 3:
@@ -237,15 +243,15 @@ class Beetle():
         df.iloc[0] = statistics.values()
 
         if (self.beetle_id == 1):
-            print(f"{bcolors.OKGREEN}{tabulate(df, headers='keys', tablefmt='psql')}{bcolors.ENDC}")
+            print(f"{bcolors.OKGREEN}{tabulate(df, headers='keys', tablefmt='fancy_grid')}{bcolors.ENDC}")
             print("\n" * 8)  
         elif(self.beetle_id == 2):
-            print(f"{bcolors.OKBLUE}{tabulate(df, headers='keys', tablefmt='psql')}{bcolors.ENDC}")
+            print(f"{bcolors.OKBLUE}{tabulate(df, headers='keys', tablefmt='fancy_grid')}{bcolors.ENDC}")
             print("\n" * 4)
         elif (self.beetle_id == 3):
             sys.stdout.write("\033[F" * 5)
             sys.stdout.write("\033[K")  # Clear to the end of the line
-            print(tabulate(df, headers='keys', tablefmt='psql'))
+            print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
 
     
     def set_to_connect(self):

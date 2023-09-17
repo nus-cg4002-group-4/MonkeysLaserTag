@@ -1,15 +1,27 @@
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 from beetle import Beetle
 from constants import BEETLE_MACS, BEETLE1_MAC, BEETLE2_MAC, BEETLE3_MAC
 import pandas as pd
 
 
-data = {'Connected', 'Handshake', 'Packets received', 'Speed' }
+
+
+statistics = {
+    'Connected': [False, False, False],
+    'Handshake': [False, False, False],
+    'Packets received': [0, 0, 0],
+    'kbps': [0, 0, 0],
+    'Packets fragmented': [0, 0, 0],
+    'Packets discarded (Corrupt)': [0, 0, 0],
+}
+
+df = pd.DataFrame(statistics, index=[1, 2, 3])
 
 processes = []
+queue = Queue()
 
 beetle_1 = Beetle(BEETLE1_MAC, beetle_id=1)
-process_1 = Process(target=beetle_1.initiate_program)
+process_1 = Process(target=beetle_1.initiate_program, args=(queue,))
 processes.append(process_1)
 process_1.start()
 
@@ -33,6 +45,10 @@ process_1.start()
 try:
     for process in processes:
         process.join()
+
+    while True:
+        if not queue.empty():
+            print(queue.get())
 except KeyboardInterrupt:
     print("Terminating processes...")
     for process in processes:
