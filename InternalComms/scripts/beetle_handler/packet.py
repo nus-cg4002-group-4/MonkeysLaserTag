@@ -2,9 +2,8 @@ from enum import Enum
 from dataclasses import dataclass
 
 class PacketId(Enum):
-    VEST_PKT = 0
     RHAND_PKT = 1
-    LHAND_PKT = 2
+    VEST_PKT = 2
     GAMESTATE_PKT = 3
     ACK_PKT = 4
     H_PKT = 5

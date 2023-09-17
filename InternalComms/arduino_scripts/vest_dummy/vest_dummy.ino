@@ -1,6 +1,6 @@
-#define VEST_PKT 0
+#define VEST_PKT 2
 #define RHAND_PKT 1
-#define LHAND_PKT 2
+// #define LHAND_PKT 2
 #define GAMESTATE_PKT 3
 #define ACK_PKT 4
 #define H_PKT 5
@@ -82,7 +82,15 @@ char msg;
 
 vestDataPacket prevPacket;
 
+#define MAX_SEQ_NUM 7
+
 unsigned long send_timer;
+rightHandDataPacket packets[MAX_SEQ_NUM + 1];
+bool ackReceived[MAX_SEQ_NUM + 1] = {false}; 
+unsigned long ackTimers[MAX_SEQ_NUM + 1] = {0};
+
+uint8_t baseSeqNum = 0;
+uint8_t nextSeqNum = 0;
 
 void setup() {
 	// For actual configurations, set up pins here
@@ -108,6 +116,14 @@ void loop() {
         currentState = Serial.read();  // Clears the serial, set handshake
         break;
       default:
+        // int ackNum = Serial.read();
+        // // int difference = baseSeqNum - ackNum < 0 ? baseSeqNum + MAX_SEQ_NUM - ackNum : (baseSeqNum - ackNum) % (MAX_SEQ_NUM + 1);
+        // int i = (baseSeqNum - ackNum) % MAX_SEQ_NUM + 1;
+        // while (i >= 0 && i <= WINDOW_SIZE) { 
+        //   ackReceived[baseSeqNum] = true;
+        //   baseSeqNum = (baseSeqNum + 1) % (MAX_SEQ_NUM + 1);
+        //   i -= 1;
+        // }
         break;
       // case KEEP_ALIVE:
       //   Serial.read();
@@ -128,12 +144,11 @@ void loop() {
     switch(currentState) {
       case STATE_SEND:
         sendDummyVestDataPacket();
-        setStateToAck();
+        // setStateToAck();
         break;
       case STATE_HANDSHAKE:
         resetFlags();
         sendHandshakeAck();
-        waitForHandshakeAck();
         setStateToSend();
         break;
       case STATE_ACK:
@@ -145,7 +160,9 @@ void loop() {
         break;
     }
   }
+  if (sentHandshakeAck && !ackReceived) waitForAck();
 }
+
 
 void resetFlags() {
   currentState = 'x';
@@ -187,8 +204,7 @@ void waitForAck() {
 }
 
 void sendDummyVestDataPacket(){
-  send_timer = millis();
-  if (!ackReceived && sentHandshakeAck) {
+  if (sentHandshakeAck && !ackReceived && seqNum > 0) {
     Serial.write((uint8_t *)&prevPacket, sizeof(prevPacket));
     return;
   }
@@ -201,9 +217,10 @@ void sendDummyVestDataPacket(){
   pkt.padding_1 = 0;
   pkt.padding_2 = 0;
   pkt.crc = calculateGvCrc32(&pkt);
+  // pkt.crc = 0;
   ackReceived = false;
   Serial.write((uint8_t *)&pkt, sizeof(pkt)); 
-  delay(INTERVAL);
+  // delay(100);
 }
 
 int randomint(int min, int max) {
