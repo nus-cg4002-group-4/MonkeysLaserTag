@@ -50,10 +50,9 @@ class Beetle():
         self.handshake_replied = False
         self.handshake_complete = False
 
-        self.queue = queue
-
         # Initialize
         self.set_to_connect()
+
 
 
     """
@@ -151,38 +150,43 @@ class Beetle():
     def disconnect(self) -> None:
         self.beetle.disconnect()
 
-    def initiate_program(self, data_queue: Queue):
+    def initiate_program(self, stats_queue: Queue):
         """Main function to run the program."""
         last_press_time = 0
         self.keep_alive_timer = time.time()
         self.receive_timer = time.time()
         
                 
-        statistics = {
-            'Connected': self.ble_connected,
-            'Handshake': self.handshake_complete,
-            'Packets received': 0,
-            'kbps': 0.0,
-            'Packets fragmented': 0,
-            'Packets discarded (Corrupt)': 0
-            }
-        df = pd.DataFrame(statistics, index=[self.beetle_id])
-        print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
+        # statistics = {
+        #     'Connected': self.ble_connected,
+        #     'Handshake': self.handshake_complete,
+        #     'Packets received': 0,
+        #     'kbps': 0.0,
+        #     'Packets fragmented': 0,
+        #     'Packets discarded (Corrupt)': 0
+        #     }
+        # df = pd.DataFrame(statistics, index=[self.beetle_id])
+        # print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
 
         while True:
 
-            statistics = { self.beetle_id: {
-                'Connected': self.ble_connected,
-                'Handshake': self.handshake_complete,
-                'Packets received': self.beetle.delegate.count if self.handshake_complete else 0,
-                'kbps': self.beetle.delegate.count * 20 * 8 / 1000 * (time.time() - self.start_timer) if self.handshake_complete else 0,
-                'Packets fragmented': self.beetle.delegate.fragmented_count if self.handshake_complete else 0
-               }
-            }
+            current_time = time.time()
 
-            data_queue.put(statistics)
+            if current_time - self.keep_alive_timer >= 0.05:
+                statistics = { self.beetle_id: 
+                                {
+                                    'Connected': self.ble_connected,
+                                    'Handshake': self.handshake_complete,
+                                    'Packets received': self.beetle.delegate.count if self.handshake_complete else 0,
+                                    'kbps': float(self.beetle.delegate.count * 20 * 8 / (1000 * (time.time() - self.start_timer))) if self.handshake_complete else 0,
+                                    'Packets fragmented': self.beetle.delegate.fragmented_count if self.handshake_complete else 0,
+                                    'Packets discarded (Corrupt)': self.beetle.delegate.corrupted_count if self.handshake_complete else 0
+                                }
+                            }
 
-            # self.print_table(df)
+                stats_queue.put(statistics)
+
+                self.keep_alive_timer = current_time
             
             try:
                 if self.handshake_complete and time.time() - self.receive_timer >= 3:
@@ -340,7 +344,7 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 # # TODO: Write data to ssh server
 
-                print(f"VestPacket received successfully: {pkt_data}")
+                # print(f"VestPacket received successfully: {pkt_data}")
 
             elif (pkt_id == PacketId.RHAND_PKT):
                 

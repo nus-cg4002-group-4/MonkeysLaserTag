@@ -2,9 +2,8 @@ from multiprocessing import Process, Queue
 from beetle import Beetle
 from constants import BEETLE_MACS, BEETLE1_MAC, BEETLE2_MAC, BEETLE3_MAC
 import pandas as pd
-
-
-
+import time
+from tabulate import tabulate
 
 statistics = {
     'Connected': [False, False, False],
@@ -17,23 +16,8 @@ statistics = {
 
 df = pd.DataFrame(statistics, index=[1, 2, 3])
 
-processes = []
-queue = Queue()
 
-beetle_1 = Beetle(BEETLE1_MAC, beetle_id=1)
-process_1 = Process(target=beetle_1.initiate_program, args=(queue,))
-processes.append(process_1)
-process_1.start()
 
-# beetle_2 = Beetle(BEETLE2_MAC, beetle_id=2)
-# process_2 = Process(target=beetle_2.initiate_program)
-# processes.append(process_2)
-# process_2.start()
-
-# beetle_3 = Beetle(BEETLE3_MAC, beetle_id=3)
-# process_3 = Process(target=beetle_3.initiate_program)
-# processes.append(process_3)
-# process_3.start()
 
 # for mac in BEETLE_MACS:
 #     beetle = Beetle(mac, beetle_id=beetle_id)
@@ -42,19 +26,60 @@ process_1.start()
 #     process.start()
 #     beetle_id += 1
 
+processes = []
+queue_1 = Queue()
+queue_2 = Queue()
+queue_3 = Queue()
+
+beetle_1 = Beetle(BEETLE1_MAC, beetle_id=1)
+process_1 = Process(target=beetle_1.initiate_program, args=(queue_1,))
+processes.append(process_1)
+
+beetle_2 = Beetle(BEETLE2_MAC, beetle_id=2)
+process_2 = Process(target=beetle_2.initiate_program, args=(queue_2,))
+processes.append(process_2)
+
+beetle_3 = Beetle(BEETLE3_MAC, beetle_id=3)
+process_3 = Process(target=beetle_3.initiate_program, args=(queue_3,))
+processes.append(process_3)
+
+
+print(df)
+
 try:
-    for process in processes:
-        process.join()
+    process_1.start()
+    process_2.start()
+    process_3.start()
 
     while True:
-        if not queue.empty():
-            print(queue.get())
+        if not queue_1.empty():
+            data = queue_1.get(timeout=0.1)
+            # print(list(data.values())[0])
+            df.iloc[0] = list(data.values())[0]
+
+        if not queue_2.empty():
+            data = queue_2.get(timeout=0.1)
+            # print(list(data.values())[0])
+            df.iloc[1] = list(data.values())[0]
+        
+        if not queue_3.empty():
+            data = queue_3.get(timeout=0.1)
+            # print(list(data.values())[0])
+            df.iloc[2] = list(data.values())[0]
+
+        print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
+        
+    # for process in processes:
+    #     process.join()
+    
+
+
 except KeyboardInterrupt:
     print("Terminating processes...")
     for process in processes:
         process.terminate()
-    for process in processes:
-        process.join()
+    # for process in processes:
+    #     process.join()
 
 # try:
 #     beetle = Beetle(BEETLE3_MAC, 1)
