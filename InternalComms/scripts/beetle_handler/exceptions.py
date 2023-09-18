@@ -4,10 +4,10 @@ class HandshakeException(Exception):
     def __init__(self, message="Handshake failed."):
         super().__init__(message)
 
-class DisconnectException(Exception):
-    """Exception raised when a beetle is disconnected."""
+class DuplicateException(Exception):
+    """Exception raised when packet is duplicated."""
 
-    def __init__(self, message="Beetle disconnected."):
+    def __init__(self, message="Packet is duplicated. Dropping packet..."):
         super().__init__(message)
 
 class PacketIDException(Exception):

@@ -233,9 +233,9 @@ void sendRightHandPacket(float ax, float ay, float az, float gx, float gy, float
     pkt.gx = static_cast<int16_t>(gx * 100);
     pkt.gy = static_cast<int16_t>(gy * 100);
     pkt.gz = static_cast<int16_t>(gz * 100);
-    // pkt.bullets = bullets; // For actual data
+    pkt.bullets = bullets; // For actual data
     // For data collection, bullets = button for now.
-    pkt.bullets = !button_prev; // 0 when pressed, 1 when not pressed
+    // pkt.bullets = !button_prev; // 0 when pressed, 1 when not pressed
     pkt.flex = flex;
     pkt.padding = 0;
     pkt.crc = calculateRightHandCrc16(&pkt);

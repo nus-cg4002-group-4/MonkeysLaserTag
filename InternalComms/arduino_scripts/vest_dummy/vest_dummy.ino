@@ -33,19 +33,23 @@ struct hPacket {
 };
 
 struct rightHandDataPacket {
-	uint8_t id;
-	uint8_t seq_no;
-	uint16_t flex_sensor;
-	// Gyro
-	int16_t yaw;
-	int16_t pitch;
-	int16_t roll;
+	uint8_t id; // B
+	uint8_t seq; // B
 	// Accelerometer
-	int16_t x;
-	int16_t y;
-	int16_t z;
-	uint32_t padding; // Assign it to 0
+	int16_t ax; // h
+	int16_t ay; // h
+	int16_t az; // h
+  // Gyro
+	int16_t gx; // h
+	int16_t gy; // h
+	int16_t gz; // h
+  uint16_t flex; // H
+  uint8_t bullets; // B
+  uint8_t padding; 
+
+	uint16_t crc; // Assign it to 0 H
 };
+
 
 struct leftHandDataPacket {
 	uint8_t id;
@@ -78,20 +82,12 @@ unsigned long ack_timer;
 char currentState;
 bool sentHandshakeAck;
 bool ackReceived;
+bool isTimeout;
 char msg;
 
 vestDataPacket prevPacket;
 
-// #define MAX_SEQ_NUM 40
-// #define WINDOW_SIZE 4
-
 unsigned long send_timer;
-// vestDataPacket packets[MAX_SEQ_NUM + 1];
-// bool ackReceived[MAX_SEQ_NUM + 1] = {false}; 
-// unsigned long ackTimers[MAX_SEQ_NUM + 1] = {0};
-
-// uint8_t baseSeqNum = 0;
-// uint8_t nextSeqNum = 0;
 
 void setup() {
 	// For actual configurations, set up pins here
@@ -130,11 +126,12 @@ void loop() {
       case STATE_HANDSHAKE:
         resetFlags();
         sendHandshakeAck();
+        waitForHandshakeAck();
         setStateToSend();
         break;
-      case 'a':
+      case STATE_ACK:
         waitForAck();
-        if (ackReceived) 
+        if (ackReceived || isTimeout) 
           setStateToSend();
         break;
       default:
@@ -155,6 +152,7 @@ void resetFlags() {
   prevPacket.seq_no = NULL;
   prevPacket.ir_rcv_1 = NULL;
   prevPacket.ir_rcv_2 = NULL;
+  isTimeout = false;
   delay(50);
 }
 
@@ -174,7 +172,15 @@ void setStateToAck() {
 }
 
 void waitForAck() {
-  while (!Serial.available());
+  unsigned long current_time = millis();
+  unsigned long timeout_interval = 500;
+
+  while (!Serial.available()) {
+    if (millis() - current_time >= timeout_interval) {
+      isTimeout = true;
+      return; // Break out of the bloop and resend prev packet
+    }
+  };
 
   if (Serial.peek() == STATE_HANDSHAKE) {
     Serial.read();
@@ -191,7 +197,7 @@ void waitForAck() {
 }
 
 void sendDummyVestDataPacket(){
-  if (!ackReceived && (sentHandshakeAck && prevPacket.id != NULL)) {
+  if (isTimeout || (!ackReceived && (sentHandshakeAck && prevPacket.id != NULL))) {
     Serial.write((uint8_t *)&prevPacket, sizeof(prevPacket));
     delay(10);
   } else {
@@ -231,9 +237,6 @@ void sendHandshakeAck() {
 }
 
 void waitForHandshakeAck(){
-  unsigned long prevMillis = 0;
-  unsigned long interval = 5000;
-  bool isTimeout = false;
   char ack_msg;
 
   while (!Serial.available());
@@ -244,7 +247,6 @@ void waitForHandshakeAck(){
     resetFlags();
     return;
   }
-
 }
 
 //=======================================================

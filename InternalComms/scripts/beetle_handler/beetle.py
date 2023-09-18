@@ -5,7 +5,7 @@ from packet import PacketId, VestPacket, RHandDataPacket
 from state import State
 from crc import custom_crc16, custom_crc32
 from write import write_to_csv
-from exceptions import DisconnectException, HandshakeException, PacketIDException, CRCException
+from exceptions import DuplicateException, HandshakeException, PacketIDException, CRCException
 from constants import *
 
 import pandas as pd
@@ -114,11 +114,9 @@ class Beetle():
     def receive_data(self, duration=3, polling_interval=INTERVAL_RATE):
 
         end_time = time.time() + duration
-        # Reminder to use this to break the loop
         while time.time() < end_time:
             if self.handshake_replied:
                 return
-            # Need to check again on the timeout, can be longer and recover the packets
             self.beetle.waitForNotifications(timeout=polling_interval)
         
         raise HandshakeException("Handshake timed out.")
@@ -175,12 +173,12 @@ class Beetle():
             if current_time - self.keep_alive_timer >= 0.05:
                 statistics = { self.beetle_id: 
                                 {
-                                    'Connected': self.ble_connected,
-                                    'Handshake': self.handshake_complete,
+                                    'Connected': f"{bcolors.OKGREEN}Connected{bcolors.ENDC}" if self.ble_connected else f"Disconnected",
+                                    'Handshake': f"{bcolors.OKGREEN}Completed{bcolors.ENDC}" if self.handshake_complete else f"Waiting",
                                     'Packets received': self.beetle.delegate.count if self.handshake_complete else 0,
                                     'kbps': float(self.beetle.delegate.count * 20 * 8 / (1000 * (time.time() - self.start_timer))) if self.handshake_complete else 0,
                                     'Packets fragmented': self.beetle.delegate.fragmented_count if self.handshake_complete else 0,
-                                    'Packets discarded (Corrupt)': self.beetle.delegate.corrupted_count if self.handshake_complete else 0
+                                    'Packets corrupted': self.beetle.delegate.corrupted_count if self.handshake_complete else 0
                                 }
                             }
 
@@ -219,7 +217,6 @@ class Beetle():
                     raise btle.BTLEException(message="Invalid state.")
                 
                 if self.handshake_complete:
-                    # This continuously checks if the beetle is still connected
                     self.try_writing_to_beetle(last_press_time)
 
             except HandshakeException as e:
@@ -233,30 +230,6 @@ class Beetle():
                 self.disconnect()
                 self.reset_flags()
                 self.set_to_connect()
-
-    def print_table(self, df):
-        statistics = {
-                'Connected': self.ble_connected,
-                'Handshake': self.handshake_complete,
-                'Packets received': self.beetle.delegate.count if self.handshake_complete else 0,
-                'kbps': float(self.beetle.delegate.count * 20 * 8 / (1000 * (time.time() - self.start_timer))) if self.handshake_complete else 0,
-                'Packets fragmented': self.beetle.delegate.fragmented_count if self.handshake_complete else 0,
-                'Packets discarded (Corrupt)': self.beetle.delegate.corrupted_count if self.handshake_complete else 0
-            }
-
-        df.iloc[0] = statistics.values()
-
-        if (self.beetle_id == 1):
-            print(f"{bcolors.OKGREEN}{tabulate(df, headers='keys', tablefmt='fancy_grid')}{bcolors.ENDC}")
-            print("\n" * 8)  
-        elif(self.beetle_id == 2):
-            print(f"{bcolors.OKBLUE}{tabulate(df, headers='keys', tablefmt='fancy_grid')}{bcolors.ENDC}")
-            print("\n" * 4)
-        elif (self.beetle_id == 3):
-            sys.stdout.write("\033[F" * 5)
-            sys.stdout.write("\033[K")  # Clear to the end of the line
-            print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
-
     
     def set_to_connect(self):
         print("Setting to connect state")
@@ -278,22 +251,21 @@ class ReadDelegate(btle.DefaultDelegate):
 
     def __init__(self, beetle_instance):
         btle.DefaultDelegate.__init__(self)
-        self.error_packetid_count = 0
         self.count = 0
         self.beetle = beetle_instance
 
         self.ack_count = 0
 
         # Keeps track of the sequence number sent for vestpackets
-        self.seq_no = 0
-        self.error_packetid_count = 0
+        self.seq_no = -1
+        self.corrupted_packet_counter = 0
+        self.corrupted_count = 0
         self.trigger_record = 0 # For data collection purposes
 
         # Handling fragmented packets
         self.packet_buffer = b""
         self.total_calls = 0
         self.fragmented_count = 0
-        self.corrupted_count = 0
         # Fragmented count = total calls to handleNotifications - number of times packet is processed
 
     def handleNotification(self, cHandle, data):
@@ -322,7 +294,7 @@ class ReadDelegate(btle.DefaultDelegate):
         # print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
         try:
             # Check packet id
-            if data[0] < 0 or data[0] > 5:
+            if data[0] < 1 or data[0] > 5:
                 raise PacketIDException()
             
             pkt_id = PacketId(data[0])  
@@ -336,6 +308,10 @@ class ReadDelegate(btle.DefaultDelegate):
                 if crc != custom_crc32(data[:4]):
                     raise CRCException()
                 
+                
+
+                if pkt_data.seq_no == self.seq_no:
+                    raise DuplicateException()
                 
                 # # Update sequence number afterwards to send ack
                 self.seq_no = pkt_data.seq_no
@@ -355,11 +331,12 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 if crc != custom_crc16(data[:17]):
                     raise CRCException()
-
+                
                 # Resets error count since packet received successfully
-                self.error_packetid_count = 0
+                self.corrupted_packet_counter = 0
 
-                # print(f"{self.beetle.beetle_id}: Right Hand Packet received successfully: {pkt_data}", end = "\r")
+                print(f"{self.beetle.beetle_id}: \
+                      Right Hand Packet received successfully: {pkt_data}")
                 
                 # TODO: Write data to ssh server
 
@@ -376,33 +353,24 @@ class ReadDelegate(btle.DefaultDelegate):
         except struct.error as e:
             print(f"Struct cannot be unpacked: {e}")
         except PacketIDException or CRCException as e:
-            # Send old ack to get new packet again
-            if self.beetle.beetle_id == 1: # ID of beetle for Vest
-                self.beetle.send_ack(self.seq_no) 
-            self.corrupted_count += 1
+
+            self.corrupted_count += 1 # Statistics purposes
+
+            # It will send the ack of the previous frame
+            if self.beetle.beetle_id != 3: # ID of beetle for Glove, no ack
+                self.beetle.send_ack(self.seq_no)
+            
             # PacketId conversion failed
             print("Packet id not found.")
             # Accounting packet loss for action window
             # Can be modified to just track packet loss
             self.account_packet_loss()
 
-            # If there are 5 consecutive packets that do not match the CRC, 
+            # If there are 5 consecutive packets that do not match the CRC/Packet ID, 
             # we assume that the packets are jumbled and we need to re-handshake
             self.track_corrupted_packets()
-        # except CRCException as e:
-        #     self.corrupted_count += 1
-        #     # Since assertion error, it will send the ack of the previous frame
-        #     # self.beetle.send_ack(self.seq_no) 
-
-        #     print("CRC do not match, packet corrupted.")
-        #     # Accounting packet loss for action window
-        #     # Can be modified to just track packet loss
-        #     self.account_packet_loss()
-
-        #     # If there are 5 consecutive packets that do not match the CRC, 
-        #     # we assume that the packets are jumbled and we need to re-handshake
-        #     self.track_corrupted_packets()
-
+        except DuplicateException as e:
+            print(f"Duplicated packet is dropped.")
         except btle.BTLEException as e: 
             # Error will be thrown if we try to ack but beetle is not connected
             # Should not have this error since we are able to catch it in the initiate program fn.
@@ -412,16 +380,16 @@ class ReadDelegate(btle.DefaultDelegate):
             print(f"Error occured: {e}")
 
     def track_corrupted_packets(self):
-        self.error_packetid_count += 1
-        if self.error_packetid_count >= 5:
-            print("Packet fragmented and sequence is messed up. Re-handshaking...")
-            self.error_packetid_count = 0
+        self.corrupted_packet_counter += 1
+        if self.corrupted_packet_counter >= 5:
+            print("Packets jumbled and sequence is messed up. Re-handshaking...")
+            self.corrupted_packet_counter = 0
             self.beetle.set_to_connect()
 
     def is_packet_complete(self, data):
         return len(data) >= 20
-    
-    def account_packet_loss(self):
+
+    def account_packet_loss(self): 
         if self.trigger_record: 
             self.beetle.packet_dropped += 1
             # append an empty data

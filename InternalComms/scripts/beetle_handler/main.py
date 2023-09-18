@@ -1,17 +1,18 @@
 from multiprocessing import Process, Queue
-from beetle import Beetle
+from beetle import Beetle, bcolors
 from constants import BEETLE_MACS, BEETLE1_MAC, BEETLE2_MAC, BEETLE3_MAC
 import pandas as pd
 import time
 from tabulate import tabulate
+            # 'Connected': f"{bcolors.OKGREEN}Connected{bcolors.ENDC}" if self.ble_connected else f"{bcolors.WARNING}Disconnected{bcolors.ENDC}",
 
 statistics = {
-    'Connected': [False, False, False],
-    'Handshake': [False, False, False],
+    'Connected': [f"Disconnected", f"Disconnected", f"Disconnected"],
+    'Handshake': [f"Waiting", f"Waiting", f"Waiting"],
     'Packets received': [0, 0, 0],
     'kbps': [0, 0, 0],
     'Packets fragmented': [0, 0, 0],
-    'Packets discarded (Corrupt)': [0, 0, 0],
+    'Packets corrupted': [0, 0, 0],
 }
 
 df = pd.DataFrame(statistics, index=[1, 2, 3])
@@ -68,7 +69,6 @@ try:
             df.iloc[2] = list(data.values())[0]
 
         print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
-        
     # for process in processes:
     #     process.join()
     
