@@ -1,29 +1,44 @@
 import threading
 import time
+from array import array
+from GameLogic import GameLogic
 
 class GameEngine:
+    actionData = [0,0,0]
+
     def __init__(self) -> None:
         pass
 
-    def data_input_thread():
+    def data_input_thread(self):
         while True:
             # simulate data input
-            print("Data Input:")
+            userInput = input("Please enter playerID, action: ") 
+
+            arguments = userInput.split()
+            print("playerID: ", arguments[0])
+            print("Player Action: ", arguments[1])
+            print("Enemy Visible: ", arguments[2])
+
+            self.actionData = [arguments[0], [arguments[1], [arguments[2]]]]
             time.sleep(1)
 
-    def game_logic_thread():
+    def game_logic_thread(self):
         while True:
             # Perform game logic procesing
             print("Game Logic Processing")
+
             time.sleep(1)
 
-    def data_output_thread():
+    def data_output_thread(self):
         while True:
             # Perform data output
             print("Data Output")
             time.sleep(1)
 
-    # create threads
+   
+
+if __name__ == "__main__":
+     # create threads
     data_input_thread = threading.Thread(target=data_input_thread)
     game_logic_thread = threading.Thread(target=game_logic_thread)
     data_output_thread = threading.Thread(target=data_output_thread)

@@ -1,7 +1,3 @@
-import json
-import threading
-import time
-
 from enum import Enum
 from PlayerClass import Player
 from PlayerClass import GestureID
@@ -20,6 +16,14 @@ class GameLogic:
         self.player_1 = Player(1)
         self.player_2 = Player(2)
         # player_list = [player_1, player_2]
+        pass
+
+    def actionHandler(self, dataIn):
+        self.playerId = dataIn[0]
+        self.playerAction = dataIn[1]
+        pass
+
+    def visualHandler(self, dataIn):
         pass
 
     #logic
@@ -116,8 +120,8 @@ class GameLogic:
             # print(player2JSONString)
         # save gamestate to json
 
-game = GameLogic()
-game.run()
+# game = GameLogic()
+# game.run()
 
     #userInput = Input(playerID, action) 
         
