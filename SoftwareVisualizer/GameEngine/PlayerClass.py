@@ -40,7 +40,6 @@ class Player:
             self.hp = self.hp - dmg
 
         if self.hp <= 0:
-            self.death += 1
             self.respawn()
 
     def shieldActivate(self):
@@ -50,24 +49,23 @@ class Player:
             self.shieldHP = self.maxShieldHP
             self.shieldCount -= 1
 
-    def shoot(self, enemy):
+    def shoot(self):
         if (self.ammo <= 0):
             pass
         else:
             self.ammo = self.ammo - 1
+            # if (self.enemyDetected == 1):
+            #     enemy.reduceHP(self.ammoDmg)
+        return (self.ammo > 0 and self.enemyDetected == 1)
 
-    def grenadeThrow(self, enemy):
+    def grenadeThrow(self):
         if (self.grenades <= 0):
             pass
         else:
             self.grenades -= 1
-            if (self.enemyDetected == 1):
-                enemy.reduceHP(self.grenadesDmg)
-                if enemy.hp <= 0:
-                    self.kill += 1
-                    self.respawn()
+        return (self.grenades > 0 and self.enemyDetected == 1)
                     
-    def skillActivate(self, enemy):
+    def skillActivate(self):
         if (self.enemyDetected == 1):
             enemy.reduceHP(self.skillDmg)
             if enemy.hp <= 0:
@@ -79,7 +77,7 @@ class Player:
             self.ammo = self.maxAmmo
 
     def respawn(self):
-        if self.hp < 0:
+        if self.hp <= 0:
             self.hp = self.maxHP
             self.shieldHP = 0
             self.shieldCount = self.maxShieldCount

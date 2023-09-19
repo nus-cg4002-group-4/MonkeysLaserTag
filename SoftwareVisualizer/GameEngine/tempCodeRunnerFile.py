@@ -1,3 +1,2 @@
 
-        player_2 = Player(2)
-        player_list = [player_1, player_2]
+        # self.player_2.updateEnemy(self.player_1)

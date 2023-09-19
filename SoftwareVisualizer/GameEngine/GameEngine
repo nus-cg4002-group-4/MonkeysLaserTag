@@ -1,0 +1,34 @@
+import threading
+import time
+
+class GameEngine:
+    def __init__(self) -> None:
+        pass
+
+    def data_input_thread():
+        while True:
+            # simulate data input
+            print("Data Input:")
+            time.sleep(1)
+
+    def game_logic_thread():
+        while True:
+            # Perform game logic procesing
+            print("Game Logic Processing")
+            time.sleep(1)
+
+    def data_output_thread():
+        while True:
+            # Perform data output
+            print("Data Output")
+            time.sleep(1)
+
+    # create threads
+    data_input_thread = threading.Thread(target=data_input_thread)
+    game_logic_thread = threading.Thread(target=game_logic_thread)
+    data_output_thread = threading.Thread(target=data_output_thread)
+
+    # Start Threads
+    data_input_thread.start()
+    game_logic_thread.start()
+    data_output_thread.start()
