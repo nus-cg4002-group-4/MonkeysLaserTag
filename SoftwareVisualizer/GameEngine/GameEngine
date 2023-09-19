@@ -10,6 +10,7 @@ class GameEngine:
 
     def __init__(self) -> None:
         self.dataInputQueue = queue.Queue()
+        self.dataOutputQueue = queue.Queue()
         self.player1 = Player(1)
         self.player2 = Player(2)
 
@@ -83,7 +84,10 @@ class GameEngine:
     def data_output_thread(self):
         while True:
             # Perform data output
-            print("Data Output")
+            # print("Data Output")
+
+            if not self.dataInputQueue.empty():
+                dataOUT = self.dataOutputQueue.get()
             time.sleep(1)
 
 if __name__ == "__main__":
