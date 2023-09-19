@@ -4,8 +4,8 @@ import json
 class RelayServer:
     def __init__(self):
         self.server_name = 'localhost'
-        self.port1 = 1200
-        self.port2 = 1201
+        self.port1 = 1202
+        self.port2 = 1203
         self.conn_socket1 = None
         self.conn_socket2 = None
         self.connection_count = 0

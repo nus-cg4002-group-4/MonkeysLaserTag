@@ -1,6 +1,7 @@
 from socket import *
 import json
 import base64
+import random
 
 from Crypto import Random
 from Crypto.Cipher import AES
@@ -55,30 +56,32 @@ class EvalClient:
         self.client_socket.close()
         print('Closed socket for Eval Server')
 
-    def get_dummy_state():
+    def get_dummy_eval_state_str():
+        state = EvalClient.get_dummy_eval_state_json()
+        return json.dumps(state)
+
+    def get_dummy_eval_state_json():
         state = {
             'player_id': 1,
-            'action': 'grenade',
+            'action': random.choice(['grenade', ]),
             'game_state': {
-                'p1': {
-                    'hp': 2,
-                    'bullets': 1,
-                    'grenades': 1,
-                    'shield_hp': 1,
-                    'deaths': 0,
-                    'shields': 1
-                },
-                'p2': {
-                    'hp': 2,
-                    'bullets': 1,
-                    'grenades': 1,
-                    'shield_hp': 1,
-                    'deaths': 0,
-                    'shields': 1
-                }
+                'p1': EvalClient.get_dummy_game_state_json(),
+                'p2': EvalClient.get_dummy_game_state_json()
             }
         }   
-        js = json.dumps(state)
-        return js
+        return state
     
-EvalClient.get_dummy_state = staticmethod(EvalClient.get_dummy_state)
+    def get_dummy_game_state_json():
+        state = {
+                    'hp': random.choice(range(101)),
+                    'bullets': random.choice(range(7)),
+                    'grenades': 2,
+                    'shield_hp': random.choice(range(31)),
+                    'deaths': 0,
+                    'shields': random.choice(range(4))
+                }
+        return state
+
+EvalClient.get_dummy_eval_state_str = staticmethod(EvalClient.get_dummy_eval_state_str)    
+EvalClient.get_dummy_eval_state_json = staticmethod(EvalClient.get_dummy_eval_state_json)
+EvalClient.get_dummy_game_state_json = staticmethod(EvalClient.get_dummy_game_state_json)

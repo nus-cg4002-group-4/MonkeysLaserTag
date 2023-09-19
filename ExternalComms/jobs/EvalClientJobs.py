@@ -17,9 +17,7 @@ class EvalClientJobs:
                 to_send = eval_client_to_server.get()
                 response = self.eval_client.send_to_server_w_res(to_send)
 
-                print('i sent it')
-
-                print('Send to game engine: ', 'response')
+                print('Send to eval server: ', 'to_send')
                 eval_client_to_game_engine.put(response)
                 time.sleep(3)
             except:

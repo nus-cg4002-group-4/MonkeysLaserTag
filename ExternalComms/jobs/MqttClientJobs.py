@@ -25,7 +25,6 @@ class MqttClientJobs:
                 msg = engine_to_vis.get()
                 print('Sent to Visualizer: ', msg)
                 self.mqtt_client2.publish_to_topic(self.mqtt_client2.game_state_topic, msg)
-                time.sleep(8)
             except:
                 break
     

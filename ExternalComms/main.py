@@ -25,7 +25,7 @@ class Brain:
 
         self.eval_client_to_server = Queue()
         self.eval_client_to_game_engine = Queue()
-        self.relay_server_to_parser = Queue()
+        self.relay_server_to_engine = Queue()
         self.relay_server_to_node = Queue()
         self.game_engine_to_vis = Queue()
         self.vis_to_game_engine = Queue()
@@ -51,7 +51,8 @@ class Brain:
                                                 args=(self.eval_client_to_game_engine,
                                                     self.eval_client_to_server,
                                                     self.game_engine_to_vis, 
-                                                    self.vis_to_game_engine))
+                                                    self.vis_to_game_engine,
+                                                    self.relay_server_to_engine))
             self.processes.append(self.game_engine_process)
             self.game_engine_process.start()
 
@@ -64,7 +65,7 @@ class Brain:
 
             # # Relay Server Process
             self.relay_server_process = Process(target=self.relay_server_jobs.relay_server_job, 
-                                                args=(self.relay_server_to_parser, self.relay_server_to_node))
+                                                args=(self.relay_server_to_engine, self.relay_server_to_node))
             self.processes.append(self.relay_server_process)
             self.relay_server_process.start()
 
