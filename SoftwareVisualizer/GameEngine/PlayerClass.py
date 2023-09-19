@@ -28,6 +28,9 @@ class Player:
         print("actionID: ", self.gestureID)
         print("isEnemyVisible: ", self.enemyDetected)
 
+    def isEnemyDetected(self, detected):
+        return detected == 1
+
     def reduceHP(self, dmg):
         if self.shieldHP > 0:
             remainingShieldHP = self.shieldHP - dmg
@@ -35,11 +38,12 @@ class Player:
                 self.shieldHP = remainingShieldHP
             else: 
                 self.shieldHP = 0
-                self.hp= self.hp - abs(remainingShieldHP)
+                self.hp = self.hp - abs(remainingShieldHP)
         else:
             self.hp = self.hp - dmg
 
         if self.hp <= 0:
+            print("respawn")
             self.respawn()
 
     def shieldActivate(self):
@@ -50,27 +54,19 @@ class Player:
             self.shieldCount -= 1
 
     def shoot(self):
-        if (self.ammo <= 0):
-            pass
-        else:
-            self.ammo = self.ammo - 1
-            # if (self.enemyDetected == 1):
-            #     enemy.reduceHP(self.ammoDmg)
-        return (self.ammo > 0 and self.enemyDetected == 1)
+        if (self.ammo > 0):
+            self.ammo -= 1
 
     def grenadeThrow(self):
-        if (self.grenades <= 0):
-            pass
-        else:
+        if (self.grenades > 0):
             self.grenades -= 1
-        return (self.grenades > 0 and self.enemyDetected == 1)
                     
-    def skillActivate(self):
-        if (self.enemyDetected == 1):
-            enemy.reduceHP(self.skillDmg)
-            if enemy.hp <= 0:
-                    self.kill += 1
-                    self.respawn()
+    # def skillActivate(self):
+    #     if (self.enemyDetected == 1):
+    #         enemy.reduceHP(self.skillDmg)
+    #         if enemy.hp <= 0:
+    #                 self.kill += 1
+    #                 self.respawn()
 
     def reload(self):
         if (self.ammo <= 0):
