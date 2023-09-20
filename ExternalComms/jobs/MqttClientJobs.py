@@ -19,16 +19,16 @@ class MqttClientJobs:
     #         except:
     #             break
     
-    def send_to_vis_task(self, engine_to_vis):
+    def send_to_vis_task(self, engine_to_vis, topic):
         while True:
             try:
                 msg = engine_to_vis.get()
                 print('Sent to Visualizer: ', msg)
-                self.mqtt_client2.publish_to_topic(self.mqtt_client2.game_state_topic, msg)
+                self.mqtt_client2.publish_to_topic(topic, msg)
             except:
                 break
     
-    def mqtt_client_job(self, engine_to_vis, vis_to_engine):
+    def mqtt_client_job(self, engine_to_vis_gamestate, engine_to_vis_hit, vis_to_engine):
         def on_message_hit_miss(client, userdata, msg):
             vis_to_engine.put(str(msg.payload))
 
@@ -39,9 +39,13 @@ class MqttClientJobs:
             # Thread for subscription
             self.mqtt_client1.subscribe_to_topic(self.mqtt_client1.hit_miss_topic)
 
-            process_send_to_vis = Process(target=self.send_to_vis_task, args=(engine_to_vis,), daemon=True)
-            self.processes.append(process_send_to_vis)
-            process_send_to_vis.start()
+            process_send_gamestate = Process(target=self.send_to_vis_task, args=(engine_to_vis_gamestate, self.mqtt_client2.game_state_topic), daemon=True)
+            self.processes.append(process_send_gamestate)
+            process_send_gamestate.start()
+
+            process_send_request = Process(target=self.send_to_vis_task, args=(engine_to_vis_hit, self.mqtt_client2.request_topic), daemon=True)
+            self.processes.append(process_send_request)
+            process_send_request.start()
 
             for p in self.processes:
                 p.join()

@@ -8,6 +8,7 @@ class MqttClient:
     def __init__(self):
         self.hit_miss_topic = 'hit_miss'
         self.game_state_topic = 'gamestate'
+        self.request_topic = 'hit_miss_request'
         self.hostname = None
         self.port = None
         self.username = None

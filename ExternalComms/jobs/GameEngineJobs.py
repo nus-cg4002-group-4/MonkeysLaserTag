@@ -33,14 +33,16 @@ class GameEngineJobs:
             else:
                 print('Received from eval server ', msg)
     
-    def gen_action_task(self, relay_to_engine, engine_to_vis, engine_to_eval):
+    def gen_action_task(self, relay_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval):
         while True:
             try:
                 signal = relay_to_engine.get()
                 state = EvalClient.get_dummy_eval_state_json()
-                engine_to_eval.put(json.dumps(state))
+                state_str = json.dumps(state)
+                engine_to_eval.put(state_str)
                 if state['action'] == 'grenade':
-                    engine_to_vis.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
+                    engine_to_vis_gamestate.put(state_str)
+                    engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
             except:
                 break
     
@@ -53,7 +55,7 @@ class GameEngineJobs:
     #             break
                 
     
-    def game_engine_job(self, eval_to_engine, engine_to_eval, engine_to_vis, vis_to_engine, relay_to_engine):
+    def game_engine_job(self, eval_to_engine, engine_to_eval, engine_to_vis_gamestate, engine_to_vis_hit, vis_to_engine, relay_to_engine):
         
         try:
             process_rcv_from_mqtt = Process(target=self.receive_from_mqtt_task, args=(vis_to_engine,), daemon=True)
@@ -68,7 +70,7 @@ class GameEngineJobs:
             self.processes.append(process_rcv_from_eval)
             process_rcv_from_eval.start()
 
-            process_gen_action = Process(target=self.gen_action_task, args=(relay_to_engine, engine_to_vis, engine_to_eval), daemon=True)
+            process_gen_action = Process(target=self.gen_action_task, args=(relay_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval), daemon=True)
             self.processes.append(process_gen_action)
             process_gen_action.start()
             
