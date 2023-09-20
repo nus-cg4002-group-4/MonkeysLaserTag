@@ -31,7 +31,7 @@ class GameEngineJobs:
             except:
                 break
             else:
-                print('Received from eval server ', 'msg')
+                print('Received from eval server ', msg)
     
     def gen_action_task(self, relay_to_engine, engine_to_vis, engine_to_eval):
         while True:

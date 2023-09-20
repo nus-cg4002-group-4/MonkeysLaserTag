@@ -1,6 +1,9 @@
 import time
 from multiprocessing import Lock, Process, Queue, current_process
 import queue
+import random
+import json
+import asyncio
 
 from helpers.RelayServer import RelayServer
 
@@ -9,24 +12,42 @@ class RelayServerJobs:
         self.relay_server = RelayServer()
         self.processes = []
     
+    async def receive_from_relay_node(self, conn_socket, relay_server_to_engine):
+        msg = await self.relay_server.receive_from_node(conn_socket)
+        if self.relay_server.is_running:
+            relay_server_to_engine.put('request')
+            print('Received from relay node: ', msg)
+
     def receive_from_relay_node_task(self, conn_socket, relay_server_to_engine):
-        while True:
+        while self.relay_server.is_running:
             try:
-                msg = self.relay_server.receive_from_node(conn_socket)
-                if not msg:
-                    print('Empty message received.')
-                    break
-                relay_server_to_engine.put('request')
-                print('Received from relay node: ', msg)
+                asyncio.run(self.receive_from_relay_node(conn_socket, relay_server_to_engine))
+            except Exception as e:
+                print(e)
+                break
             except:
                 break
+
+    def get_dummy_packet(self):
+        packet = {
+            'pkt_id': random.choice(range(4)),
+            'ax': random.choice(range(20, 60)),
+            'ay': random.choice(range(-60,-20)),
+            'az': random.choice(range(1000, 1200))
+        }
+
+        p = json.dumps(packet).encode()
+        return str(len(p)) + '_' + p.decode()
     
     def send_to_relay_node_task(self, conn_socket, relay_server_to_node):
         while True:
             try:
-                msg = relay_server_to_node.get()
+                #msg = relay_server_to_node.get()
+                msg = self.get_dummy_packet()
                 print('Sent to relay node: ', msg)
-                self.relay_server.send_to_node(msg, conn_socket)
+                self.relay_server.send_to_node(msg.encode(), conn_socket)
+                time.sleep(10)
+
             except:
                 break
         

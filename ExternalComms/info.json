@@ -3,10 +3,10 @@
 		"hostname": "33c8ce82e0c04232a7e95be6c46196f5.s1.eu.hivemq.cloud",
 		"port": 8883,
 		"username": "visualizer",
-		"password": "EnterPasswordHere"
+		"password": "Password"
 	},
 	"eval": {
-		"hostname": "192.168.152.18",
+		"hostname": "localhost",
 		"password": "Lasertageveryday"
 	}
 }

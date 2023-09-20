@@ -59,7 +59,6 @@ class Brain:
             self.recv_from_imu_process.start()
 
             # Receive from IR Process
-
         
             for p in self.processes:
                 p.join()
@@ -67,7 +66,7 @@ class Brain:
             print('Terminating Main')
         
         except Exception as e:
-            print(e)
+            print(e, 'meow')
         
         self.beetle_jobs.relay_node.end_client()
         print('Closed socket for Relay Node')
