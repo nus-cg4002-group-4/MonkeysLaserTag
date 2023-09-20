@@ -10,16 +10,22 @@ class EvalClientJobs:
         self.eval_client = EvalClient()
 
         self.eval_client_process = None
+        self.timeout = 15
     
     async def eval_client_task(self, eval_client_to_server, eval_client_to_game_engine):
-
         while True:
             try:
-                to_send = eval_client_to_server.get()
+                to_send = eval_client_to_server.get(timeout=self.timeout)
                 response = await self.eval_client.send_to_server_w_res(to_send)
                 if self.eval_client.is_running:
                     print('Send to eval server: ', 'to_send')
                     eval_client_to_game_engine.put(response)
+            except queue.Empty:
+                print('Time out from game engine. Sending random game state')
+                to_send = EvalClient.get_dummy_eval_state_str()
+                response = await self.eval_client.send_to_server_w_res(to_send)
+                print('Send to eval server: ', 'to_send')
+                eval_client_to_game_engine.put(response)
             except:
                 self.eval_client.is_running = False
                 print('Terminating Eval Client Job')
