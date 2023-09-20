@@ -10,7 +10,7 @@ class EvalClientJobs:
         self.eval_client = EvalClient()
 
         self.eval_client_process = None
-        self.timeout = 15
+        self.timeout = 50
     
     async def eval_client_task(self, eval_client_to_server, eval_client_to_game_engine):
         while True:

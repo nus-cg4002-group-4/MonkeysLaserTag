@@ -4,7 +4,7 @@ import queue
 import random
 import json
 import asyncio
-
+from helpers.EvalClient import EvalClient
 from helpers.RelayServer import RelayServer
 
 class RelayServerJobs:
@@ -30,10 +30,7 @@ class RelayServerJobs:
 
     def get_dummy_packet(self):
         packet = {
-            'pkt_id': random.choice(range(4)),
-            'ax': random.choice(range(20, 60)),
-            'ay': random.choice(range(-60,-20)),
-            'az': random.choice(range(1000, 1200))
+            'p1': EvalClient.get_dummy_eval_state_json()
         }
 
         p = json.dumps(packet).encode()
@@ -42,12 +39,11 @@ class RelayServerJobs:
     def send_to_relay_node_task(self, conn_socket, relay_server_to_node):
         while True:
             try:
-                #msg = relay_server_to_node.get()
+                msg = relay_server_to_node.get()
                 msg = self.get_dummy_packet()
                 print('Sent to relay node: ', msg)
                 self.relay_server.send_to_node(msg.encode(), conn_socket)
-                time.sleep(10)
-
+                time.sleep(40)
             except:
                 break
         
