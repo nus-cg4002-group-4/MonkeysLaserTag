@@ -56,8 +56,16 @@ class BeetleJobs:
                 break 
 
     def send_to_server_job(self, node_to_server):   
-        data = node_to_server.get()
-        self.relay_node.send_to_server(data)
+        while True:
+            try:
+                data = node_to_server.get()
+                self.relay_node.send_to_server(data)
+            except Exception as e:
+                print(e)
+                break
+            except:
+                break
+
 
     def recv_from_server_job(self, node_to_imu, node_to_ir):
         while self.relay_node.is_running:
@@ -71,20 +79,12 @@ class BeetleJobs:
         print('end job')
     
     async def recv_from_server(self, node_to_imu, node_to_ir):
-        while True:
-            try:
-                data = await self.relay_node.receive_from_server()
-                # Decide if it's for IMU or IR
-                if data == 'imu':
-                    node_to_imu.put(data)
-                elif data == 'ir':
-                    node_to_ir.put(data)
-                break
-            except Exception as e:
-                print(e)
-                break
-            except:
-                break
+        data = await self.relay_node.receive_from_server()
+        # Decide if it's for IMU or IR
+        if data == 'imu':
+            node_to_imu.put(data)
+        elif data == 'ir':
+            node_to_ir.put(data)
 
     
 

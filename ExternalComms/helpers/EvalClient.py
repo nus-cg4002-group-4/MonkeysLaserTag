@@ -15,7 +15,7 @@ class EvalClient:
         self.port = None
         self.secret_key = None
         self.client_socket = None
-        self.timeout = 15
+        self.timeout = 60
         self.is_running = True
     
     def encrypt_and_format(self, msg):
@@ -89,9 +89,9 @@ class EvalClient:
         to_send = self.encrypt_and_format(msg)
         self.client_socket.send(to_send)
         success, timeout, text = await self.recv_text(self.timeout)
-        if not success:
-            print('Timeout from receiving data from eval server. Generating randoma action')
-            return self.get_dummy_response_from_eval_str()
+        # if not success:
+        #     print('Timeout from receiving data from eval server. Generating randoma action')
+        #     return self.get_dummy_response_from_eval_str()
 
         return text
     

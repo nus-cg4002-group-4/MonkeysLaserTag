@@ -17,7 +17,7 @@ class EvalClientJobs:
             try:
                 to_send = eval_client_to_server.get(timeout=self.timeout)
                 response = await self.eval_client.send_to_server_w_res(to_send)
-                if self.eval_client.is_running:
+                if self.eval_client.is_running and response:
                     print('Send to eval server: ', 'to_send')
                     eval_client_to_game_engine.put(response)
             except queue.Empty:
