@@ -1,6 +1,7 @@
 from pynq import Overlay, allocate
 import pynq.lib.dma
 import sys, os
+import numpy as np
 
 cfd = sys.path[0]
 
