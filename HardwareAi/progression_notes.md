@@ -23,14 +23,14 @@ Enumerations:
 
 Headers of the CSV file:
 ```csv
-[timestamp],[dom x-accel],[dom y-accel],[dom z-accel],[dom x-gyro],[dom y-gyro],[dom z-gyro],[non-dom x-accel],[non-dom y-accel],[non-dom z-accel],[non-dom x-gyro],[non-dom y-gyro],[non-dom z-gyro],[flex]
+[timestamp],[x_accel],[y_accel],[z_accel],[x_gyro],[y_gyro],[z_gyro],[flex]
 ```
 
 Name of CSV file: 
 ```
-[activity]_[id].csv
+[activity]_[name of person]_[id].csv
 ```
-For example `punch_1.csv` and `spear_54.csv`. 
+For example `punch_darren_1.csv` and `spear_weida_54.csv`. 
 
 All filenames should be **unique** and should contain **only one underscore**.
 
@@ -79,10 +79,10 @@ Potential starting dimensions for each window:
 * But also nightmare to train
 
 ```python
-# For (40, 12) case
+# For (40, 6) case
 
 model = Sequential()
-model.add(Conv1D(16, 3, activation='relu', input_shape=(1, 40, 12)))
+model.add(Conv1D(16, 3, activation='relu', input_shape=(1, 40, 6)))
 
 # Dimension: (38, 16)
 
@@ -111,10 +111,29 @@ $$
 * Adding random vector to each?
 * Playing with window cutoffs
 
+## Start of Move Detection
+
+Set magnitude threshold and check for it. Once detected then send window to FPGA.
+
+Quick magnitude algo:
+
+$$
+\text{QuickMag} = x^2+y^2+z^2
+$$
+
+Maybe send several windows over and confirm if all windows return the same output?
+
 # Porting to HLS
 
 https://www.youtube.com/watch?v=EjjzIimyiM0
 
 Quantization-aware training
-
 xczu3eg-sbva484-1-i with 150MHz clock
+
+## Working With HLS
+
+Apparently Vivado 2022.2 cannot synthesize/has bugs with AXI stream, so switched to 2019.1.
+
+Initially values were integrated as part of BRAM, but Vivado 2019.1 takes extremely long time to synthesize (around 10 hours), and there is not enough area for implementation. 
+
+Switched to loading values into IP using AXI stream, synthesis now takes 10 mins, enough area for implementation.
