@@ -40,8 +40,8 @@ class GameEngineJobs:
                 state = EvalClient.get_dummy_eval_state_json()
                 state_str = json.dumps(state)
                 engine_to_eval.put(state_str)
+                engine_to_vis_gamestate.put(state_str)
                 if state['action'] == 'grenade':
-                    engine_to_vis_gamestate.put(state_str)
                     engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
             except:
                 break
