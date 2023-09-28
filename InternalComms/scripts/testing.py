@@ -1,34 +1,38 @@
-from bluepy import btle 
+import multiprocessing
+import time
 
-# Beetle 1: D0:39:72:E4:8E:67
-beetle1 = "D0:39:72:E4:8E:67"
-fakebeetle = "D0:39:72:E4:8E:68"
+# Function to run in a separate process
+class Test:
 
-def bleConnect(beetle):
-    try: 
-        p = btle.Peripheral(beetle)
-        print("Success!")
-        print(p)
-    except:
-        print("Could not connect.")
+    def __init__ (self):
+        pass
 
-bleConnect(beetle1)
-bleConnect(fakebeetle)
-from bluepy import btle
+    def process_function(self, flag, queue):
+        while not flag.is_set():
+            data = f"Data {time.time()}"
+            queue.put(data)
+            print(f"Sent: {data}")
+            time.sleep(1)  # Simulate some work
 
-beetle1 = "D0:39:72:E4:8E:67"
+if __name__ == "__main__":
+    # Create a multiprocessing queue
+    data_queue = multiprocessing.Queue()
 
-def bleConnect(beetle):
+    # Create a multiprocessing flag
+    exit_flag = multiprocessing.Event()
+    t = Test()
+    # Create a separate process
+    process = multiprocessing.Process(target=t.process_function, args=(exit_flag, data_queue))
+
+    # Start the process
+    process.start()
+
     try:
-        p = btle.Peripheral(beetle)
-        print("Connection successful with details:")
-        print(p)
-    except:
-        print("Unable to connect to beetle")
-        # Error handling - timeout
-
-bleConnect(beetle1)
-
-# setDelegate
-# waitForNotifications 
-
+        while True:
+            if not data_queue.empty(): data = data_queue.get(timeout=1)  # Wait for 1 second to get data
+            print(f"Received: {data}")
+    except KeyboardInterrupt:
+        # Set the exit flag to terminate the separate process
+        exit_flag.set()
+        process.join()  # Wait for the process to finish
+        print("Main process finished.")
