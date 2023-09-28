@@ -40,17 +40,12 @@ beetle_2 = Beetle(BEETLE2_MAC, beetle_id=2)
 process_2 = Process(target=beetle_2.initiate_program, args=(queue_2,))
 processes.append(process_2)
 
-beetle_3 = Beetle(BEETLE3_MAC, beetle_id=3)
-process_3 = Process(target=beetle_3.initiate_program, args=(queue_3,))
-processes.append(process_3)
-
 
 print(df)
 
 try:
     process_1.start()
     process_2.start()
-    process_3.start()
 
     while True:
         if not queue_1.empty():
@@ -62,11 +57,6 @@ try:
             data = queue_2.get(timeout=0.1)
             # print(list(data.values())[0])
             df.iloc[1] = list(data.values())[0]
-        
-        if not queue_3.empty():
-            data = queue_3.get(timeout=0.1)
-            # print(list(data.values())[0])
-            df.iloc[2] = list(data.values())[0]
 
         print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
     
