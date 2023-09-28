@@ -5,8 +5,10 @@ import numpy as np
 
 cfd = sys.path[0]
 
+print('Loading overlay...')
 overlay = Overlay(os.path.join(cfd, 'design_1_wrapper.bit'))
 dma = overlay.axi_dma_0
+print('Overlay loaded.')
 
 in_array = [1, 2, 3, 4]
 
@@ -15,6 +17,7 @@ out_buffer = allocate(shape=(4,), dtype=np.uint32)
 
 in_buffer[:] = in_array
 
+print('Sending buffers...')
 dma.sendchannel.transfer(in_buffer)
 dma.recvchannel.transfer(out_buffer)
 dma.sendchannel.wait()
