@@ -4,7 +4,6 @@ import queue
 import random
 import json
 import asyncio
-from helpers.EvalClient import EvalClient
 from helpers.RelayServer import RelayServer
 
 class RelayServerJobs:
@@ -30,7 +29,7 @@ class RelayServerJobs:
 
     def get_dummy_packet(self):
         packet = {
-            'p1': EvalClient.get_dummy_eval_state_json()
+            'p1': 2
         }
 
         p = json.dumps(packet).encode()

@@ -2,8 +2,8 @@ import time
 from multiprocessing import Lock, Process, Queue, current_process
 import json
 import asyncio
+import random
 from helpers.RelayServer import RelayServer
-from helpers.EvalClient import EvalClient
 from jobs.RelayServerJobs import RelayServerJobs
 
 class RelayTest:
@@ -31,9 +31,21 @@ class RelayTest:
                 break
             except:
                 break
+    
+    def get_dummy_eval_state_json(self):
+        state = {
+            'player_id': 1,
+            'action': random.choice(['grenade', 'portal', 'shield']),
+            'game_state': {
+                'p1': {
+                    'health': 100
+                }
+            }
+        }   
+        return state
 
     def get_dummy_packet(self):
-        packet = EvalClient.get_dummy_game_state_json()
+        packet = self.get_dummy_game_state_json()
 
         p = json.dumps(packet).encode()
         return str(len(p)) + '_' + p.decode()

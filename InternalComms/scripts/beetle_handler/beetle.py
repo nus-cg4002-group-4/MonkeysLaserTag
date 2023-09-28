@@ -153,18 +153,6 @@ class Beetle():
         last_press_time = 0
         self.keep_alive_timer = time.time()
         self.receive_timer = time.time()
-        
-                
-        # statistics = {
-        #     'Connected': self.ble_connected,
-        #     'Handshake': self.handshake_complete,
-        #     'Packets received': 0,
-        #     'kbps': 0.0,
-        #     'Packets fragmented': 0,
-        #     'Packets discarded (Corrupt)': 0
-        #     }
-        # df = pd.DataFrame(statistics, index=[self.beetle_id])
-        # print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
 
         while True:
 
@@ -245,7 +233,6 @@ class Beetle():
     def set_to_wait_ack(self):
         print("Setting to ack state")
         self.state = State.ACK
-
 
 class ReadDelegate(btle.DefaultDelegate):
 
