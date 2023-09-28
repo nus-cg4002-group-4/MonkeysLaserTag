@@ -278,7 +278,7 @@ class ReadDelegate(btle.DefaultDelegate):
         self.count += 1 # Number of packets processed
         self.fragmented_count = self.total_calls - self.count # Number of fragmented packets
 
-        # print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
+        print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
         try:
             # Check packet id
             if data[0] < 1 or data[0] > 5:
