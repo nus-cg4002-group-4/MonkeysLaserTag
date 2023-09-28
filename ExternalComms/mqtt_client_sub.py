@@ -32,5 +32,5 @@ client.connect(host=hostname, port=port)
 print('START')
 
 # Subscribe
-client.subscribe('gamestate', qos=1)
+client.subscribe('hit_miss', qos=1)
 client.loop_forever()
