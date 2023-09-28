@@ -1,6 +1,9 @@
 from socket import *
 import json
 import base64
+import random
+from time import perf_counter
+import asyncio
 
 from Crypto import Random
 from Crypto.Cipher import AES
@@ -12,6 +15,8 @@ class EvalClient:
         self.port = None
         self.secret_key = None
         self.client_socket = None
+        self.timeout = 60
+        self.is_running = True
     
     def encrypt_and_format(self, msg):
         padded = pad(msg.encode(), AES.block_size)
@@ -27,11 +32,68 @@ class EvalClient:
         to_send = self.encrypt_and_format(msg)
         self.client_socket.send(to_send)
     
-    def send_to_server_w_res(self, msg):
+    async def recv_text(self, timeout):
+        text_received   = ""
+        success         = False
+        if self.is_running:
+            loop = asyncio.get_event_loop()
+            try:
+                while True:
+                    # recv length followed by '_' followed by json
+                    data = b''
+                    while not data.endswith(b'_'):
+                        start_time = perf_counter()
+                        task = loop.sock_recv(self.client_socket, 1)
+                        _d = await asyncio.wait_for(task, timeout=timeout)
+                        timeout -= (perf_counter() - start_time)
+                        if not _d:
+                            data = b''
+                            break
+                        data += _d
+                    if len(data) == 0:
+                        print('recv_text: Eval server disconnected')
+                        self.close_client()
+                        self.is_running = False
+                        break
+                    data = data.decode("utf-8")
+                    length = int(data[:-1])
+                    data = b''
+                    while len(data) < length:
+                        start_time = perf_counter()
+                        task = loop.sock_recv(self.client_socket, length - len(data))
+                        _d = await asyncio.wait_for(task, timeout=timeout)
+                        timeout -= (perf_counter() - start_time)
+                        if not _d:
+                            data = b''
+                            break
+                        data += _d
+                    if len(data) == 0:
+                        print('recv_text: Eval server disconnected')
+                        self.close_client()
+                        break
+                    text_received = data.decode("utf8")  # Decode raw bytes to UTF-8
+                    success = True
+                    break
+            except ConnectionResetError:
+                print('recv_text: Connection Reset for Eval Server')
+                self.close_client()
+            except asyncio.TimeoutError:
+                print('recv_text: Timeout while receiving data from Eval Server')
+                timeout = -1
+        else:
+            timeout = -1
+
+        return success, timeout, text_received
+    
+    async def send_to_server_w_res(self, msg):
         to_send = self.encrypt_and_format(msg)
         self.client_socket.send(to_send)
-        rcvd = self.client_socket.recv(2048).decode('utf8')
-        return rcvd
+        success, timeout, text = await self.recv_text(self.timeout)
+        # if not success:
+        #     print('Timeout from receiving data from eval server. Generating randoma action')
+        #     return self.get_dummy_response_from_eval_str()
+
+        return text
     
     def initialize(self):
         # Read connection details
@@ -52,33 +114,45 @@ class EvalClient:
         self.connect_to_server()
         
     def close_client(self):
-        self.client_socket.close()
-        print('Closed socket for Eval Server')
+        self.is_running = False
+        if self.client_socket:
+            self.client_socket.close()
+            print('Closed socket for Eval Server')
 
-    def get_dummy_state():
+    def get_dummy_eval_state_str():
+        state = EvalClient.get_dummy_eval_state_json()
+        return json.dumps(state)
+
+    def get_dummy_eval_state_json():
         state = {
             'player_id': 1,
-            'action': 'grenade',
+            'action': random.choice(['grenade', 'portal', 'shield']),
             'game_state': {
-                'p1': {
-                    'hp': 2,
-                    'bullets': 1,
-                    'grenades': 1,
-                    'shield_hp': 1,
-                    'deaths': 0,
-                    'shields': 1
-                },
-                'p2': {
-                    'hp': 2,
-                    'bullets': 1,
-                    'grenades': 1,
-                    'shield_hp': 1,
-                    'deaths': 0,
-                    'shields': 1
-                }
+                'p1': EvalClient.get_dummy_game_state_json(),
+                'p2': EvalClient.get_dummy_game_state_json()
             }
         }   
-        js = json.dumps(state)
-        return js
+        return state
     
-EvalClient.get_dummy_state = staticmethod(EvalClient.get_dummy_state)
+    def get_dummy_response_from_eval_str(self):
+        state = {
+            'p1': EvalClient.get_dummy_game_state_json(),
+            'p2': EvalClient.get_dummy_game_state_json()
+        }
+        return json.dumps(state)
+
+    
+    def get_dummy_game_state_json():
+        state = {
+                    'hp': random.choice(range(101)),
+                    'bullets': random.choice(range(7)),
+                    'grenades': 2,
+                    'shield_hp': random.choice(range(31)),
+                    'deaths': 0,
+                    'shields': random.choice(range(4))
+                }
+        return state
+
+EvalClient.get_dummy_eval_state_str = staticmethod(EvalClient.get_dummy_eval_state_str)    
+EvalClient.get_dummy_eval_state_json = staticmethod(EvalClient.get_dummy_eval_state_json)
+EvalClient.get_dummy_game_state_json = staticmethod(EvalClient.get_dummy_game_state_json)
