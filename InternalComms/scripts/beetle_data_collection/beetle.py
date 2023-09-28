@@ -251,6 +251,7 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 # Resets error count
                 self.error_packetid_count = 0
+                print(f"Right Hand Packet received successfully: {pkt_data}")
 
                 # CRC is correct and button is pressed
                 if pkt_data.bullets == 1 and self.beetle.handshake_complete: 
@@ -260,7 +261,6 @@ class ReadDelegate(btle.DefaultDelegate):
                     self.trigger_record = True
 
                 if self.trigger_record:
-                    # print(f"Right Hand Packet received successfully: {pkt_data}")
                     self.count += 1
                     if self.count == 1:
                         self.timer = time.time()

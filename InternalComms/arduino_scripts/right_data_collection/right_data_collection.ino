@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include <IRremote.h>
 #include <cppQueue.h>
+#include <limits.h>
 #define IR_PIN 3
 #define BUZZER_PIN 5
 #define SAMPLE_WINDOW 60
@@ -17,7 +18,7 @@
 #define STATE_HANDSHAKE_ACK 'd'
 #define STATE_SEND 's'
 
-#define INTERVAL 50 
+#define INTERVAL 20
 
 //Initialise IR and IMU
 IRsend irsend;
@@ -276,15 +277,33 @@ void sendRightHandPacket(float ax, float ay, float az, float gx, float gy, float
     rightHandDataPacket pkt;
     pkt.id = 1;
     pkt.seq = seqNum;
+
+    /**
+
+    // Normalizing datasets
+
+    float gyroDeg = getGyroDegree();
+    float accelG = getAccel();
+
+    pkt.ax = (int)(ax / accelG * SHRT_MAX);
+    pkt.ay = (int)(ay / accelG * SHRT_MAX);
+    pkt.az = (int)(az / accelG * SHRT_MAX);
+    pkt.gx = (int)(gx / gyroDeg * SHRT_MAX);
+    pkt.gy = (int)(gy / gyroDeg * SHRT_MAX);
+    pkt.gz = (int)(gz / gyroDeg * SHRT_MAX);
+
+    */
+
     pkt.ax = static_cast<int16_t>(ax * 100);
     pkt.ay = static_cast<int16_t>(ay * 100);
     pkt.az = static_cast<int16_t>(az * 100);
     pkt.gx = static_cast<int16_t>(gx * 100);
     pkt.gy = static_cast<int16_t>(gy * 100);
     pkt.gz = static_cast<int16_t>(gz * 100);
-    pkt.bullets = bullets; // For actual data
+
+    // pkt.bullets = bullets; // For actual data
     // For data collection, bullets = button for now.
-    // pkt.bullets = !button_prev; // 0 when pressed, 1 when not pressed
+    pkt.bullets = !button_prev; // 0 when pressed, 1 when not pressed
     pkt.flex = flex;
     pkt.padding = 0;
     pkt.crc = calculateRightHandCrc16(&pkt);
@@ -344,6 +363,34 @@ uint16_t custom_crc16(const uint8_t* data, size_t len) {
     }
   }
   return crc;
+}
+
+float getGyroDegree() {
+    switch (mpu.getGyroRange()) {
+    case MPU6050_RANGE_250_DEG:
+      return 250.0f;
+    case MPU6050_RANGE_500_DEG:
+      return 500.0f;
+    case MPU6050_RANGE_1000_DEG:
+      return 1000.0f;
+    case MPU6050_RANGE_2000_DEG:
+      return 2000.0f;
+    default:
+      return 0.0f;
+  }
+}
+
+float getAccel() {
+  switch (mpu.getAccelerometerRange()) {
+  case MPU6050_RANGE_2_G:
+    return 2.0f;
+  case MPU6050_RANGE_4_G:
+    return 4.0f;
+  case MPU6050_RANGE_8_G:
+    return 8.0f;
+  case MPU6050_RANGE_16_G:
+    return 16.0f;
+  }
 }
 
 // end internal comms

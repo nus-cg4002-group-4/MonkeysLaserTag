@@ -69,10 +69,7 @@ try:
             df.iloc[2] = list(data.values())[0]
 
         print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
-    # for process in processes:
-    #     process.join()
     
-
 
 except KeyboardInterrupt:
     print("Terminating processes...")

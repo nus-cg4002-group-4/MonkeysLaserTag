@@ -308,8 +308,6 @@ class ReadDelegate(btle.DefaultDelegate):
                 if crc != custom_crc32(data[:4]):
                     raise CRCException()
                 
-                
-
                 if pkt_data.seq_no == self.seq_no:
                     raise DuplicateException()
                 
@@ -335,8 +333,8 @@ class ReadDelegate(btle.DefaultDelegate):
                 # Resets error count since packet received successfully
                 self.corrupted_packet_counter = 0
 
-                print(f"{self.beetle.beetle_id}: \
-                      Right Hand Packet received successfully: {pkt_data}")
+                # print(f"{self.beetle.beetle_id}: \
+                #       Right Hand Packet received successfully: {pkt_data}")
                 
                 # TODO: Write data to ssh server
 
@@ -361,7 +359,7 @@ class ReadDelegate(btle.DefaultDelegate):
                 self.beetle.send_ack(self.seq_no)
             
             # PacketId conversion failed
-            print("Packet id not found.")
+            print("Packet id not found/CRC Corrupted")
             # Accounting packet loss for action window
             # Can be modified to just track packet loss
             self.account_packet_loss()
