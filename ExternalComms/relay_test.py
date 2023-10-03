@@ -60,6 +60,7 @@ class RelayTest:
                 print('Sent to relay node: ', msg)
                 self.relay_server.send_to_node(msg.encode(), conn_socket)
                 time.sleep(10)
+            
             except:
                 break
         
