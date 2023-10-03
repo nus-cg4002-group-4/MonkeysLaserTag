@@ -19,7 +19,10 @@ in_buffer[:] = in_array
 
 print('Sending buffers...')
 dma.sendchannel.transfer(in_buffer)
+print('Setting up receive channel...')
 dma.recvchannel.transfer(out_buffer)
 dma.sendchannel.wait()
+print('Buffers sent.')
 dma.recvchannel.wait()
+print('Output received.')
 print(out_buffer)
