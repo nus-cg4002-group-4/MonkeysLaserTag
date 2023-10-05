@@ -51,6 +51,7 @@ class RelayTest:
         return str(len(p)) + '_' + p.decode()
     
     def send_to_relay_node_task(self, conn_socket, relay_server_to_node):
+        print('send to node start')
         while True:
             try:
                 # Send dummy message to relay node every 10 s
@@ -61,6 +62,9 @@ class RelayTest:
                 self.relay_server.send_to_node(msg.encode(), conn_socket)
                 time.sleep(10)
             
+            except Exception as e:
+                print(e)
+                break
             except:
                 break
         
@@ -76,10 +80,15 @@ class RelayTest:
                 self.processes.append(process_receive)
                 process_receive.start()
 
+
                 process_send = Process(target=self.send_to_relay_node_task, args=(conn_socket, relay_server_to_node), daemon=True)
                 self.processes.append(process_send)
                 process_send.start()
+                print('started')
 
+            except Exception as e:
+                print(e)
+                break
             except:
                 break
             else:
