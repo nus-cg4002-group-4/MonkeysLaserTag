@@ -8,6 +8,7 @@ from write import write_to_csv
 from exceptions import DuplicateException, HandshakeException, PacketIDException, CRCException
 from constants import *
 
+from dataclasses import asdict
 import pandas as pd
 import sys
 import time
@@ -167,8 +168,14 @@ class Beetle():
     def disconnect(self) -> None:
         self.beetle.disconnect()
 
-    def initiate_program(self, stats_queue: Queue):
+    def initiate_program(self, 
+                         node_to_server: Queue
+                         #stats_queue: Queue
+                         ):
         """Main function to run the program."""
+        
+        # Initiate the node to send to server
+        self.node_to_server = node_to_server
 
         # Used for keyboard events
         self.last_press_time = time.time()
@@ -198,7 +205,7 @@ class Beetle():
                                 }
                             }
 
-                stats_queue.put(statistics)
+                # stats_queue.put(statistics) # Right now, stats queue is offline
 
                 self.statistics_timer = current_time
             
@@ -311,6 +318,7 @@ class ReadDelegate(btle.DefaultDelegate):
     def handleNotification(self, cHandle, data):
         if self.total_calls == 0: 
             self.beetle.start_timer = time.time()
+            self.bullets = 6
 
         self.beetle.receive_timer = time.time() # Update current time
 
@@ -366,6 +374,8 @@ class ReadDelegate(btle.DefaultDelegate):
                 self.health = pkt_data.health
 
                 # # TODO: Write data to ssh server
+                # if self.beetle.node_to_server:
+                #     self.beetle.node_to_server.put(asdict(pkt_data))
 
                 print(f"VestPacket received successfully: {pkt_data}")
 
@@ -382,12 +392,28 @@ class ReadDelegate(btle.DefaultDelegate):
                 # Resets error count since packet received successfully
                 self.corrupted_packet_counter = 0
 
-                self.bullets = pkt_data.bullets
+                # self.bullets = pkt_data.bullets
 
                 # print(f"{self.beetle.beetle_id}: \
                 #       Right Hand Packet received successfully: {pkt_data}")
-                
+
+                # Convert pkt_data to a dictionary
+                pkt_dict = asdict(pkt_data)
+
+                # Convert dict_values to a list and then iterate to create AI_data
+                AI_data = { 
+                    key: value for key, value in pkt_dict.items() if key != 'bullets'
+                }
+
                 # TODO: Write data to ssh server
+                if self.beetle.handshake_complete:
+                    self.beetle.node_to_server.put(AI_data) # pkt_id 1
+                    print(AI_data)
+                    print({'pkt_id' : 3, 'bullets' : pkt_data.bullets})
+                    if self.bullets != pkt_data.bullets:
+                        self.beetle.node_to_server.put({'pkt_id' : 3, 'bullets' : pkt_data.bullets})
+                        self.bullets = pkt_data.bullets
+
             elif (pkt_id == PacketId.GAMESTATE_PKT):
                 pass
             elif (pkt_id == PacketId.ACK_PKT):
@@ -442,5 +468,10 @@ class ReadDelegate(btle.DefaultDelegate):
             # append an empty data
             self.beetle.packet_window.append(RHandDataPacket(0,0,0,0,0,0,0,0,0,0)) 
     
-        
+    def dataclass_to_dict(self, dataclass_instance, attribute):
+        return {
+            field.name: getattr(dataclass_instance, field.name)
+            for field in dataclass_instance.__dataclass_fields__.values()
+            if field.name in attribute
+        }
     

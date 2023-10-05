@@ -20,7 +20,6 @@ class RelayTest:
         print('recv from relay node')
         try:
             msg = await self.relay_server.receive_from_node(conn_socket)
-            print('recvd')
             if self.relay_server.is_running:
                 #relay_server_to_engine.put('request')
                 print('Received from relay node: ', msg)
