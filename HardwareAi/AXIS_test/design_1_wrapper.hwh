@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Thu Oct  5 11:24:46 2023" VIVADOVERSION="2019.1">
+<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Thu Oct  5 11:41:19 2023" VIVADOVERSION="2019.1">
 
   <SYSTEMINFO ARCH="zynquplus" DEVICE="xczu3eg" NAME="design_1" PACKAGE="sbva484" SPEEDGRADE="-2"/>
 
@@ -1063,11 +1063,7 @@
             <CONNECTION INSTANCE="myip_v1_0_HLS_0" PORT="S_AXIS_TDATA"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" LEFT="3" NAME="m_axis_mm2s_tkeep" RIGHT="0" SIGIS="undef" SIGNAME="adder_dma_m_axis_mm2s_tkeep">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="myip_v1_0_HLS_0" PORT="S_AXIS_TKEEP"/>
-          </CONNECTIONS>
-        </PORT>
+        <PORT DIR="O" LEFT="3" NAME="m_axis_mm2s_tkeep" RIGHT="0" SIGIS="undef"/>
         <PORT DIR="O" NAME="m_axis_mm2s_tvalid" SIGIS="undef" SIGNAME="adder_dma_m_axis_mm2s_tvalid">
           <CONNECTIONS>
             <CONNECTION INSTANCE="myip_v1_0_HLS_0" PORT="S_AXIS_TVALID"/>
@@ -1169,11 +1165,7 @@
             <CONNECTION INSTANCE="myip_v1_0_HLS_0" PORT="M_AXIS_TDATA"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" LEFT="3" NAME="s_axis_s2mm_tkeep" RIGHT="0" SIGIS="undef" SIGNAME="adder_dma_s_axis_s2mm_tkeep">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="myip_v1_0_HLS_0" PORT="M_AXIS_TKEEP"/>
-          </CONNECTIONS>
-        </PORT>
+        <PORT DIR="I" LEFT="3" NAME="s_axis_s2mm_tkeep" RIGHT="0" SIGIS="undef"/>
         <PORT DIR="I" NAME="s_axis_s2mm_tvalid" SIGIS="undef" SIGNAME="adder_dma_s_axis_s2mm_tvalid">
           <CONNECTIONS>
             <CONNECTION INSTANCE="myip_v1_0_HLS_0" PORT="M_AXIS_TVALID"/>
@@ -2260,7 +2252,7 @@
         </BUSINTERFACE>
       </BUSINTERFACES>
     </MODULE>
-    <MODULE COREREVISION="2113237440" FULLNAME="/myip_v1_0_HLS_0" HWVERSION="1.0" INSTANCE="myip_v1_0_HLS_0" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="myip_v1_0_HLS" VLNV="xilinx.com:hls:myip_v1_0_HLS:1.0">
+    <MODULE COREREVISION="2113237540" FULLNAME="/myip_v1_0_HLS_0" HWVERSION="1.0" INSTANCE="myip_v1_0_HLS_0" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="myip_v1_0_HLS" VLNV="xilinx.com:hls:myip_v1_0_HLS:1.0">
       <DOCUMENTS/>
       <PARAMETERS>
         <PARAMETER NAME="Component_Name" VALUE="design_1_myip_v1_0_HLS_0_0"/>
@@ -2302,12 +2294,6 @@
             <CONNECTION INSTANCE="adder_dma" PORT="m_axis_mm2s_tlast"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" LEFT="3" NAME="S_AXIS_TKEEP" RIGHT="0" SIGIS="undef" SIGNAME="adder_dma_m_axis_mm2s_tkeep">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="adder_dma" PORT="m_axis_mm2s_tkeep"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" LEFT="3" NAME="S_AXIS_TSTRB" RIGHT="0" SIGIS="undef"/>
         <PORT DIR="O" NAME="M_AXIS_TVALID" SIGIS="undef" SIGNAME="adder_dma_s_axis_s2mm_tvalid">
           <CONNECTIONS>
             <CONNECTION INSTANCE="adder_dma" PORT="s_axis_s2mm_tvalid"/>
@@ -2328,12 +2314,6 @@
             <CONNECTION INSTANCE="adder_dma" PORT="s_axis_s2mm_tlast"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" LEFT="3" NAME="M_AXIS_TKEEP" RIGHT="0" SIGIS="undef" SIGNAME="adder_dma_s_axis_s2mm_tkeep">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="adder_dma" PORT="s_axis_s2mm_tkeep"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" LEFT="3" NAME="M_AXIS_TSTRB" RIGHT="0" SIGIS="undef"/>
       </PORTS>
       <BUSINTERFACES>
         <BUSINTERFACE BUSNAME="adder_dma_M_AXIS_MM2S" NAME="S_AXIS" TYPE="TARGET" VLNV="xilinx.com:interface:axis:1.0">
@@ -2343,8 +2323,8 @@
           <PARAMETER NAME="TDEST_WIDTH" VALUE="0"/>
           <PARAMETER NAME="TID_WIDTH" VALUE="0"/>
           <PARAMETER NAME="HAS_TREADY" VALUE="1"/>
-          <PARAMETER NAME="HAS_TSTRB" VALUE="1"/>
-          <PARAMETER NAME="HAS_TKEEP" VALUE="1"/>
+          <PARAMETER NAME="HAS_TSTRB" VALUE="0"/>
+          <PARAMETER NAME="HAS_TKEEP" VALUE="0"/>
           <PARAMETER NAME="HAS_TLAST" VALUE="1"/>
           <PARAMETER NAME="FREQ_HZ" VALUE="96968727"/>
           <PARAMETER NAME="PHASE" VALUE="0.000"/>
@@ -2355,8 +2335,6 @@
             <PORTMAP LOGICAL="TREADY" PHYSICAL="S_AXIS_TREADY"/>
             <PORTMAP LOGICAL="TDATA" PHYSICAL="S_AXIS_TDATA"/>
             <PORTMAP LOGICAL="TLAST" PHYSICAL="S_AXIS_TLAST"/>
-            <PORTMAP LOGICAL="TKEEP" PHYSICAL="S_AXIS_TKEEP"/>
-            <PORTMAP LOGICAL="TSTRB" PHYSICAL="S_AXIS_TSTRB"/>
           </PORTMAPS>
         </BUSINTERFACE>
         <BUSINTERFACE BUSNAME="myip_v1_0_HLS_0_M_AXIS" NAME="M_AXIS" TYPE="INITIATOR" VLNV="xilinx.com:interface:axis:1.0">
@@ -2366,8 +2344,8 @@
           <PARAMETER NAME="TDEST_WIDTH" VALUE="0"/>
           <PARAMETER NAME="TID_WIDTH" VALUE="0"/>
           <PARAMETER NAME="HAS_TREADY" VALUE="1"/>
-          <PARAMETER NAME="HAS_TSTRB" VALUE="1"/>
-          <PARAMETER NAME="HAS_TKEEP" VALUE="1"/>
+          <PARAMETER NAME="HAS_TSTRB" VALUE="0"/>
+          <PARAMETER NAME="HAS_TKEEP" VALUE="0"/>
           <PARAMETER NAME="HAS_TLAST" VALUE="1"/>
           <PARAMETER NAME="FREQ_HZ" VALUE="96968727"/>
           <PARAMETER NAME="PHASE" VALUE="0.000"/>
@@ -2378,8 +2356,6 @@
             <PORTMAP LOGICAL="TREADY" PHYSICAL="M_AXIS_TREADY"/>
             <PORTMAP LOGICAL="TDATA" PHYSICAL="M_AXIS_TDATA"/>
             <PORTMAP LOGICAL="TLAST" PHYSICAL="M_AXIS_TLAST"/>
-            <PORTMAP LOGICAL="TKEEP" PHYSICAL="M_AXIS_TKEEP"/>
-            <PORTMAP LOGICAL="TSTRB" PHYSICAL="M_AXIS_TSTRB"/>
           </PORTMAPS>
         </BUSINTERFACE>
       </BUSINTERFACES>
