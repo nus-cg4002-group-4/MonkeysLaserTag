@@ -17,11 +17,17 @@ class RelayTest:
         self.relay_server_to_node = Queue()
     
     async def receive_from_relay_node(self, conn_socket, relay_server_to_engine):
-        msg = await self.relay_server.receive_from_node(conn_socket)
-        if self.relay_server.is_running:
-            #relay_server_to_engine.put('request')
-            print('Received from relay node: ', msg)
+        print('recv from relay node')
+        try:
+            msg = await self.relay_server.receive_from_node(conn_socket)
+            print('recvd')
+            if self.relay_server.is_running:
+                #relay_server_to_engine.put('request')
+                print('Received from relay node: ', msg)
 
+        except Exception as e:
+            print(e)
+            
     def receive_from_relay_node_task(self, conn_socket, relay_server_to_engine):
         while self.relay_server.is_running:
             try:
@@ -31,6 +37,7 @@ class RelayTest:
                 break
             except:
                 break
+        print('not running')
     
     def get_dummy_eval_state_json(self):
         state = {
@@ -45,12 +52,13 @@ class RelayTest:
         return state
 
     def get_dummy_packet(self):
-        packet = self.get_dummy_game_state_json()
+        packet = self.get_dummy_eval_state_json()
 
         p = json.dumps(packet).encode()
         return str(len(p)) + '_' + p.decode()
     
     def send_to_relay_node_task(self, conn_socket, relay_server_to_node):
+        print('start sending')
         while True:
             try:
                 # Send dummy message to relay node every 10 s
@@ -60,26 +68,32 @@ class RelayTest:
                 print('Sent to relay node: ', msg)
                 self.relay_server.send_to_node(msg.encode(), conn_socket)
                 time.sleep(10)
-            
+            except Exception as e:
+                print(e, 'got errrr')
+                break
             except:
                 break
         
     def relay_server_job(self, relay_server_to_engine, relay_server_to_node):
         conn_count = 0
-        
+        processes = []
         while conn_count < 2:
             try:
                 conn_socket = self.relay_server.start_connection()
-                print(f'Relay node {conn_count + 1} connected')
+                print(f'Relay node {conn_count + 1} connect')
 
                 process_receive = Process(target=self.receive_from_relay_node_task, args=(conn_socket, relay_server_to_engine), daemon=True)
-                self.processes.append(process_receive)
+                processes.append(process_receive)
                 process_receive.start()
 
                 process_send = Process(target=self.send_to_relay_node_task, args=(conn_socket, relay_server_to_node), daemon=True)
-                self.processes.append(process_send)
+                processes.append(process_send)
                 process_send.start()
 
+                print('start')
+            except Exception as e:
+                print(e, 'err')
+                break
             except:
                 break
             else:
@@ -87,7 +101,7 @@ class RelayTest:
                 time.sleep(.5)
         
         try:
-            for p in self.processes:
+            for p in processes:
                 p.join()
 
         except KeyboardInterrupt: 
@@ -100,7 +114,7 @@ class RelayTest:
         self.relay_server.close_connection()
     
     def start_processes(self):
-        relay_server_jobs = RelayServerJobs()
+        relay_server_jobs = RelayTest()
         relay_server_process = Process(target=relay_server_jobs.relay_server_job, 
                                                 args=(self.relay_server_to_engine, self.relay_server_to_node))
         relay_server_process.start()
