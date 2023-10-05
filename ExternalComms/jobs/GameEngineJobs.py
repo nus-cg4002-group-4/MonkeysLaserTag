@@ -3,15 +3,23 @@ from multiprocessing import Lock, Process, Queue, current_process
 import queue
 import json
 from helpers.EvalClient import EvalClient
+from SoftwareVisualizer.GameEngine.GameLogic import GameLogic
 
 class GameEngineJobs:
-    def __init__(self):
+
+    # Attributes
+    processes: list
+    gameLogic: GameLogic
+
+    def __init__(self, game_logic: GameLogic):
         self.processes = []
+        self.gameLogic = game_logic
     
     def receive_from_mqtt_task(self, vis_to_engine):
         while True:
             try:
                 msg = vis_to_engine.get()
+                self.gameLogic.subscribeFromVisualizer(msg);
                 print('Received from hit_miss: ', msg)
             except:
                 break
@@ -20,6 +28,7 @@ class GameEngineJobs:
         while True:
             try:
                 msg = eval_to_engine.get()
+                self.gameLogic.subscribeFromEval(msg);
             except:
                 break
             else:
