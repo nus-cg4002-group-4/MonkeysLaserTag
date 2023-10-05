@@ -65,7 +65,11 @@ start_step init_design
 set ACTIVE_STEP init_design
 set rc [catch {
   create_msg_db init_design.pb
+  set_param power.BramSDPPropagationFix 1
   set_param chipscope.maxJobs 5
+  set_param power.enableUnconnectedCarry8PinPower 1
+  set_param power.enableCarry8RouteBelPower 1
+  set_param power.enableLutRouteBelPower 1
   create_project -in_memory -part xczu3eg-sbva484-2-i
   set_property design_mode GateLvl [current_fileset]
   set_param project.singleFileAddWarning.threshold 0
