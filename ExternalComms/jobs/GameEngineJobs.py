@@ -18,9 +18,11 @@ class GameEngineJobs:
     def receive_from_mqtt_task(self, vis_to_engine):
         while True:
             try:
-                msg = vis_to_engine.get()
-                self.gameLogic.subscribeFromVisualizer(msg);
-                print('Received from hit_miss: ', msg)
+                msgIn = 0 #get message input from AI function
+                
+                can_see = vis_to_engine.get()
+                # self.gameLogic.subscribeFromVisualizer(can_see);
+                print('Received from hit_miss: ', msgIn, can_see)
             except:
                 break
     
@@ -34,19 +36,22 @@ class GameEngineJobs:
             else:
                 print('Received from eval server ', msg)
     
-    def gen_action_task(self, relay_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval):
+    def gen_action_task(self, relay_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine):
         while True:
             try:
                 # game engine
-                msg = 0
+                msg = 0 # message queue coming from relay_node and dma
                 signal = relay_to_engine.get()
                 if msg == 0:
+                    # relay nodes
                     updated_game_state = self.gameLogic.relay_logic(signal)
                 elif msg == 1:
-                    if signal.action == 'grenade':
+                    # ai nodes
+                    msgIn = 0 #get message input from AI function format:: "player_id enum"
+                    if msgIn[1] >= 4 and msgIn[1] <= 8 or msgIn[1] == 2: #grenades, and all skill
                         engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
-                        
-                    updated_game_state = self.gameLogic.ai_logic(signal)     
+                    hit_miss = vis_to_engine.get()
+                    updated_game_state = self.gameLogic.ai_logic(msgIn, hit_miss)     
 
                 # game_state_str = json.dumps(updated_game_state)
                 engine_to_eval.put(updated_game_state)
