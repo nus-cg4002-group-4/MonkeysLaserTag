@@ -64,7 +64,7 @@ class GameLogic:
         return self.convert_to_json(self.player_1, self.player_2)
 
     def ai_logic(self, msgIn, can_see):
-        #msgIn "playerId enum"
+        # msgIn "playerId enum"
         args = msgIn.split();
         if (int(args[0]) == 1):
             #player 1
@@ -78,12 +78,15 @@ class GameLogic:
             pass
 
         if (int(args[1]) == 0): #none
+            currentPlayer.action = "none"
             pass
         elif (int(args[1]) == 1): #shield
+            currentPlayer.action = "shield"
             currentPlayer.shieldActivate()
             pass
         elif (int(args[1]) == 2): #grenade
             print("player " + currentPlayer.id + " grenade player " + enemyPlayer.id)
+            currentPlayer.action = "grenade"
             if currentPlayer.grenadeThrow():
                 if can_see:
                     enemyPlayer.reduceHP(self.grenadeDMG)
@@ -91,35 +94,37 @@ class GameLogic:
             pass
         elif (int(args[1]) == 3): #reload
             print("player " + currentPlayer.id + " reload")
+            currentPlayer.action = "reload"
             currentPlayer.reload()
             pass
         elif (int(args[1]) == 4): #web
             print("player 2 activate skill")
-            currentPlayer.action == "web"
+            currentPlayer.action = "web"
             if can_see:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
         elif (int(args[1]) == 5): #portal
-            currentPlayer.action == "portal"
+            currentPlayer.action = "portal"
             if can_see:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
         elif (int(args[1]) == 6): #punch
-            currentPlayer.action == "punch"
+            currentPlayer.action = "punch"
             if can_see:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
         elif (int(args[1]) == 7): #hammer
-            currentPlayer.action == "hammer"
+            currentPlayer.action = "hammer"
             if can_see:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
         elif (int(args[1]) == 8): #spear
-            currentPlayer.action == "spear"
+            currentPlayer.action = "spear"
             if can_see:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
         elif (int(args[1]) == 9): #logout
+            currentPlayer.action = "logout"
             pass
         else:
             pass
