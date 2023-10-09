@@ -13,6 +13,8 @@
 
 #define KEEP_ALIVE 'x'
 #define GAMESTATE 'g'
+#define SHIELD 'k'
+#define HEALTH 'l'
 
 //Gyro and accelerometer will have signed values
 struct ackPacket {
@@ -32,48 +34,14 @@ struct hPacket {
 	uint8_t padding_4;
 };
 
-struct rightHandDataPacket {
-	uint8_t id; // B
-	uint8_t seq; // B
-	// Accelerometer
-	int16_t ax; // h
-	int16_t ay; // h
-	int16_t az; // h
-  // Gyro
-	int16_t gx; // h
-	int16_t gy; // h
-	int16_t gz; // h
-  uint16_t flex; // H
-  uint8_t bullets; // B
-  uint8_t padding; 
-
-	uint16_t crc; // Assign it to 0 H
-};
-
-
-struct leftHandDataPacket {
-	uint8_t id;
-	uint8_t seq_no;
-	// Gyro
-	int16_t yaw;
-	int16_t pitch;
-	int16_t roll;
-	// Accelerometer
-	int16_t x;
-	int16_t y;
-	int16_t z;
-	uint32_t padding_1; // Assign it to 0
-	uint16_t padding_2; // Assign it to 0
-};
-
 struct vestDataPacket {
 	uint8_t id; //B
 	uint8_t seq_no; //B
 	uint8_t ir_rcv_1; //B
 	uint8_t ir_rcv_2; //B
-  uint16_t padding_0; // H
+  uint16_t health; // H
+  uint16_t shield; // Assign it to 0 // H
 	uint64_t padding_1; // Assign it to 0 // I
-	uint16_t padding_2; // Assign it to 0 // H
 	uint32_t crc; // 
 };
 
@@ -85,9 +53,15 @@ bool ackReceived;
 bool isTimeout;
 char msg;
 
+uint16_t currentHealth;
+uint16_t currentShield;
+
 vestDataPacket prevPacket;
 
 unsigned long send_timer;
+
+String numericPart = "";
+char gamestateType = 'x';
 
 void setup() {
 	// For actual configurations, set up pins here
@@ -96,18 +70,37 @@ void setup() {
 	resetFlags();
 }
 
+uint16_t convertGamestateInt(){
+  String number = "";
+  while (Serial.available() && isDigit(Serial.peek())) {
+    number += char(Serial.read());
+  }
+  return number.toInt();
+}
+
+void updateGamestate(char gamestate) {
+
+  switch (gamestateType) {
+    case HEALTH:
+      currentHealth = convertGamestateInt();
+      break;
+    case SHIELD:
+      currentShield = convertGamestateInt();
+      break;
+  }
+}
+
 void loop() {
 
-  // if (sentHandshakeAck && millis() - send_timer > 1000) {
-  //   send_timer = millis();
-  //   setStateToHandshake();
-  // }
-
   if (Serial.available()) {
+
+    // Do not Serial.read() here as it could be an acknowledgement
+
     switch (Serial.peek()){
       case GAMESTATE:
-        Serial.read();
-        // TODO: Handle gamestate
+        Serial.read(); // Read g
+        gamestateType = Serial.read(); // Read and update gamestate type
+        updateGamestate(gamestateType); // Read and update gamestate type
         break;
       case STATE_HANDSHAKE:
         currentState = Serial.read();  // Clears the serial, set handshake
@@ -138,10 +131,8 @@ void loop() {
         resetFlags();
         break;
     }
-    // DO NOT USE PARSEINT! Very slow BRUH
   }
 }
-
 
 void resetFlags() {
   currentState = 'x';
@@ -153,6 +144,8 @@ void resetFlags() {
   prevPacket.ir_rcv_1 = NULL;
   prevPacket.ir_rcv_2 = NULL;
   isTimeout = false;
+  currentHealth = 100;
+  currentShield = 30;
   delay(50);
 }
 
@@ -199,21 +192,21 @@ void waitForAck() {
 void sendDummyVestDataPacket(){
   if (isTimeout || (!ackReceived && (sentHandshakeAck && prevPacket.id != NULL))) {
     Serial.write((uint8_t *)&prevPacket, sizeof(prevPacket));
-    delay(10);
+    delay(50);
   } else {
     vestDataPacket pkt;
     pkt.id = VEST_PKT;
     pkt.seq_no = seqNum;
     pkt.ir_rcv_1 = randomint(0, 1);
     pkt.ir_rcv_2 = randomint(0, 1);
-    pkt.padding_0 = 0;
+    pkt.health = currentHealth;
+    pkt.shield = currentShield;
     pkt.padding_1 = 0;
-    pkt.padding_2 = 0;
     pkt.crc = calculateGvCrc32(&pkt);
     prevPacket = pkt;
     ackReceived = false;
     Serial.write((uint8_t *)&pkt, sizeof(pkt)); 
-    delay(10);
+    delay(50);
   }
 }
 
@@ -263,7 +256,9 @@ uint32_t calculateGvCrc32(vestDataPacket *pkt) {
     sizeof(pkt->id) +
     sizeof(pkt->seq_no) +
     sizeof(pkt->ir_rcv_1) +
-    sizeof(pkt->ir_rcv_2)
+    sizeof(pkt->ir_rcv_2) + 
+    sizeof(pkt->health) +
+    sizeof(pkt->shield)
   );
 }
 

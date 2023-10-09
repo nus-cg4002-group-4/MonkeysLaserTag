@@ -1,5 +1,5 @@
 from bluepy import btle
-from keyboard import is_pressed
+import keyboard
 
 from packet import PacketId, GvPacket, RHandDataPacket
 from state import State
@@ -27,6 +27,11 @@ class Beetle():
         self.handshake_replied = False
         self.handshake_complete = False
 
+        # Timers
+        self.keep_alive_timer = 0
+        self.prev_receive_timer = 0
+        self.receive_timer = 0
+
         # Initialize
         self.set_to_connect()
 
@@ -40,7 +45,7 @@ class Beetle():
         self.characteristic = self.service.getCharacteristics(forUUID=CHAR_UUID)[0]
         message = HANDSHAKE_MSG_INIT
         self.characteristic.write(bytes(message, "utf-8"))
-        self.receive_data(0.2, 0.1)
+        self.receive_data()
 
     def complete_handshake(self):
         message = HANDSHAKE_MSG_ACK
@@ -52,6 +57,7 @@ class Beetle():
         self.handshake_replied = False
         self.handshake_complete = False
         self.ble_connected = False
+        self.start_timer = 0
     
     def wait_handshake_reply(self, timeout, start_time):
         while not self.handshake_replied:
@@ -96,34 +102,74 @@ class Beetle():
             except btle.BTLEException as e:
                 print(f"Failed to connect to {self.mac_address}")
             
-    def receive_data(self, duration=10000000000, polling_interval=INTERVAL_RATE):
+    def receive_data(self, duration=3, polling_interval=INTERVAL_RATE):
 
         end_time = time.time() + duration
-        # Reminder to use this to break the loop
         while time.time() < end_time:
-            # Need to check again on the timeout, can be longer and recover the packets
-            if self.beetle.waitForNotifications(timeout=polling_interval):
-                continue
+            if self.handshake_replied:
+                return
+            self.beetle.waitForNotifications(timeout=polling_interval)
+        
+        raise HandshakeException("Handshake timed out.")
 
     def send_ack(self, seq_no) -> None:
         self.characteristic.write(bytes(str(seq_no), "utf-8"))
     
-    """Dumps a BTLEException when there is a power loss"""
-    def try_reading_from_beetle(self):
-        self.characteristic.write(bytes("x", "utf-8"))
+    def try_writing_to_beetle(self, last_press_time: time):
+        """Dumps a BTLEException when there is a power loss"""
+        
+        current_time = time.time()
+
+        # Temporary implementation of reload
+        if keyboard.is_pressed("s"):
+            if current_time - last_press_time >= 10:
+                print('You Pressed s Key!')
+                last_press_time = current_time
+                self.send_reload()
+
+        """
+            Uncomment this for keep alive
+        """
+
+        # Writes a keep alive 'x' byte to the beetle every second
+        # elif (current_time - self.keep_alive_timer >= 0.1):
+        #     self.characteristic.write(bytes('x', "utf-8"))
+        #     self.keep_alive_timer = current_time
+
+    def send_reload(self): # simulate reload action
+        self.characteristic.write(bytes('r', "utf-8"))
 
     def disconnect(self) -> None:
         self.beetle.disconnect()
 
-    def initiate_program(self):
+    def initiate_program(self): # Missing stats queue from main program
+
+        last_press_time = 0
+        self.keep_alive_timer = time.time()
+        self.receive_timer = time.time()
 
         """Main function to run the program."""
 
         while True:
 
-            # user_input = input("Press enter to continue: ")
-            # if user_input == "":
-            #     break
+            current_time = time.time()
+
+            # if current_time - self.keep_alive_timer >= 0.05:
+            #     statistics = { self.beetle_id: 
+            #                     {
+            #                         'Connected': f"{bcolors.OKGREEN}Connected{bcolors.ENDC}" if self.ble_connected else f"Disconnected",
+            #                         'Handshake': f"{bcolors.OKGREEN}Completed{bcolors.ENDC}" if self.handshake_complete else f"Waiting",
+            #                         'Packets received': self.beetle.delegate.count if self.handshake_complete else 0,
+            #                         'kbps': float(self.beetle.delegate.count * 20 * 8 / (1000 * (time.time() - self.start_timer))) if self.handshake_complete else 0,
+            #                         'Packets fragmented': self.beetle.delegate.fragmented_count if self.handshake_complete else 0,
+            #                         'Packets corrupted': self.beetle.delegate.corrupted_count if self.handshake_complete else 0
+            #                     }
+            #                 }
+
+            #     stats_queue.put(statistics)
+
+            self.keep_alive_timer = current_time
+
 
             try:                    
 
@@ -154,7 +200,9 @@ class Beetle():
                 
                 if self.handshake_complete:
                     # This continuously checks if the beetle is still connected.
-                    self.try_reading_from_beetle()
+                    # But i have temporarily disabled it because it is not necessary,
+                    # May interfere with reading packets on beetle end
+                    self.try_writing_to_beetle(last_press_time)
 
             except HandshakeException as e:
                 print(f"{e}")
@@ -198,6 +246,9 @@ class ReadDelegate(btle.DefaultDelegate):
         self.trigger_record = 0
         self.file_count = 0
         self.timer = 0
+
+        # self.start = False
+        self.last_press_time = 0
 
     def handleNotification(self, cHandle, data):
         
@@ -251,31 +302,49 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 # Resets error count
                 self.error_packetid_count = 0
-                print(f"Right Hand Packet received successfully: {pkt_data}")
 
                 # CRC is correct and button is pressed
-                if pkt_data.bullets == 1 and self.beetle.handshake_complete: 
-                    # Assuming bullets == button for recording purposes
-                    if not self.trigger_record: # Print it once only
-                        print("Action window triggered. Please perform action now.")
-                    self.trigger_record = True
+                if not self.beetle.handshake_complete:
+                    # pass
+                    return
 
-                if self.trigger_record:
+                if pkt_data.bullets == 1 and time.time() - self.last_press_time >= 0.5: 
+                    # Assuming bullets == button for recording purposes
+                    self.last_press_time = time.time()
+
+                    if not self.trigger_record:
+                        print("Action window triggered. Please perform action now.")
+                        self.trigger_record = True
+
+                    elif self.trigger_record:
+                        print(f"Action saved. Time taken: {time.time()-self.timer}")
+                        self.trigger_record = False
+                        self.start = False
+                        self.file_count += 1
+                        self.count = 0
+                        packets = self.beetle.packet_window
+                        self.beetle.packet_window = []
+                        write_to_csv(packets, self.file_count)
+
+                if pkt_data.bullets == 0 and self.trigger_record:
+                    self.start = True
                     self.count += 1
+                    print(f"Right Hand Packet received successfully: {pkt_data}")
+
                     if self.count == 1:
                         self.timer = time.time()
                     if len(self.beetle.packet_window) <= RECORD_PACKETS_LIMIT:
                         self.beetle.packet_window.append(pkt_data)
                         # print(f"Packet window length: {len(self.beetle.packet_window)}")
                         # Record 200 packets into a csv file
-                        if len(self.beetle.packet_window) == RECORD_PACKETS_LIMIT: 
-                            print(f"Action saved. Time taken: {time.time()-self.timer}")
-                            self.file_count += 1
-                            self.trigger_record = False
-                            self.count = 0
-                            packets = self.beetle.packet_window
-                            self.beetle.packet_window = []
-                            write_to_csv(packets, self.file_count)
+                        # if len(self.beetle.packet_window) == RECORD_PACKETS_LIMIT: 
+                            # print(f"Action saved. Time taken: {time.time()-self.timer}")
+                            # self.file_count += 1
+                            # self.trigger_record = False
+                            # self.count = 0
+                            # packets = self.beetle.packet_window
+                            # self.beetle.packet_window = []
+                            # write_to_csv(packets, self.file_count)
 
                 # TODO: Write data to ssh server
 
@@ -327,7 +396,7 @@ class ReadDelegate(btle.DefaultDelegate):
         if self.error_packetid_count >= 5:
             print("Packet fragmented and sequence is messed up. Re-handshaking...")
             self.error_packetid_count = 0
-            self.beetle.set_to_handshake()
+            self.beetle.set_to_connect()
 
     def is_packet_complete(self, data):
         return len(data) >= 20

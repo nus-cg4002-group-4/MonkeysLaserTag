@@ -33,12 +33,16 @@ class BeetleJobs:
                 break 
 
     def send_to_server_job(self, node_to_server):   
+        print('start sending')
         while True:
             try:
                 # TODO: Remove data formatting part
                 data = node_to_server.get()
-                p = str(list(data.values())[0]).encode()
-                msg = str(len(p)) + '_' + p
+                p = str(list(data.values()))
+                msg = str(len(p.encode())) + '_' + p
+                
+                print(msg)
+                print('send')
                 self.relay_node.send_to_server(msg)
             except Exception as e:
                 print(e)

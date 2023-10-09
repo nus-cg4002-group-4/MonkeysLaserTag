@@ -23,7 +23,7 @@ if __name__ == "__main__":
     #         process.join()
 
     try:
-        beetle = Beetle(BEETLE4_MAC_GLOVE)
+        beetle = Beetle(BEETLE3_MAC)
         beetle.initiate_program()
     except KeyboardInterrupt:
         if beetle.ble_connected: 

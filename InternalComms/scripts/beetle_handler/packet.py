@@ -15,6 +15,8 @@ class VestPacket:
     # IR Receivers
     ir_rcv_1: int
     ir_rcv_2: int
+    health: int
+    shield: int
     
 
 @dataclass

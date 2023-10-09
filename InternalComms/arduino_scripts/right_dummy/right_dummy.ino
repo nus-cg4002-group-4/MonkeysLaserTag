@@ -186,28 +186,6 @@ void loop() {
         break;
     }
   }
-
-//poll for reload action ##WEIDA
-/*WEIDA IMPLEMENTATION*/
-
-
-  /* Print out the values */
-  // Serial.print(ax);
-  // Serial.print(",");
-  // Serial.print(ay);
-  // Serial.print(",");
-  // Serial.print(az);
-  // Serial.print(", ");
-  // Serial.print(gx);
-  // Serial.print(",");
-  // Serial.print(gy);
-  // Serial.print(",");
-  // Serial.print(gz);
-  // Serial.print(",");
-  // Serial.print(flex);
-  // Serial.print(",");
-  // Serial.print(bullets);  
-  // Serial.println("");  
 }
 
 // Internal Comms functions
