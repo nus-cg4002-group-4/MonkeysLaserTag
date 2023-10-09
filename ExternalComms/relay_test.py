@@ -21,7 +21,6 @@ class RelayTest:
         print(conn_socket_num)
         try:
             msg = await self.relay_server.receive_from_node(conn_socket_num)
-            print('recvd')
             if self.relay_server.is_running:
                 #relay_server_to_engine.put('request')
                 print('Received from relay node: ', msg)
@@ -126,6 +125,7 @@ class RelayTest:
                 process_send = Process(target=self.send_to_relay_node_task, args=(conn_count, relay_server_to_node), daemon=True)
                 processes.append(process_send)
                 process_send.start()
+                print('started')
 
                 print('start')
             except Exception as e:
