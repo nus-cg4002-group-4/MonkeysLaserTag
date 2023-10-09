@@ -37,13 +37,37 @@ class GameEngineJobs:
     def gen_action_task(self, relay_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval):
         while True:
             try:
+                # game engine
+                msg = 0
                 signal = relay_to_engine.get()
-                state = EvalClient.get_dummy_eval_state_json()
-                state_str = json.dumps(state)
-                engine_to_eval.put(state_str)
-                engine_to_vis_gamestate.put(state_str)
-                if state['action'] == 'grenade':
-                    engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
+                if msg == 0:
+                    updated_game_state = self.gameLogic.relay_logic(signal)
+                elif msg == 1:
+                    if signal.action == 'grenade':
+                        engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
+                        
+                    updated_game_state = self.gameLogic.ai_logic(signal)     
+
+                # game_state_str = json.dumps(updated_game_state)
+                engine_to_eval.put(updated_game_state)
+                engine_to_vis_gamestate.put(updated_game_state)
+               
+                # grab msg queues
+                # if is relay node
+                # run game_engine.relay_logic(msg)
+                # sent gamestate json
+                # else if is PMA (AI Gesture)
+                # run game_engine.ai_logic(msg)
+                # sent gamestate json
+
+                # dummy inputs
+                # signal = relay_to_engine.get()
+                # state = EvalClient.get_dummy_eval_state_json()
+                # state_str = json.dumps(state)
+                # engine_to_eval.put(state_str)
+                # engine_to_vis_gamestate.put(state_str)
+                # if state['action'] == 'grenade':
+                #     engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
             except:
                 break
     

@@ -6,26 +6,26 @@ class Player:
         self.maxHP: int = 100
         self.maxShieldHP: int = 30
         self.maxShieldCount: int = 3
-        self.maxAmmo: int = 6
+        self.maxbullets: int = 6
         self.maxGrenades: int = 2
-        self.ammoDmg: int = 10
+        self.bulletsDmg: int = 10
         self.grenadesDmg: int = 30
         self.skillDmg: int = 10
 
         self.hp: int = self.maxHP
         self.shieldHP: int = 0
         self.shieldCount: int = self.maxShieldCount
-        self.ammo: int = self.maxAmmo
+        self.bullets: int = self.maxbullets
         self.grenades: int = self.maxGrenades
         self.enemyDetected: int = 0
-        self.gestureID: int = 0
-        self.kill: int = 0
+        self.action: int = 0
         self.death: int = 0
+        self.kill = 0
 
     def updateState(self, action, visibility):
-        self.gestureID = action
+        self.action = action
         self.enemyDetected = visibility
-        print("actionID: ", self.gestureID)
+        print("actionID: ", self.action)
         print("isEnemyVisible: ", self.enemyDetected)
 
     def isEnemyDetected(self, detected):
@@ -54,8 +54,8 @@ class Player:
             self.shieldCount -= 1
 
     def shoot(self):
-        if (self.ammo > 0):
-            self.ammo -= 1
+        if (self.bullets > 0):
+            self.bullets -= 1
 
     def grenadeThrow(self):
         if (self.grenades > 0):
@@ -69,15 +69,15 @@ class Player:
     #                 self.respawn()
 
     def reload(self):
-        if (self.ammo <= 0):
-            self.ammo = self.maxAmmo
+        if (self.bullets <= 0):
+            self.bullets = self.maxbullets
 
     def respawn(self):
         if self.hp <= 0:
             self.hp = self.maxHP
             self.shieldHP = 0
             self.shieldCount = self.maxShieldCount
-            self.ammo = self.maxAmmo
+            self.bullets = self.maxbullets
             self.grenades = self.maxGrenades
             self.death += 1
         

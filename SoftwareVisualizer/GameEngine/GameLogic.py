@@ -1,3 +1,4 @@
+import json
 from enum import Enum
 from PlayerClass import Player
 from PlayerClass import GestureID
@@ -7,8 +8,8 @@ class GameLogic:
     grenadeDMG = 30
     skillDMG = 10
 
-    player_1 = 0
-    player_2 = 0
+    # player_1 = 0
+    # player_2 = 0
     # player_1 = Player(1)
     # player_2 = Player(2)    
     
@@ -31,19 +32,95 @@ class GameLogic:
     #     # decode msgIn
     #     pass
 
-    # def subscribeFromEval(self, msgIn):
-    #     # msg from eval
-    #     # decode msgIn
-    #     pass
-
-    def convert_to_json(self):
+    def subscribeFromEval(self, msgIn):
+        # msg from eval
+        # decode msgIn
         pass
+
+    
 
     def relay_logic(self, msgIn):
-        pass
+        #decode msgIn
+        #msgIn: 
+        # playerID, packetID, hit, health, shield
+        # playerID, packetID, bullets
+
+        msgIn_arugments = msgIn.split()
+        
+        if int(msgIn_arugments[0]) == 1:
+            # player 1
+            currentPlayer = self.player_1
+        elif int(msgIn_arugments[0]) == 2:
+            currentPlayer = self.player_2
+
+        if int(msgIn_arugments[1]) == 1:
+            # packetID 1: hit, health, shield
+            currentPlayer.reduceHP(10)
+            pass      
+        elif int(msgIn_arugments[1]) == 3:
+            #bullets
+            currentPlayer.ammo = msgIn_arugments[2]
+            pass   
+        return self.convert_to_json(self.player_1, self.player_2)
 
     def ai_logic(self, msgIn):
+        if (msgIn.player == 1):
+            #player 1
+            pass
+        elif msgIn.player == 2:
+            #palyer 2
+            pass
+        if (msgIn.gesture == "none"): 
+            pass
+        elif (msgIn.gesture == "gun"):
+            pass
+        elif (msgIn.gesture == "shield"):
+            pass
+        elif (msgIn.gesture == "grenade"):
+            pass
+        elif (msgIn.gesture == "reload"):
+            pass
+        elif (msgIn.gesture == "web"):
+            pass
+        elif (msgIn.gesture == "portal"):
+            pass
+        elif (msgIn.gesture == "punch"):
+            pass
+        elif (msgIn.gesture == "hammer"):
+            pass
+        elif (msgIn.gesture == "spear"):
+            pass
+        elif (msgIn.gesture == "logout"):
+            pass
+        else:
+            pass
         pass
+        return self.convert_to_json(1)
+    
+    def convert_to_json(self, player1, player2):
+        game_state_sent = {
+            "player_id": player1.id,
+            "action": 'grenade',
+            "game_state": {
+                'p1': {
+                    'hp': player1.hp,
+                    'bullets': player1.bullets,
+                    'grenades': player1.grenades,
+                    'shield_hp': player1.shieldHP,
+                    'deaths': player1.death,
+                    'shields': player1.shieldCount
+                },
+                'p2': {
+                    'hp': player2.hp,
+                    'bullets': player2.bullets,
+                    'grenades': player2.grenades,
+                    'shield_hp': player2.shieldHP,
+                    'deaths': player2.death,
+                    'shields': player2.shieldCount
+                },
+            }
+        }
+        return json.dumps(game_state_sent)
 
     #logic
     def run_game_logic(self):
@@ -101,33 +178,35 @@ class GameLogic:
         # sent gamestate json to visualizer
 
         
-        print("Player 1 states:  ")
-        print("Player 1 HP: ", self.player_1.hp)
-        print("Player 1 ShieldHP: ", self.player_1.shieldHP)
-        print("Player 1 no. of Shield left: ", self.player_1.shieldCount)
-        print("Player 1 bullets: ", self.player_1.ammo)
-        print("Player 1 Grenades: ", self.player_1.grenades)
-        print("Player 1 kill: ", self.player_1.kill)
-        print("Player 1 Deaths: ", self.player_1.death)
-        print("Player 1 Actions: ", self.player_1.gestureID)
-        print("----------------------")
-        print("Player 2 states:  ")
-        print("Player 2 HP: ", self.player_2.hp)
-        print("Player 2 ShieldHP: ", self.player_2.shieldHP)
-        print("Player 2 no. of Shield left: ", self.player_2.shieldCount)
-        print("Player 2 bullets: ", self.player_2.ammo)
-        print("Player 2 Grenades: ", self.player_2.grenades)
-        print("Player 2 kill: ", self.player_2.kill)
-        print("Player 2 Deaths: ", self.player_2.death)
-        print("Player 2 Actions: ", self.player_2.gestureID)
+        # print("Player 1 states:  ")
+        # print("Player 1 HP: ", self.player_1.hp)
+        # print("Player 1 ShieldHP: ", self.player_1.shieldHP)
+        # print("Player 1 no. of Shield left: ", self.player_1.shieldCount)
+        # print("Player 1 bullets: ", self.player_1.ammo)
+        # print("Player 1 Grenades: ", self.player_1.grenades)
+        # print("Player 1 kill: ", self.player_1.kill)
+        # print("Player 1 Deaths: ", self.player_1.death)
+        # print("Player 1 Actions: ", self.player_1.gestureID)
+        # print("----------------------")
+        # print("Player 2 states:  ")
+        # print("Player 2 HP: ", self.player_2.hp)
+        # print("Player 2 ShieldHP: ", self.player_2.shieldHP)
+        # print("Player 2 no. of Shield left: ", self.player_2.shieldCount)
+        # print("Player 2 bullets: ", self.player_2.ammo)
+        # print("Player 2 Grenades: ", self.player_2.grenades)
+        # print("Player 2 kill: ", self.player_2.kill)
+        # print("Player 2 Deaths: ", self.player_2.death)
+        # print("Player 2 Actions: ", self.player_2.gestureID)
         # player1JSONString = json.dump(player_1)
         # player2JSONString = json.dump(player_2)
         # print(player1JSONString)
         # print(player2JSONString)
         # save gamestate to json
 
+# msg = "2 1 1 60 20"
 # game = GameLogic()
-# game.run()
+# print(game.relay_logic(msg))
+
 
     #userInput = Input(playerID, action) 
         
