@@ -65,6 +65,7 @@ class GameLogic:
 
     def ai_logic(self, msgIn, can_see):
         # msgIn "playerId enum"
+        # can_see "playerId hit/miss"
         args = msgIn.split();
         if (int(args[0]) == 1):
             #player 1
