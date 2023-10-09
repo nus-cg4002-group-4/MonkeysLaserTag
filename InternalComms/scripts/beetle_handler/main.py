@@ -32,9 +32,9 @@ queue_1 = Queue()
 queue_2 = Queue()
 queue_3 = Queue()
 
-beetle_1 = Beetle(BEETLE1_MAC, beetle_id=1)
-process_1 = Process(target=beetle_1.initiate_program, args=(queue_1,))
-processes.append(process_1)
+# beetle_1 = Beetle(BEETLE1_MAC, beetle_id=1)
+# process_1 = Process(target=beetle_1.initiate_program, args=(queue_1,))
+# processes.append(process_1)
 
 beetle_2 = Beetle(BEETLE2_MAC, beetle_id=2)
 process_2 = Process(target=beetle_2.initiate_program, args=(queue_2,))
@@ -44,7 +44,7 @@ processes.append(process_2)
 print(df)
 
 try:
-    process_1.start()
+    # process_1.start()
     process_2.start()
 
     while True:
@@ -58,7 +58,7 @@ try:
             # print(list(data.values())[0])
             df.iloc[1] = list(data.values())[0]
 
-        print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
+        # print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
     
 
 except KeyboardInterrupt:

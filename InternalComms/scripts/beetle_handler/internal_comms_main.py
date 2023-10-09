@@ -73,7 +73,7 @@ class Brain:
 
             # TODO: Format the data into required format + str
             # Receive from IMU Process
-            beetle_1 = Beetle(BEETLE1_MAC, beetle_id=1)
+            beetle_1 = Beetle(BEETLE3_MAC, beetle_id=1)
             process_1 = Process(target=beetle_1.initiate_program, args=(self.node_to_server,))
             self.processes.append(process_1)
             process_1.start()

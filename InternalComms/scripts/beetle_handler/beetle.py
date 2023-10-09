@@ -15,6 +15,9 @@ import struct
 from tabulate import tabulate
 from multiprocessing import Queue
 
+SHIELD = 'k'
+HEALTH = 'l'
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -34,15 +37,17 @@ class Beetle():
         self.beetle_id = beetle_id
         self.beetle = None
         self.mac_address = mac_address
-        self.busy_processing = False
+        
+        # Acknowledgements
+        self.ack_shield_value = 0
+        self.ack_health_value = 0
 
         # Data Collection purposes
         self.packet_dropped = 0
         self.packet_window = []
 
         # Timers
-        self.keep_alive_timer = 0
-        self.prev_receive_timer = 0
+        self.statistics_timer = 0
         self.receive_timer = 0
 
         # Flags
@@ -50,14 +55,12 @@ class Beetle():
         self.handshake_replied = False
         self.handshake_complete = False
 
+        # Flags for gamestate
+        self.sent_health = False
+        self.sent_shield = False
+
         # Initialize
         self.set_to_connect()
-
-
-
-    """
-    Private functions
-    """
 
     def init_handshake(self):
         self.service = self.beetle.getServiceByUUID(SERVICE_UUID)
@@ -76,12 +79,9 @@ class Beetle():
         self.handshake_replied = False
         self.handshake_complete = False
         self.ble_connected = False
-        self.start_timer = 0
-
-
-    """
-    Others
-    """
+        self.sent_health = False
+        self.sent_shield = False
+        self.sent_reload = False
 
     def handshake(self, timeout=3):
 
@@ -124,53 +124,69 @@ class Beetle():
 
     def send_ack(self, seq_no) -> None:
         self.characteristic.write(bytes(str(seq_no), "utf-8"))
-    
-    def try_writing_to_beetle(self, last_press_time: time):
-        """Dumps a BTLEException when there is a power loss"""
-        
+
+    def on_keypress(self, key: str, fn):
         current_time = time.time()
-
-        # Temporary implementation of reload
-        if keyboard.is_pressed("s"):
-            if current_time - last_press_time >= 10:
-                print('You Pressed s Key!')
-                last_press_time = current_time
-                self.send_reload()
-
-        # Writes a keep alive 'x' byte to the beetle every second
-        # elif (current_time - self.keep_alive_timer >= 0.1):
-        #     self.characteristic.write(bytes('x', "utf-8"))
-        #     self.keep_alive_timer = current_time
+        if keyboard.is_pressed(key):
+            if current_time - self.last_press_time >= 1:
+                print(f'{key} pressed!')
+                self.last_press_time = current_time
+                fn() # execute fn
+    
+    def try_writing_to_beetle(self):
+        self.on_keypress("h", self.send_health)
+        self.on_keypress("j", self.send_shield)
+        self.on_keypress("r", self.send_reload)
 
     def send_reload(self): # simulate reload action
         self.characteristic.write(bytes('r', "utf-8"))
+        self.sent_reload = True
+    
+    def send_shield(self): # simulate gamestate update
+        # Simulate obtaining a value from queue
+        value = 0
+        # Invoke gamestate to receive data for gamestate in beetle
+        self.emit_gamestate(type=SHIELD, value=value)
+        self.ack_shield_value = value
+        self.sent_shield = True
+
+    def send_health(self): # simulate gamestate update
+        # Simulate obtaining a value from queue
+        value = 0
+        # Invoke gamestate to receive data for gamestate in beetle
+        self.emit_gamestate(type=HEALTH, value=value)
+        self.ack_health_value = value
+        self.sent_health = True
+
+    def emit_gamestate(self, type, value):
+        self.characteristic.write(bytes(f'g', "utf-8"))
+        self.characteristic.write(bytes(str(type), "utf-8"))
+        self.characteristic.write(bytes(str(value), "utf-8"))
+        self.ack_gamestate_timer = time.time()
 
     def disconnect(self) -> None:
         self.beetle.disconnect()
 
     def initiate_program(self, stats_queue: Queue):
         """Main function to run the program."""
-        last_press_time = 0
-        self.keep_alive_timer = time.time()
+
+        # Used for keyboard events
+        self.last_press_time = time.time()
+
+        # Used for statistics
+        self.statistics_timer = time.time()
+
+        # Used for beetle's automatic re-connection
         self.receive_timer = time.time()
-        
-                
-        # statistics = {
-        #     'Connected': self.ble_connected,
-        #     'Handshake': self.handshake_complete,
-        #     'Packets received': 0,
-        #     'kbps': 0.0,
-        #     'Packets fragmented': 0,
-        #     'Packets discarded (Corrupt)': 0
-        #     }
-        # df = pd.DataFrame(statistics, index=[self.beetle_id])
-        # print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
+
+        # Used for acknowledgements
+        self.ack_gamestate_timer = time.time()
 
         while True:
 
             current_time = time.time()
 
-            if current_time - self.keep_alive_timer >= 0.05:
+            if current_time - self.statistics_timer >= 0.05:
                 statistics = { self.beetle_id: 
                                 {
                                     'Connected': f"{bcolors.OKGREEN}Connected{bcolors.ENDC}" if self.ble_connected else f"Disconnected",
@@ -184,7 +200,7 @@ class Beetle():
 
                 stats_queue.put(statistics)
 
-                self.keep_alive_timer = current_time
+                self.statistics_timer = current_time
             
             try:
                 if self.handshake_complete and time.time() - self.receive_timer >= 3:
@@ -216,8 +232,15 @@ class Beetle():
                     # Raise error and reconnect
                     raise btle.BTLEException(message="Invalid state.")
                 
+                # To simulate receiving an item in queue
+                # If event occurs and handshake is complete, try writing to beetle
                 if self.handshake_complete:
-                    self.try_writing_to_beetle(last_press_time)
+
+                    # Attempt to event to beetle
+                    self.try_writing_to_beetle()
+
+                    # Simulate if shield, health or reload is not updated properly
+                    self.check_gamestate_sent(current_time)
 
             except HandshakeException as e:
                 print(f"{e}")
@@ -230,6 +253,26 @@ class Beetle():
                 self.disconnect()
                 self.reset_flags()
                 self.set_to_connect()
+
+    def check_gamestate_sent(self, current_time):
+        if current_time - self.ack_gamestate_timer >= 0.7:
+            if self.sent_shield:
+                if self.beetle.delegate.shield != self.ack_shield_value:
+                    self.send_shield()
+                else:
+                    self.sent_shield = False
+                        
+            if self.sent_health:
+                if self.beetle.delegate.health != self.ack_health_value:
+                    self.send_health()
+                else:
+                    self.sent_health = False
+
+            if self.sent_reload:
+                if self.beetle.delegate.bullets != 6:
+                    self.send_reload()
+                else:
+                    self.sent_reload = False
     
     def set_to_connect(self):
         print("Setting to connect state")
@@ -241,11 +284,6 @@ class Beetle():
     def set_to_receive(self):
         print("Setting to receive state, ready to receive data.")
         self.state = State.RECEIVE
-
-    def set_to_wait_ack(self):
-        print("Setting to ack state")
-        self.state = State.ACK
-
 
 class ReadDelegate(btle.DefaultDelegate):
 
@@ -267,6 +305,8 @@ class ReadDelegate(btle.DefaultDelegate):
         self.total_calls = 0
         self.fragmented_count = 0
         # Fragmented count = total calls to handleNotifications - number of times packet is processed
+        self.shield = 0
+        self.health = 0
 
     def handleNotification(self, cHandle, data):
         if self.total_calls == 0: 
@@ -301,14 +341,19 @@ class ReadDelegate(btle.DefaultDelegate):
 
             if (pkt_id == PacketId.VEST_PKT):
 
-                pkt = struct.unpack('BBBB', data[:4])
+                unprocessed_vest_data = data[:8]
+
+                pkt = struct.unpack('BBBBHH', unprocessed_vest_data)
                 pkt_data = VestPacket(*pkt)
                 
                 crc = struct.unpack('I', data[16:])[0]
-                if crc != custom_crc32(data[:4]):
+                if crc != custom_crc32(unprocessed_vest_data):
                     raise CRCException()
                 
                 if pkt_data.seq_no == self.seq_no:
+                    # May receive packets while still handshaking
+                    # Clears the buffer on the vest side 
+                    self.beetle.send_ack(pkt_data.seq_no)
                     raise DuplicateException()
                 
                 # # Update sequence number afterwards to send ack
@@ -316,9 +361,13 @@ class ReadDelegate(btle.DefaultDelegate):
                 if self.beetle.handshake_complete:
                     self.beetle.send_ack(self.seq_no)
 
+                # Check if packet received for Beetle() gamestate emissions
+                self.shield = pkt_data.shield
+                self.health = pkt_data.health
+
                 # # TODO: Write data to ssh server
 
-                # print(f"VestPacket received successfully: {pkt_data}")
+                print(f"VestPacket received successfully: {pkt_data}")
 
             elif (pkt_id == PacketId.RHAND_PKT):
                 
@@ -333,13 +382,12 @@ class ReadDelegate(btle.DefaultDelegate):
                 # Resets error count since packet received successfully
                 self.corrupted_packet_counter = 0
 
+                self.bullets = pkt_data.bullets
+
                 # print(f"{self.beetle.beetle_id}: \
                 #       Right Hand Packet received successfully: {pkt_data}")
                 
                 # TODO: Write data to ssh server
-
-            # elif (pkt_id == PacketId.LHAND_PKT):
-            #     pass
             elif (pkt_id == PacketId.GAMESTATE_PKT):
                 pass
             elif (pkt_id == PacketId.ACK_PKT):
@@ -369,6 +417,7 @@ class ReadDelegate(btle.DefaultDelegate):
             self.track_corrupted_packets()
         except DuplicateException as e:
             print(f"Duplicated packet is dropped.")
+            self.track_corrupted_packets()
         except btle.BTLEException as e: 
             # Error will be thrown if we try to ack but beetle is not connected
             # Should not have this error since we are able to catch it in the initiate program fn.

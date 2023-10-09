@@ -278,28 +278,25 @@ void sendRightHandPacket(float ax, float ay, float az, float gx, float gy, float
     pkt.id = 1;
     pkt.seq = seqNum;
 
-    /**
 
     // Normalizing datasets
 
     float gyroDeg = getGyroDegree();
     float accelG = getAccel();
 
-    pkt.ax = (int)(ax / accelG * SHRT_MAX);
-    pkt.ay = (int)(ay / accelG * SHRT_MAX);
-    pkt.az = (int)(az / accelG * SHRT_MAX);
-    pkt.gx = (int)(gx / gyroDeg * SHRT_MAX);
-    pkt.gy = (int)(gy / gyroDeg * SHRT_MAX);
-    pkt.gz = (int)(gz / gyroDeg * SHRT_MAX);
+    pkt.ax = static_cast<int16_t>(ax / accelG * SHRT_MAX);
+    pkt.ay = static_cast<int16_t>(ay / accelG * SHRT_MAX);
+    pkt.az = static_cast<int16_t>(az / accelG * SHRT_MAX);
+    pkt.gx = static_cast<int16_t>(gx / gyroDeg * SHRT_MAX);
+    pkt.gy = static_cast<int16_t>(gy / gyroDeg * SHRT_MAX);
+    pkt.gz = static_cast<int16_t>(gz / gyroDeg * SHRT_MAX);
 
-    */
-
-    pkt.ax = static_cast<int16_t>(ax * 100);
-    pkt.ay = static_cast<int16_t>(ay * 100);
-    pkt.az = static_cast<int16_t>(az * 100);
-    pkt.gx = static_cast<int16_t>(gx * 100);
-    pkt.gy = static_cast<int16_t>(gy * 100);
-    pkt.gz = static_cast<int16_t>(gz * 100);
+    // pkt.ax = static_cast<int16_t>(ax * 100);
+    // pkt.ay = static_cast<int16_t>(ay * 100);
+    // pkt.az = static_cast<int16_t>(az * 100);
+    // pkt.gx = static_cast<int16_t>(gx * 100);
+    // pkt.gy = static_cast<int16_t>(gy * 100);
+    // pkt.gz = static_cast<int16_t>(gz * 100);
 
     // pkt.bullets = bullets; // For actual data
     // For data collection, bullets = button for now.
@@ -375,8 +372,6 @@ float getGyroDegree() {
       return 1000.0f;
     case MPU6050_RANGE_2000_DEG:
       return 2000.0f;
-    default:
-      return 0.0f;
   }
 }
 

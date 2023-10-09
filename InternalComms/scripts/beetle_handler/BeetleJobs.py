@@ -35,11 +35,13 @@ class BeetleJobs:
     def send_to_server_job(self, node_to_server):   
         while True:
             try:
+                print('send to server')
+                time.sleep(3)
                 # TODO: Remove data formatting part
-                data = node_to_server.get()
-                p = str(list(data.values())[0]).encode()
-                msg = str(len(p)) + '_' + p
-                self.relay_node.send_to_server(msg)
+                # data = node_to_server.get()
+                # p = str(list(data.values())[0]).encode()
+                # msg = str(len(p)) + '_' + p
+                # self.relay_node.send_to_server(msg)
             except Exception as e:
                 print(e)
                 break
@@ -50,7 +52,9 @@ class BeetleJobs:
     def recv_from_server_job(self, node_to_imu, node_to_ir):
         while self.relay_node.is_running:
             try:
-                asyncio.run(self.recv_from_server(node_to_imu, node_to_ir))
+                print('recv from server')
+                time.sleep(5)
+                #asyncio.run(self.recv_from_server(node_to_imu, node_to_ir))
             except Exception as e:
                 print(e)
                 break
