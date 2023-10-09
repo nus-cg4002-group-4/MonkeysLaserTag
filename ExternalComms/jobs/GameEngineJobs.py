@@ -18,7 +18,8 @@ class GameEngineJobs:
     def receive_from_mqtt_task(self, vis_to_engine):
         while True:
             try:
-                msgIn = 0 #get message input from AI function
+                #dummy ai input
+                msgIn = "1 2" #get message input from AI function
                 
                 can_see = vis_to_engine.get()
                 # self.gameLogic.subscribeFromVisualizer(can_see);
@@ -47,7 +48,8 @@ class GameEngineJobs:
                     updated_game_state = self.gameLogic.relay_logic(signal)
                 elif msg == 1:
                     # ai nodes
-                    msgIn = 0 #get message input from AI function format:: "player_id enum"
+                    #dummy ai input
+                    msgIn = "1 2" #get message input from AI function format:: "player_id enum"
                     if msgIn[1] >= 4 and msgIn[1] <= 8 or msgIn[1] == 2: #grenades, and all skill
                         engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
                     hit_miss = vis_to_engine.get()

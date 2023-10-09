@@ -88,7 +88,7 @@ class GameLogic:
             print("player " + currentPlayer.id + " grenade player " + enemyPlayer.id)
             currentPlayer.action = "grenade"
             if currentPlayer.grenadeThrow():
-                if can_see:
+                if can_see[1]:
                     enemyPlayer.reduceHP(self.grenadeDMG)
                 pass
             pass
@@ -100,27 +100,27 @@ class GameLogic:
         elif (int(args[1]) == 4): #web
             print("player 2 activate skill")
             currentPlayer.action = "web"
-            if can_see:
+            if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
         elif (int(args[1]) == 5): #portal
             currentPlayer.action = "portal"
-            if can_see:
+            if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
         elif (int(args[1]) == 6): #punch
             currentPlayer.action = "punch"
-            if can_see:
+            if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
         elif (int(args[1]) == 7): #hammer
             currentPlayer.action = "hammer"
-            if can_see:
+            if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
         elif (int(args[1]) == 8): #spear
             currentPlayer.action = "spear"
-            if can_see:
+            if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
         elif (int(args[1]) == 9): #logout
