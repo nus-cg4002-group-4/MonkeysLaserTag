@@ -65,24 +65,28 @@ start_step init_design
 set ACTIVE_STEP init_design
 set rc [catch {
   create_msg_db init_design.pb
+  set_param power.BramSDPPropagationFix 1
   set_param chipscope.maxJobs 5
-  create_project -in_memory -part xczu3eg-sbva484-2-i
+  set_param power.enableUnconnectedCarry8PinPower 1
+  set_param power.enableCarry8RouteBelPower 1
+  set_param power.enableLutRouteBelPower 1
+  create_project -in_memory -part xczu3eg-sbva484-1-e
   set_property design_mode GateLvl [current_fileset]
   set_param project.singleFileAddWarning.threshold 0
-  set_property webtalk.parent_dir C:/Xilinx/Vivado/projects/test_adder_2019_2/test_adder_2019_2.cache/wt [current_project]
-  set_property parent.project_path C:/Xilinx/Vivado/projects/test_adder_2019_2/test_adder_2019_2.xpr [current_project]
-  set_property ip_repo_paths C:/Xilinx/Vitis_HLS/projects/test_adder_2019_2 [current_project]
+  set_property webtalk.parent_dir C:/Xilinx/Vivado/projects/test_adder_2019_1/test_adder_2019_1.cache/wt [current_project]
+  set_property parent.project_path C:/Xilinx/Vivado/projects/test_adder_2019_1/test_adder_2019_1.xpr [current_project]
+  set_property ip_repo_paths C:/Xilinx/Vitis_HLS/projects/test_adder_2019_1 [current_project]
   update_ip_catalog
-  set_property ip_output_repo C:/Xilinx/Vivado/projects/test_adder_2019_2/test_adder_2019_2.cache/ip [current_project]
+  set_property ip_output_repo C:/Xilinx/Vivado/projects/test_adder_2019_1/test_adder_2019_1.cache/ip [current_project]
   set_property ip_cache_permissions {read write} [current_project]
   set_property XPM_LIBRARIES {XPM_CDC XPM_FIFO XPM_MEMORY} [current_project]
-  add_files -quiet C:/Xilinx/Vivado/projects/test_adder_2019_2/test_adder_2019_2.runs/synth_1/design_1_wrapper.dcp
+  add_files -quiet C:/Xilinx/Vivado/projects/test_adder_2019_1/test_adder_2019_1.runs/synth_1/design_1_wrapper.dcp
   set_msg_config -source 4 -id {BD 41-1661} -limit 0
   set_param project.isImplRun true
-  add_files C:/Xilinx/Vivado/projects/test_adder_2019_2/test_adder_2019_2.srcs/sources_1/bd/design_1/design_1.bd
+  add_files C:/Xilinx/Vivado/projects/test_adder_2019_1/test_adder_2019_1.srcs/sources_1/bd/design_1/design_1.bd
   set_param project.isImplRun false
   set_param project.isImplRun true
-  link_design -top design_1_wrapper -part xczu3eg-sbva484-2-i
+  link_design -top design_1_wrapper -part xczu3eg-sbva484-1-e
   set_param project.isImplRun false
   write_hwdef -force -file design_1_wrapper.hwdef
   close_msg_db -file init_design.pb
@@ -134,22 +138,6 @@ if {$rc} {
   unset ACTIVE_STEP 
 }
 
-start_step phys_opt_design
-set ACTIVE_STEP phys_opt_design
-set rc [catch {
-  create_msg_db phys_opt_design.pb
-  phys_opt_design 
-  write_checkpoint -force design_1_wrapper_physopt.dcp
-  close_msg_db -file phys_opt_design.pb
-} RESULT]
-if {$rc} {
-  step_failed phys_opt_design
-  return -code error $RESULT
-} else {
-  end_step phys_opt_design
-  unset ACTIVE_STEP 
-}
-
 start_step route_design
 set ACTIVE_STEP route_design
 set rc [catch {
@@ -182,6 +170,7 @@ set rc [catch {
   set_property XPM_LIBRARIES {XPM_CDC XPM_FIFO XPM_MEMORY} [current_project]
   catch { write_mem_info -force design_1_wrapper.mmi }
   write_bitstream -force design_1_wrapper.bit 
+  catch { write_sysdef -hwdef design_1_wrapper.hwdef -bitfile design_1_wrapper.bit -meminfo design_1_wrapper.mmi -file design_1_wrapper.sysdef }
   catch {write_debug_probes -quiet -force design_1_wrapper}
   catch {file copy -force design_1_wrapper.ltx debug_nets.ltx}
   close_msg_db -file write_bitstream.pb
