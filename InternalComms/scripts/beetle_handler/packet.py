@@ -13,8 +13,7 @@ class VestPacket:
     pkt_id: int
     seq_no: int
     # IR Receivers
-    ir_rcv_1: int
-    ir_rcv_2: int
+    ir_rcv: int
     health: int
     shield: int
     

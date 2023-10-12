@@ -339,7 +339,7 @@ class ReadDelegate(btle.DefaultDelegate):
         self.count += 1 # Number of packets processed
         self.fragmented_count = self.total_calls - self.count # Number of fragmented packets
 
-        # print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
+        print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
         try:
             # Check packet id
             if data[0] < 1 or data[0] > 5:
@@ -349,10 +349,13 @@ class ReadDelegate(btle.DefaultDelegate):
 
             if (pkt_id == PacketId.VEST_PKT):
 
-                unprocessed_vest_data = data[:8]
+                unprocessed_vest_data = data[:7]
 
-                pkt = struct.unpack('BBBBHH', unprocessed_vest_data)
-                pkt_data = VestPacket(*pkt)
+                # = means native with no alignment, default is @ with alignment.
+                pkt = struct.unpack('=BB?HH', unprocessed_vest_data)
+                pkt_data = VestPacket(
+                    *pkt
+                )
                 
                 crc = struct.unpack('I', data[16:])[0]
                 if crc != custom_crc32(unprocessed_vest_data):

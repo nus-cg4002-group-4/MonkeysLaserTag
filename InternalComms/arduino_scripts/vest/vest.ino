@@ -66,11 +66,11 @@ struct hPacket {
 struct vestDataPacket {
 	uint8_t id; //B
 	uint8_t seq_no; //B
-	uint8_t ir_rcv_1; //B
-	uint8_t ir_rcv_2; //B
+	uint8_t ir_rcv; //B
   uint16_t health; // H
   uint16_t shield; // Assign it to 0 // H
 	uint64_t padding_1; // Assign it to 0 // I
+  uint8_t padding_2;
 	uint32_t crc; // 
 };
 
@@ -124,6 +124,16 @@ void updateGamestate(char gamestate) {
 
 void loop() {
 
+    // Joonsiong's code
+  if (dead == false) {
+    if (hit) {
+      if (shield == 0) 
+        health -= 10;
+      else 
+        shield -= 10;
+    }
+  }
+
   if (Serial.available()) {
 
     // Do not Serial.read() here as it could be an acknowledgement
@@ -165,12 +175,10 @@ void loop() {
     }
   }
 
-  // Joonsiong's code
-  if (dead == false) {
-    // receiver_handler();
-    // health_calc();
-    // death_handler();
-  }
+  gun_dmg_handler();
+  receiver_handler();
+  // health_calc();
+  // death_handler();
 }
 
 void resetFlags() {
@@ -180,8 +188,7 @@ void resetFlags() {
   seqNum = 0;
   prevPacket.id = NULL;
   prevPacket.seq_no = NULL;
-  prevPacket.ir_rcv_1 = NULL;
-  prevPacket.ir_rcv_2 = NULL;
+  prevPacket.ir_rcv = NULL;
   isTimeout = false;
   currentHealth = 100;
   currentShield = 30;
@@ -236,11 +243,11 @@ void sendDummyVestDataPacket(){
     vestDataPacket pkt;
     pkt.id = VEST_PKT;
     pkt.seq_no = seqNum;
-    pkt.ir_rcv_1 = randomint(0, 1);
-    pkt.ir_rcv_2 = randomint(0, 1);
+    pkt.ir_rcv = hit;
     pkt.health = currentHealth;
     pkt.shield = currentShield;
     pkt.padding_1 = 0;
+    pkt.padding_2 = 0;
     pkt.crc = calculateGvCrc32(&pkt);
     prevPacket = pkt;
     ackReceived = false;
@@ -294,8 +301,7 @@ uint32_t calculateGvCrc32(vestDataPacket *pkt) {
   return custom_crc32(&pkt->id, 
     sizeof(pkt->id) +
     sizeof(pkt->seq_no) +
-    sizeof(pkt->ir_rcv_1) +
-    sizeof(pkt->ir_rcv_2) + 
+    sizeof(pkt->ir_rcv) +
     sizeof(pkt->health) +
     sizeof(pkt->shield)
   );
@@ -335,7 +341,7 @@ void receiver_handler()
 {
   if (IrReceiver.decode()) {
     IrReceiver.resume();
-    hit = (IrReceiver.decodedIRData.command == BUL_DMG_CODE);
+    hit = true;
   }
 }
 
@@ -343,9 +349,7 @@ void dmg_beeper_handler(int x)
 {
   for (int i = 0; i < x/10; i++) {
     digitalWrite(BUZZER_PIN, HIGH);
-    delay(100);
     digitalWrite(BUZZER_PIN, LOW);
-    delay(50); 
   }
 }
 
@@ -353,7 +357,6 @@ void dmg_beeper_handler(int x)
 int gun_dmg_handler()
 {
   if (hit) {
-    Serial.print("Gun hit   ");
     dmg_beeper_handler(BASE_DMG);
     hit = false;
     return BASE_DMG;

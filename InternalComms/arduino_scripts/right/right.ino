@@ -1,10 +1,9 @@
 #include <Wire.h>
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
-#include <Wire.h>
 #include <IRremote.h>
-#include <cppQueue.h>
 #include <limits.h>
+#include <cppQueue.h>
 #define IR_PIN 3
 #define BUZZER_PIN 5
 #define SAMPLE_WINDOW 60
