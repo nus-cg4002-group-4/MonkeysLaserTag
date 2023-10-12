@@ -23,6 +23,7 @@ class DmaTest:
                         f = open(os.path.join(dir, file), 'r')
                         data = f.read().split(',')
                         self.dma.send_to_ai(data)
+                        time.sleep(5)
             
             except Exception as e:
                 print(e)

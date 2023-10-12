@@ -45,20 +45,20 @@ class GameLogic:
         # playerID, packetID, hit, health, shield
         # playerID, packetID, bullets
 
-        msgIn_arugments = msgIn.split()
+        msgIn_arugments = list(map(int, msgIn.split()))
         print(msgIn_arugments)
         
-        if int(msgIn_arugments[0]) == 1:
+        if msgIn_arugments[0] == 1:
             # player 1
             currentPlayer = self.player_1
-        elif int(msgIn_arugments[0]) == 2:
+        elif msgIn_arugments[0] == 2:
             currentPlayer = self.player_2
 
-        if int(msgIn_arugments[1]) == 1:
+        if msgIn_arugments[1] == 1:
             # packetID 1: hit, health, shield
             currentPlayer.reduceHP(10)
             pass      
-        elif int(msgIn_arugments[1]) == 3:
+        elif msgIn_arugments[1] == 3:
             #bullets
             currentPlayer.bullets = msgIn_arugments[2]
             pass   
@@ -67,26 +67,27 @@ class GameLogic:
     def ai_logic(self, msgIn, can_see):
         # msgIn "playerId enum"
         # can_see "playerId hit/miss"
-        args = msgIn.split();
-        if (int(args[0]) == 1):
+        args = list(map(int, msgIn.split()))
+        can_see = list(map(int, can_see.split()))
+        if args[0] == 1:
             #player 1
             currentPlayer = self.player_1
             enemyPlayer = self.player_2
             pass
-        elif int(args[0]) == 2:
+        elif args[0] == 2:
             #player 2
             currentPlayer = self.player_2
             enemyPlayer = self.player_1
             pass
 
-        if (int(args[1]) == 0): #none
+        if args[1] == 0: #none
             currentPlayer.action = "none"
             pass
-        elif (int(args[1]) == 1): #shield
+        elif args[1] == 1: #shield
             currentPlayer.action = "shield"
             currentPlayer.shieldActivate()
             pass
-        elif (int(args[1]) == 2): #grenade
+        elif args[1] == 2: #grenade
             print("player " + str(currentPlayer.id) + " grenade player " + str(enemyPlayer.id))
             currentPlayer.action = "grenade"
             if currentPlayer.grenadeThrow():
@@ -94,38 +95,38 @@ class GameLogic:
                     enemyPlayer.reduceHP(self.grenadeDMG)
                 pass
             pass
-        elif (int(args[1]) == 3): #reload
+        elif args[1] == 3: #reload
             print("player " + str(currentPlayer.id) + " reload")
             currentPlayer.action = "reload"
             currentPlayer.reload()
             pass
-        elif (int(args[1]) == 4): #web
+        elif args[1] == 4: #web
             print("player 2 activate skill")
             currentPlayer.action = "web"
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
-        elif (int(args[1]) == 5): #portal
+        elif args[1] == 5: #portal
             currentPlayer.action = "portal"
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
-        elif (int(args[1]) == 6): #punch
+        elif args[1] == 6: #punch
             currentPlayer.action = "punch"
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
-        elif (int(args[1]) == 7): #hammer
+        elif args[1] == 7: #hammer
             currentPlayer.action = "hammer"
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
-        elif (int(args[1]) == 8): #spear
+        elif args[1] == 8: #spear
             currentPlayer.action = "spear"
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
-        elif (int(args[1]) == 9): #logout
+        elif args[1] == 9: #logout
             currentPlayer.action = "logout"
             pass
         else:

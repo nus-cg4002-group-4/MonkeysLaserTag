@@ -32,18 +32,18 @@ class GameEngineJobs:
             
             try:
                 # game engine
-                msg, signal = action_to_engine.get()
+                signal, msg = action_to_engine.get()
                 hit_miss = '1 1'
-                print(msg, 'game engine')
-                if msg == 2:
+                print(signal, msg, 'game engine')
+                if signal == 2:
                     # goggle
 
-                    updated_game_state = self.gameLogic.relay_logic(signal)
-                elif msg == 3:
+                    updated_game_state = self.gameLogic.relay_logic(msg)
+                elif signal == 3:
                     # bullet
 
-                    updated_game_state = self.gameLogic.relay_logic(signal)
-                elif msg == 1:
+                    updated_game_state = self.gameLogic.relay_logic(msg)
+                elif signal == 1:
                     # ai nodes
                     #dummy ai input
                     #get message input from AI function format:: "player_id enum"
@@ -52,7 +52,7 @@ class GameEngineJobs:
                         engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
                         #hit_miss = vis_to_engine.get()
                     updated_game_state = self.gameLogic.ai_logic(msg, hit_miss)  
-                
+                    print('udpated game state ', updated_game_state)
                 engine_to_eval.put(updated_game_state)
                 engine_to_vis_gamestate.put(updated_game_state)
                 server_to_node.put(updated_game_state)

@@ -20,10 +20,16 @@ class Dma:
         in_buffer[:] = np.array(data).astype(np.float32)
         self.dma.sendchannel.transfer(in_buffer)
         self.dma.sendchannel.wait()
+    
+    def send_to_ai_input_2d(self, data):
+        in_buffer = allocate(shape=(560,), dtype=np.float32)
+        in_buffer[:] = np.array(data).astype(np.float32).flatten()
+        self.dma.sendchannel.transfer(in_buffer)
+        self.dma.sendchannel.wait()
 
     def recv_from_ai(self):
         out_buffer = allocate(shape=(1,), dtype=np.int32)
         self.dma.recvchannel.transfer(out_buffer)
         self.dma.recvchannel.wait()
-        return str(out_buffer)
+        return int(out_buffer)
     

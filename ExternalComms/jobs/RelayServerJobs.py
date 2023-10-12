@@ -8,6 +8,7 @@ from helpers.RelayServer import RelayServer
 from helpers.Parser import Parser
 from helpers.Dma import Dma
 import sys, os
+import numpy as np
 
 WINDOW = 80
 REMOVE = 20
@@ -20,6 +21,7 @@ class RelayServerJobs:
         self.parser = Parser()
         self.processes = []
         self.relay_node_to_parser = Queue()
+        self.dma = Dma()
     
     def send_to_ai_task(self, relay_server_to_ai):
         packets = []
@@ -39,7 +41,8 @@ class RelayServerJobs:
                 # if count == WINDOW:
                 #     # DMA stuff
                 #     count = WINDOW - REMOVE
-                #     #self.dma.send_to_ai(packets)
+                #     
+                #     #self.dma.send_to_ai_input_2d(n)
                 #     packets[:] = packets[REMOVE:WINDOW + 1]
             
             except Exception as e:
@@ -52,7 +55,7 @@ class RelayServerJobs:
         while True:
             try:
                 ai_result = self.dma.recv_from_ai()
-                relay_server_to_engine.put((1, '1 ' + ai_result))
+                relay_server_to_engine.put((1, '1 ' + str(ai_result)))
                 # relay_server_to_engine.put((1, '1 3'))
                 # time.sleep(60)
                 # print('put')
@@ -136,6 +139,7 @@ class RelayServerJobs:
         
     def relay_server_job(self, relay_server_to_engine, relay_server_to_node, relay_server_to_ai):
         conn_count = 0
+        self.dma.initialize()
         process_parse = Process(target=self.send_from_parser, args=(self.relay_node_to_parser, relay_server_to_engine, relay_server_to_ai), daemon=True)
         self.processes.append(process_parse)
         process_parse.start()
