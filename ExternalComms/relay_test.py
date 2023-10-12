@@ -5,10 +5,12 @@ import asyncio
 import random
 from helpers.RelayServer import RelayServer, ClientDisconnectException
 from jobs.RelayServerJobs import RelayServerJobs
+from helpers.Parser import Parser
 
 class RelayTest:
     def __init__(self):
         self.relay_server = RelayServer()
+        self.parser = Parser()
         
         self.relay_server_process = None
         self.parser_process = None
@@ -17,24 +19,50 @@ class RelayTest:
         self.relay_server_to_node = Queue()
 
         self.is_client_connected = [False, False]
+
+        self.relay_node_to_parser = Queue()
+    def send_from_parser(self, node_to_parser, relay_server_to_engine):
+        while True:
+            try:
+                data = node_to_parser.get()
+                data_arr = self.parser.convert_to_arr(data)
+                pkt_id, msg = self.parser.decide_dest(data_arr)
+                if pkt_id == 1:
+                    # hand
+                    # send to ai
+                    continue
+                elif pkt_id == 2:
+                    # goggle
+                    relay_server_to_engine.put(msg)
+                elif pkt_id == 3:
+                    # bullet
+                    relay_server_to_engine.put(msg)
+            
+                print('data arr', data_arr)
+            except Exception as e:
+                print(e, 'a')
+                break
+            except:
+                break
     
-    async def receive_from_relay_node(self, conn_socket_num, relay_server_to_engine):
+
+    async def receive_from_relay_node(self, conn_socket_num, node_to_parser):
         print('recv from relay node')
         print(conn_socket_num)
         try:
             msg = await self.relay_server.receive_from_node(conn_socket_num)
             if self.relay_server.is_running:
-                #relay_server_to_engine.put('request')
+                node_to_parser.put(msg)
                 print('Received from relay node: ', msg)
 
         except Exception as e:
             print(e)
             
-    def receive_from_relay_node_task(self, conn_socket_num, relay_server_to_engine):
+    def receive_from_relay_node_task(self, conn_socket_num, relay_node_to_parser):
         print(conn_socket_num)
         while self.relay_server.is_running:
             try:
-                asyncio.run(self.receive_from_relay_node(conn_socket_num, relay_server_to_engine))
+                asyncio.run(self.receive_from_relay_node(conn_socket_num, relay_node_to_parser))
             except Exception as e:
                 print(e)
                 break
@@ -116,12 +144,16 @@ class RelayTest:
     def relay_server_job(self, relay_server_to_engine, relay_server_to_node):
         conn_count = 0
         processes = []
+        process_parse = Process(target=self.send_from_parser, args=(self.relay_node_to_parser, relay_server_to_engine), daemon=True)
+        processes.append(process_parse)
+        process_parse.start()
+
         while conn_count < 2:
             try:
-                conn_socket = self.relay_server.start_connection()
+                conn_socket = self.relay_server.start_connection(conn_count)
                 print(f'Relay node {conn_count + 1} connect')
 
-                process_receive = Process(target=self.receive_from_relay_node_task, args=(conn_count, relay_server_to_engine), daemon=True)
+                process_receive = Process(target=self.receive_from_relay_node_task, args=(conn_count, self.relay_node_to_parser), daemon=True)
                 processes.append(process_receive)
                 process_receive.start()
 

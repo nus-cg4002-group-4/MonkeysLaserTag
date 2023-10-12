@@ -34,7 +34,8 @@ class RelayNode:
         self.connect_to_server()
         
         #self.receive_from_server()
-        msg = '1 1 1 80 20'
+        arr = [1, 1, 1, 80, 20]
+        msg = str(arr)
         while True:
             self.send_to_server(str(len(msg)) + '_' + msg)
             time.sleep(5)

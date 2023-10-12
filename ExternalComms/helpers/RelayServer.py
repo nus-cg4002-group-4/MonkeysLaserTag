@@ -83,7 +83,6 @@ class RelayServer:
         return text
 
     def send_to_node(self, msg, conn_socket_num):
-        print(self.is_conncted)
         # Msg has been encoded from parser
         if self.is_conncted[conn_socket_num]:
             self.conn_sockets[conn_socket_num].send(msg)
