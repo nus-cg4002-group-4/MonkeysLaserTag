@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Thu Oct 12 11:58:55 2023" VIVADOVERSION="2019.1">
+<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Thu Oct 12 12:28:39 2023" VIVADOVERSION="2019.1">
 
   <SYSTEMINFO ARCH="zynquplus" DEVICE="xczu3eg" NAME="design_1" PACKAGE="sbva484" SPEEDGRADE="-2"/>
 
@@ -1063,11 +1063,7 @@
             <CONNECTION INSTANCE="main_func_0" PORT="DATA_INPUT_TDATA"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" LEFT="3" NAME="m_axis_mm2s_tkeep" RIGHT="0" SIGIS="undef" SIGNAME="axi_dma_0_m_axis_mm2s_tkeep">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="main_func_0" PORT="DATA_INPUT_TKEEP"/>
-          </CONNECTIONS>
-        </PORT>
+        <PORT DIR="O" LEFT="3" NAME="m_axis_mm2s_tkeep" RIGHT="0" SIGIS="undef"/>
         <PORT DIR="O" NAME="m_axis_mm2s_tvalid" SIGIS="undef" SIGNAME="axi_dma_0_m_axis_mm2s_tvalid">
           <CONNECTIONS>
             <CONNECTION INSTANCE="main_func_0" PORT="DATA_INPUT_TVALID"/>
@@ -1169,11 +1165,7 @@
             <CONNECTION INSTANCE="main_func_0" PORT="DATA_OUTPUT_TDATA"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" LEFT="3" NAME="s_axis_s2mm_tkeep" RIGHT="0" SIGIS="undef" SIGNAME="axi_dma_0_s_axis_s2mm_tkeep">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="main_func_0" PORT="DATA_OUTPUT_TKEEP"/>
-          </CONNECTIONS>
-        </PORT>
+        <PORT DIR="I" LEFT="3" NAME="s_axis_s2mm_tkeep" RIGHT="0" SIGIS="undef"/>
         <PORT DIR="I" NAME="s_axis_s2mm_tvalid" SIGIS="undef" SIGNAME="axi_dma_0_s_axis_s2mm_tvalid">
           <CONNECTIONS>
             <CONNECTION INSTANCE="main_func_0" PORT="DATA_OUTPUT_TVALID"/>
@@ -1911,7 +1903,7 @@
         </BUSINTERFACE>
       </BUSINTERFACES>
     </MODULE>
-    <MODULE COREREVISION="2113247569" FULLNAME="/main_func_0" HWVERSION="1.0" INSTANCE="main_func_0" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="main_func" VLNV="xilinx.com:hls:main_func:1.0">
+    <MODULE COREREVISION="2113247667" FULLNAME="/main_func_0" HWVERSION="1.0" INSTANCE="main_func_0" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="main_func" VLNV="xilinx.com:hls:main_func:1.0">
       <DOCUMENTS/>
       <PARAMETERS>
         <PARAMETER NAME="Component_Name" VALUE="design_1_main_func_0_0"/>
@@ -1953,12 +1945,6 @@
             <CONNECTION INSTANCE="axi_dma_0" PORT="m_axis_mm2s_tlast"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" LEFT="3" NAME="DATA_INPUT_TKEEP" RIGHT="0" SIGIS="undef" SIGNAME="axi_dma_0_m_axis_mm2s_tkeep">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="axi_dma_0" PORT="m_axis_mm2s_tkeep"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" LEFT="3" NAME="DATA_INPUT_TSTRB" RIGHT="0" SIGIS="undef"/>
         <PORT DIR="O" NAME="DATA_OUTPUT_TVALID" SIGIS="undef" SIGNAME="axi_dma_0_s_axis_s2mm_tvalid">
           <CONNECTIONS>
             <CONNECTION INSTANCE="axi_dma_0" PORT="s_axis_s2mm_tvalid"/>
@@ -1979,12 +1965,6 @@
             <CONNECTION INSTANCE="axi_dma_0" PORT="s_axis_s2mm_tlast"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" LEFT="3" NAME="DATA_OUTPUT_TKEEP" RIGHT="0" SIGIS="undef" SIGNAME="axi_dma_0_s_axis_s2mm_tkeep">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="axi_dma_0" PORT="s_axis_s2mm_tkeep"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" LEFT="3" NAME="DATA_OUTPUT_TSTRB" RIGHT="0" SIGIS="undef"/>
       </PORTS>
       <BUSINTERFACES>
         <BUSINTERFACE BUSNAME="axi_dma_0_M_AXIS_MM2S" NAME="DATA_INPUT" TYPE="TARGET" VLNV="xilinx.com:interface:axis:1.0">
@@ -1994,8 +1974,8 @@
           <PARAMETER NAME="TDEST_WIDTH" VALUE="0"/>
           <PARAMETER NAME="TID_WIDTH" VALUE="0"/>
           <PARAMETER NAME="HAS_TREADY" VALUE="1"/>
-          <PARAMETER NAME="HAS_TSTRB" VALUE="1"/>
-          <PARAMETER NAME="HAS_TKEEP" VALUE="1"/>
+          <PARAMETER NAME="HAS_TSTRB" VALUE="0"/>
+          <PARAMETER NAME="HAS_TKEEP" VALUE="0"/>
           <PARAMETER NAME="HAS_TLAST" VALUE="1"/>
           <PARAMETER NAME="FREQ_HZ" VALUE="96968727"/>
           <PARAMETER NAME="PHASE" VALUE="0.000"/>
@@ -2006,8 +1986,6 @@
             <PORTMAP LOGICAL="TREADY" PHYSICAL="DATA_INPUT_TREADY"/>
             <PORTMAP LOGICAL="TDATA" PHYSICAL="DATA_INPUT_TDATA"/>
             <PORTMAP LOGICAL="TLAST" PHYSICAL="DATA_INPUT_TLAST"/>
-            <PORTMAP LOGICAL="TKEEP" PHYSICAL="DATA_INPUT_TKEEP"/>
-            <PORTMAP LOGICAL="TSTRB" PHYSICAL="DATA_INPUT_TSTRB"/>
           </PORTMAPS>
         </BUSINTERFACE>
         <BUSINTERFACE BUSNAME="main_func_0_DATA_OUTPUT" NAME="DATA_OUTPUT" TYPE="INITIATOR" VLNV="xilinx.com:interface:axis:1.0">
@@ -2017,8 +1995,8 @@
           <PARAMETER NAME="TDEST_WIDTH" VALUE="0"/>
           <PARAMETER NAME="TID_WIDTH" VALUE="0"/>
           <PARAMETER NAME="HAS_TREADY" VALUE="1"/>
-          <PARAMETER NAME="HAS_TSTRB" VALUE="1"/>
-          <PARAMETER NAME="HAS_TKEEP" VALUE="1"/>
+          <PARAMETER NAME="HAS_TSTRB" VALUE="0"/>
+          <PARAMETER NAME="HAS_TKEEP" VALUE="0"/>
           <PARAMETER NAME="HAS_TLAST" VALUE="1"/>
           <PARAMETER NAME="FREQ_HZ" VALUE="96968727"/>
           <PARAMETER NAME="PHASE" VALUE="0.000"/>
@@ -2029,8 +2007,6 @@
             <PORTMAP LOGICAL="TREADY" PHYSICAL="DATA_OUTPUT_TREADY"/>
             <PORTMAP LOGICAL="TDATA" PHYSICAL="DATA_OUTPUT_TDATA"/>
             <PORTMAP LOGICAL="TLAST" PHYSICAL="DATA_OUTPUT_TLAST"/>
-            <PORTMAP LOGICAL="TKEEP" PHYSICAL="DATA_OUTPUT_TKEEP"/>
-            <PORTMAP LOGICAL="TSTRB" PHYSICAL="DATA_OUTPUT_TSTRB"/>
           </PORTMAPS>
         </BUSINTERFACE>
       </BUSINTERFACES>
