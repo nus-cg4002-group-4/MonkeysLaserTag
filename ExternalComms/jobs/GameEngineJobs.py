@@ -39,6 +39,7 @@ class GameEngineJobs:
                 elif msg == 1:
                     # ai nodes
                     #dummy ai input
+                    
                     msgIn = "1 2" #get message input from AI function format:: "player_id enum"
                     if msgIn[1] >= 4 and msgIn[1] <= 8 or msgIn[1] == 2: #grenades, and all skill
                         engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )

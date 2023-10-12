@@ -20,7 +20,6 @@ class RelayServerJobs:
             try:
                 data = node_to_parser.get()
                 data_arr = self.parser.convert_to_arr(data)
-                print(data_arr, 'data arr')
                 pkt_id, msg = self.parser.decide_dest(data_arr)
                 if pkt_id == 1:
                     # hand
@@ -28,14 +27,14 @@ class RelayServerJobs:
                     continue
                 elif pkt_id == 2:
                     # goggle
-                    relay_server_to_engine.put(msg)
+                    relay_server_to_engine.put((0, msg))
                 elif pkt_id == 3:
                     # bullet
-                    relay_server_to_engine.put(msg)
+                    relay_server_to_engine.put((0, msg))
             
-                
+                print('data arr', data_arr)
             except Exception as e:
-                print(e)
+                print(e, 'a')
                 break
             except:
                 break
