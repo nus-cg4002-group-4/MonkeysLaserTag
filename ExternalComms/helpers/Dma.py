@@ -9,7 +9,7 @@ class Dma:
         self.dma = None
     
     def initialize(self):
-        cfd = f'{sys.path[0]}/../../HardwareAi/HLS_CNN'
+        cfd = f'{sys.path[0]}/../HardwareAi/HLS_CNN'
         print('Loading overlay...')
         self.overlay = Overlay(os.path.join(cfd, 'design_1_wrapper.bit'))
         self.dma = self.overlay.axi_dma_0
@@ -25,5 +25,5 @@ class Dma:
         out_buffer = allocate(shape=(1,), dtype=np.int32)
         self.dma.recvchannel.transfer(out_buffer)
         self.dma.recvchannel.wait()
-        return out_buffer
+        return str(out_buffer)
     

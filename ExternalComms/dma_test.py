@@ -2,11 +2,11 @@ import time
 from multiprocessing import Lock, Process, Queue, current_process
 import json
 from helpers.Dma import Dma
-import sys, os, re
+import sys, os
 
 WINDOW = 80
 REMOVE = 20
-cfd = f'{sys.path[0]}/../../HardwareAi/HLS_CNN'
+cfd = f'{sys.path[0]}/../HardwareAi/HLS_CNN'
 dir = os.path.join(cfd, 'old_values_for_testing')
 
 class DmaTest:

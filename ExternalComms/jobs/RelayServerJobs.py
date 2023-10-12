@@ -7,9 +7,12 @@ import asyncio
 from helpers.RelayServer import RelayServer
 from helpers.Parser import Parser
 from helpers.Dma import Dma
+import sys, os
 
 WINDOW = 80
 REMOVE = 20
+cfd = f'{sys.path[0]}/../HardwareAi/HLS_CNN'
+dir = os.path.join(cfd, 'old_values_for_testing')
 
 class RelayServerJobs:
     def __init__(self):
@@ -23,14 +26,21 @@ class RelayServerJobs:
         count = 0
         while True:
             try:
-                data_arr = relay_server_to_ai.get()
-                packets.append(data_arr)
-                count += 1
+                for file in os.listdir(dir):
+                    if file.endswith(".in"):
+                        print('Testing file', file)
+                        f = open(os.path.join(dir, file), 'r')
+                        data = f.read().split(',')
+                        self.dma.send_to_ai(data)
+                # data_arr = relay_server_to_ai.get()
+                # packets.append(data_arr)
+                # count += 1
 
-                if count == WINDOW:
-                    # DMA stuff
-                    count = WINDOW - REMOVE
-                    packets[:] = packets[REMOVE:WINDOW + 1]
+                # if count == WINDOW:
+                #     # DMA stuff
+                #     count = WINDOW - REMOVE
+                #     #self.dma.send_to_ai(packets)
+                #     packets[:] = packets[REMOVE:WINDOW + 1]
             
             except Exception as e:
                 print(e)
@@ -41,9 +51,11 @@ class RelayServerJobs:
     def receive_from_ai_task(self, relay_server_to_engine):
         while True:
             try:
-                relay_server_to_engine.put((1, '1 3'))
-                time.sleep(60)
-                print('put')
+                ai_result = self.dma.recv_from_ai()
+                relay_server_to_engine.put((1, '1 ' + ai_result))
+                # relay_server_to_engine.put((1, '1 3'))
+                # time.sleep(60)
+                # print('put')
             
             except Exception as e:
                 print(e)
