@@ -86,7 +86,7 @@ class GameLogic:
             currentPlayer.shieldActivate()
             pass
         elif (int(args[1]) == 2): #grenade
-            print("player " + currentPlayer.id + " grenade player " + enemyPlayer.id)
+            print("player " + str(currentPlayer.id) + " grenade player " + str(enemyPlayer.id))
             currentPlayer.action = "grenade"
             if currentPlayer.grenadeThrow():
                 if can_see[1]:
@@ -94,7 +94,7 @@ class GameLogic:
                 pass
             pass
         elif (int(args[1]) == 3): #reload
-            print("player " + currentPlayer.id + " reload")
+            print("player " + str(currentPlayer.id) + " reload")
             currentPlayer.action = "reload"
             currentPlayer.reload()
             pass
