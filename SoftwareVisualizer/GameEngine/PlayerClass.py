@@ -18,7 +18,7 @@ class Player:
         self.bullets: int = self.maxbullets
         self.grenades: int = self.maxGrenades
         self.enemyDetected: int = 0
-        self.action: int = 0
+        self.action = "none"
         self.death: int = 0
         self.kill = 0
 
@@ -60,13 +60,6 @@ class Player:
     def grenadeThrow(self):
         if (self.grenades > 0):
             self.grenades -= 1
-                    
-    # def skillActivate(self):
-    #     if (self.enemyDetected == 1):
-    #         enemy.reduceHP(self.skillDmg)
-    #         if enemy.hp <= 0:
-    #                 self.kill += 1
-    #                 self.respawn()
 
     def reload(self):
         if (self.bullets <= 0):

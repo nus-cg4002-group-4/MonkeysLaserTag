@@ -15,16 +15,6 @@ class GameEngineJobs:
         self.processes = []
         self.gameLogic = game_logic
     
-    def receive_from_mqtt_task(self, vis_to_engine):
-        pass
-        while True:
-            try:
-                msg = vis_to_engine.get()
-                #self.gameLogic.subscribeFromVisualizer(msg)
-                print('Received from hit_miss: ', msg)
-            except:
-                break
-    
     def receive_from_eval_task(self, eval_to_engine):
         while True:
             try:
@@ -35,21 +25,25 @@ class GameEngineJobs:
             else:
                 print('Received from eval server ', msg)
     
-    def gen_action_task(self, action_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine):
+    def gen_action_task(self, relay_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine):
         while True:
             try:
                 # game engine
-                msg, signal = action_to_engine.get()
+                msg, signal = relay_to_engine.get()
                 if msg == 0:
+                    # relay nodes
                     engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
                     #hit_miss = vis_to_engine.get()
 
                     updated_game_state = self.gameLogic.relay_logic(signal)
                 elif msg == 1:
-                    #if signal.action == 'grenade':
-                    
-                    updated_game_state = self.gameLogic.ai_logic(signal, hit_miss)     
-
+                    # ai nodes
+                    #dummy ai input
+                    msgIn = "1 2" #get message input from AI function format:: "player_id enum"
+                    if msgIn[1] >= 4 and msgIn[1] <= 8 or msgIn[1] == 2: #grenades, and all skill
+                        engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
+                    hit_miss = vis_to_engine.get()
+                    updated_game_state = self.gameLogic.ai_logic(msgIn, hit_miss)     
                 # game_state_str = json.dumps(updated_game_state)
                 engine_to_eval.put(updated_game_state)
                 time.sleep(2)
