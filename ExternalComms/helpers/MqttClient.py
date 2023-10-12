@@ -45,11 +45,11 @@ class MqttClient:
         self.client.connect(host=self.hostname, port=self.port)
     
     def subscribe_to_topic(self, topic):
-        self.client.subscribe(topic, qos=1)
+        self.client.subscribe(topic, qos=0)
         self.client.loop_start()
 
     def publish_to_topic(self, topic, msg):
-        self.client.publish(topic, msg, qos=1)
+        self.client.publish(topic, msg, qos=0)
 
     def close_client(self):
         self.client.loop_stop()

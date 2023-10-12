@@ -1,7 +1,7 @@
 import json
 from enum import Enum
-from PlayerClass import Player
-from PlayerClass import GestureID
+from helpers.PlayerClass import Player
+from helpers.PlayerClass import GestureID
 
 class GameLogic:
     shootDMG = 10

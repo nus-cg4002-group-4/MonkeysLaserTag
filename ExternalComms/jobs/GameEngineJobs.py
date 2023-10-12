@@ -3,7 +3,7 @@ from multiprocessing import Lock, Process, Queue, current_process
 import queue
 import json
 from helpers.EvalClient import EvalClient
-from SoftwareVisualizer.GameEngine.GameLogic import GameLogic
+from helpers.GameLogic import GameLogic
 
 class GameEngineJobs:
 
@@ -16,10 +16,11 @@ class GameEngineJobs:
         self.gameLogic = game_logic
     
     def receive_from_mqtt_task(self, vis_to_engine):
+        pass
         while True:
             try:
                 msg = vis_to_engine.get()
-                self.gameLogic.subscribeFromVisualizer(msg);
+                #self.gameLogic.subscribeFromVisualizer(msg)
                 print('Received from hit_miss: ', msg)
             except:
                 break
@@ -28,28 +29,30 @@ class GameEngineJobs:
         while True:
             try:
                 msg = eval_to_engine.get()
-                self.gameLogic.subscribeFromEval(msg);
+                self.gameLogic.subscribeFromEval(msg)
             except:
                 break
             else:
                 print('Received from eval server ', msg)
     
-    def gen_action_task(self, relay_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval):
+    def gen_action_task(self, action_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine):
         while True:
             try:
                 # game engine
-                msg = 0
-                signal = relay_to_engine.get()
+                msg, signal = action_to_engine.get()
                 if msg == 0:
+                    engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
+                    #hit_miss = vis_to_engine.get()
+
                     updated_game_state = self.gameLogic.relay_logic(signal)
                 elif msg == 1:
-                    if signal.action == 'grenade':
-                        engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
-                        
-                    updated_game_state = self.gameLogic.ai_logic(signal)     
+                    #if signal.action == 'grenade':
+                    
+                    updated_game_state = self.gameLogic.ai_logic(signal, hit_miss)     
 
                 # game_state_str = json.dumps(updated_game_state)
                 engine_to_eval.put(updated_game_state)
+                time.sleep(2)
                 engine_to_vis_gamestate.put(updated_game_state)
                
                 # grab msg queues
@@ -72,7 +75,7 @@ class GameEngineJobs:
                 break
     
     
-    def game_engine_job(self, eval_to_engine, engine_to_eval, engine_to_vis_gamestate, engine_to_vis_hit, vis_to_engine, relay_to_engine):
+    def game_engine_job(self, eval_to_engine, engine_to_eval, engine_to_vis_gamestate, engine_to_vis_hit, vis_to_engine, action_to_engine):
         
         try:
             process_rcv_from_mqtt = Process(target=self.receive_from_mqtt_task, args=(vis_to_engine,), daemon=True)
@@ -83,7 +86,7 @@ class GameEngineJobs:
             self.processes.append(process_rcv_from_eval)
             process_rcv_from_eval.start()
 
-            process_gen_action = Process(target=self.gen_action_task, args=(relay_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval), daemon=True)
+            process_gen_action = Process(target=self.gen_action_task, args=(action_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine), daemon=True)
             self.processes.append(process_gen_action)
             process_gen_action.start()
             
@@ -93,6 +96,9 @@ class GameEngineJobs:
 
         except KeyboardInterrupt:
             print('Terminating Game Engine Job')
+        
+        except Exception as e:
+            print(e)
         
         return True
 

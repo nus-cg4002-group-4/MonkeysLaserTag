@@ -6,7 +6,7 @@ from jobs.EvalClientJobs import EvalClientJobs
 from jobs.RelayServerJobs import RelayServerJobs
 from jobs.GameEngineJobs import GameEngineJobs
 from jobs.MqttClientJobs import MqttClientJobs
-from SoftwareVisualizer.GameEngine.GameLogic import GameLogic
+from helpers.GameLogic import GameLogic
 
 
 class Brain:

@@ -15,6 +15,8 @@ class RelayTest:
         
         self.relay_server_to_engine = Queue()
         self.relay_server_to_node = Queue()
+
+        self.is_client_connected = [False, False]
     
     async def receive_from_relay_node(self, conn_socket_num, relay_server_to_engine):
         print('recv from relay node')
@@ -90,14 +92,15 @@ class RelayTest:
     #             process_send.start()
 
     #             print('start')
-
     #             try:
     #                 for p in processes:
     #                     p.join()
     #             except ClientDisconnectException:
+    #                 print('client disconnected')
 
     #             except KeyboardInterrupt: 
     #                 print('Terminating Relay Server Job')
+
     #     except Exception as e:
     #         print(e, 'err')
     #         break
