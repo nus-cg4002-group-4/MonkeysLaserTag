@@ -24,11 +24,18 @@ class BeetleJobs:
         p = json.dumps(packet).encode()
         return str(len(p)) + '_' + p.decode()
 
-    def send_to_beetle_job(self, node_to_beetle):
+    def send_to_beetle_job(self, node_to_beetle, beetle_instance):
         while True:
             try:
+                
                 data = node_to_beetle.get()
+                print(f'{bcolors.OKBLUE}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!{bcolors.ENDC}')
+                beetle_instance.try_writing_to_beetle(data)
+
                 # TODO: send to beetle
+            except Exception as e:
+                print(e)
+                break
             except:
                 break 
 
@@ -65,6 +72,7 @@ class BeetleJobs:
     async def recv_from_server(self, node_to_imu, node_to_ir):
         data = await self.relay_node.receive_from_server()
         print(f'{bcolors.OKGREEN}Received from Server: {data}{bcolors.ENDC}')
+        node_to_imu.put(data)
         # TODO: Decide if it's for IMU or IR
         # if data == 'imu':
         #     node_to_imu.put(data)

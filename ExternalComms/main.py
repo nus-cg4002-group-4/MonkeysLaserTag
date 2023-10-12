@@ -27,6 +27,7 @@ class Brain:
         self.eval_client_to_server = Queue()
         self.eval_client_to_game_engine = Queue()
         self.relay_server_to_engine = Queue()
+        self.relay_server_to_ai = Queue()
         self.relay_server_to_node = Queue()
         self.game_engine_to_vis_gamestate = Queue()
         self.game_engine_to_vis_hit = Queue()
@@ -73,7 +74,9 @@ class Brain:
 
             # Relay Server Process
             self.relay_server_process = Process(target=self.relay_server_jobs.relay_server_job, 
-                                                args=(self.relay_server_to_engine, self.relay_server_to_node))
+                                                args=(self.relay_server_to_engine, 
+                                                    self.relay_server_to_node,
+                                                    self.relay_server_to_ai))
             self.processes.append(self.relay_server_process)
             self.relay_server_process.start()
 

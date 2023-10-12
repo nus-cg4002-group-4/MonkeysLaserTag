@@ -15,6 +15,7 @@ import time
 import struct
 from tabulate import tabulate
 from multiprocessing import Queue
+import json
 
 SHIELD = 'k'
 HEALTH = 'l'
@@ -133,13 +134,24 @@ class Beetle():
                 print(f'{key} pressed!')
                 self.last_press_time = current_time
                 fn() # execute fn
+
+    def try_writing_to_beetle(self, data: str):
+        print(self.handshake_complete)
+        if self.handshake_complete:
+            getDict = json.loads(data)
+
+            # "{\"player_id\": 1, \"action\": \"reload\", \"game_state\": {\"p1\": {\"hp\": 100, \"bullets\": 6, \"grenades\": 2, \"shield_hp\": 0, \"deaths\": 0, \"shields\": 3}, \"p2\": {\"hp\": 100, \"bullets\": 6, \"grenades\": 2, \"shield_hp\": 0, \"deaths\": 0, \"shields\": 3}}}"
+            print("getDict action: ", getDict['action'])
+            if getDict['action'] == 'reload' and self.beetle.delegate.bullets == 0:
+                self.send_reload()
     
-    def try_writing_to_beetle(self):
-        self.on_keypress("h", self.send_health)
-        self.on_keypress("j", self.send_shield)
-        self.on_keypress("r", self.send_reload)
+    # def try_writing_to_beetle(self):
+    #     self.on_keypress("h", self.send_health)
+    #     self.on_keypress("j", self.send_shield)
+    #     self.on_keypress("r", self.send_reload)
 
     def send_reload(self): # simulate reload action
+        print(f"{bcolors.OKBLUE}Reloading for {self.beetle_id}{bcolors.ENDC}")
         self.characteristic.write(bytes('r', "utf-8"))
         self.sent_reload = True
     
@@ -169,7 +181,8 @@ class Beetle():
         self.beetle.disconnect()
 
     def initiate_program(self, 
-                         node_to_server: Queue
+                         node_to_server: Queue,
+                         node_to_imu: Queue
                          #stats_queue: Queue
                          ):
         """Main function to run the program."""
@@ -244,7 +257,9 @@ class Beetle():
                 if self.handshake_complete:
 
                     # Attempt to event to beetle
-                    self.try_writing_to_beetle()
+                    if not node_to_imu.empty():
+                        data = node_to_imu.get()
+                        self.try_writing_to_beetle(data)
 
                     # Simulate if shield, health or reload is not updated properly
                     self.check_gamestate_sent(current_time)
@@ -339,7 +354,7 @@ class ReadDelegate(btle.DefaultDelegate):
         self.count += 1 # Number of packets processed
         self.fragmented_count = self.total_calls - self.count # Number of fragmented packets
 
-        print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
+        # print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
         try:
             # Check packet id
             if data[0] < 1 or data[0] > 5:
@@ -411,15 +426,16 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 # Convert dict_values to a list and then iterate to create AI_data
                 AI_data = { 
-                    key: value for key, value in pkt_dict.items() if key != 'bullets' or key != 'seq_no'
+                    key: value for key, value in pkt_dict.items() if key != 'bullets' and key != 'seq_no'
                 }
 
                 # TODO: Write data to ssh server
                 if self.beetle.handshake_complete:
                     self.beetle.node_to_server.put(AI_data) # pkt_id 1
-                    print(AI_data)
-                    print({'pkt_id' : 3, 'bullets' : pkt_data.bullets})
+                    # print(f"AI_data: {AI_data}")
+                    print(pkt_data.bullets)
                     if self.bullets != pkt_data.bullets:
+                        print(pkt_data.bullets)
                         self.beetle.node_to_server.put({'pkt_id' : 3, 'bullets' : pkt_data.bullets}) # pkt_id 3
                         self.bullets = pkt_data.bullets
 
@@ -438,7 +454,7 @@ class ReadDelegate(btle.DefaultDelegate):
             self.corrupted_count += 1 # Statistics purposes
 
             # It will send the ack of the previous frame
-            if self.beetle.beetle_id != 3: # ID of beetle for Glove, no ack
+            if self.beetle.beetle_id != 1: # ID of beetle for Glove, no ack
                 self.beetle.send_ack(self.seq_no)
             
             # PacketId conversion failed
