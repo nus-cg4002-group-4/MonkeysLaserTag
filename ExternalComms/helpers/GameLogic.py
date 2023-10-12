@@ -46,6 +46,7 @@ class GameLogic:
         # playerID, packetID, bullets
 
         msgIn_arugments = msgIn.split()
+        print(msgIn_arugments)
         
         if int(msgIn_arugments[0]) == 1:
             # player 1
@@ -59,7 +60,7 @@ class GameLogic:
             pass      
         elif int(msgIn_arugments[1]) == 3:
             #bullets
-            currentPlayer.ammo = msgIn_arugments[2]
+            currentPlayer.bullets = msgIn_arugments[2]
             pass   
         return self.convert_to_json(self.player_1, self.player_2)
 

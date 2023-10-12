@@ -29,7 +29,7 @@ class GameEngineJobs:
         while True:
             try:
                 action_to_engine.put((1, '1 3'))
-                time.sleep(5)
+                time.sleep(60)
                 print('put')
             
             except Exception as e:
@@ -44,28 +44,25 @@ class GameEngineJobs:
             try:
                 # game engine
                 msg, signal = action_to_engine.get()
+                hit_miss = ''
                 print(msg, 'game engine')
                 if msg == 2:
-                    # relay nodes
-                    #engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
-                    #hit_miss = vis_to_engine.get()
+                    # goggle
 
                     updated_game_state = self.gameLogic.relay_logic(signal)
                 elif msg == 3:
-                    # relay nodes
-                    #engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
-                    #hit_miss = vis_to_engine.get()
+                    # bullet
 
                     updated_game_state = self.gameLogic.relay_logic(signal)
                 elif msg == 1:
                     # ai nodes
                     #dummy ai input
-                    msgIn = "1 3" #get message input from AI function format:: "player_id enum"
-                    id = int(msgIn[2])
+                    #get message input from AI function format:: "player_id enum"
+                    id = int(msg[2])
                     if  id >= 4 and id <= 8 or id == 2: #grenades, and all skill
                         engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
                         hit_miss = vis_to_engine.get()
-                    updated_game_state = self.gameLogic.ai_logic(msgIn, msg)  
+                    updated_game_state = self.gameLogic.ai_logic(msg, hit_miss)  
                 
                 engine_to_eval.put(updated_game_state)
                 engine_to_vis_gamestate.put(updated_game_state)

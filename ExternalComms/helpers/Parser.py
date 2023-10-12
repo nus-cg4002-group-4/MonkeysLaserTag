@@ -12,7 +12,6 @@ class Parser:
         
     def decide_dest(self, msg_arr):
         pkt_id = int(msg_arr[0])
-        print('err here?', pkt_id)
         to_viz = '1 '
         if pkt_id == 1:
             # hand
