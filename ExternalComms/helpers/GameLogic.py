@@ -35,7 +35,40 @@ class GameLogic:
     def subscribeFromEval(self, msgIn):
         # msg from eval
         # decode msgIn
-        pass
+
+        try:
+            eval_output = msgIn
+    
+            if int(eval_output["player_id"]) == 1:
+                currentPlayer = self.player_1
+            elif int(eval_output["player_id"]) == 2:
+                currentPlayer = self.player_2
+
+            currentPlayer.action = "none"
+            player1_state = eval_output["game_state"]["p1"]
+            player2_state = eval_output["game_state"]["p2"]
+
+            self.player_1.hp = player1_state["hp"]
+            self.player_1.bullets = player1_state["bullets"]
+            self.player_1.grenades = player1_state["grenades"]
+            self.player_1.shieldHP = player1_state["shield_hp"]
+            self.player_1.death = player1_state["deaths"]
+            self.player_1.shieldCount = player1_state["shields"]
+
+            self.player_2.hp = player2_state["hp"]
+            self.player_2.bullets = player2_state["bullets"]
+            self.player_2.grenades = player2_state["grenades"]
+            self.player_2.shieldHP = player2_state["shield_hp"]
+            self.player_2.death = player2_state["deaths"]
+            self.player_2.shieldCount = player2_state["shields"]
+
+        except Exception as e:
+            print(e)
+            pass
+        except:
+            pass
+
+        return self.convert_to_json(self.player_1, self.player_2)
 
     
 
@@ -60,6 +93,7 @@ class GameLogic:
         elif int(msgIn_arugments[1]) == 3:
             #bullets
             currentPlayer.ammo = msgIn_arugments[2]
+            currentPlayer.action = "gun"
             pass   
         return self.convert_to_json(self.player_1, self.player_2)
 
@@ -128,6 +162,7 @@ class GameLogic:
             currentPlayer.action = "logout"
             pass
         else:
+            currentPlayer.action = "none"
             pass
         pass
         return self.convert_to_json(self.player_1, self.player_2)
