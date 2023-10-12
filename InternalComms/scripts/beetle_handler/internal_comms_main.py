@@ -59,30 +59,31 @@ class Brain:
             self.processes.append(self.recv_from_server_process)
             self.recv_from_server_process.start()
 
-            # Send to IMU Process
-            self.send_to_imu_process = Process(target=self.beetle_jobs.send_to_beetle_job, 
-                                                args=(self.node_to_imu,))
-            self.processes.append(self.send_to_imu_process)
-            self.send_to_imu_process.start()
-
-             # Send to IR Process
-            self.send_to_ir_process = Process(target=self.beetle_jobs.send_to_beetle_job, 
-                                                args=(self.node_to_ir,))
-            self.processes.append(self.send_to_ir_process)
-            self.send_to_ir_process.start()
-
-            # TODO: Format the data into required format + str
             # Receive from IMU Process
             beetle_1 = Beetle(BEETLE3_MAC, beetle_id=1)
-            process_1 = Process(target=beetle_1.initiate_program, args=(self.node_to_server,))
+            process_1 = Process(target=beetle_1.initiate_program, args=(self.node_to_server, self.node_to_imu))
             self.processes.append(process_1)
             process_1.start()
 
             # Receive from IR Process
             beetle_2 = Beetle(BEETLE2_MAC, beetle_id=2)
-            process_2 = Process(target=beetle_2.initiate_program, args=(self.node_to_server,))
+            process_2 = Process(target=beetle_2.initiate_program, args=(self.node_to_server, self.node_to_ir))
             self.processes.append(process_2)
             process_2.start()
+
+            # # Send to IMU Process
+            # self.send_to_imu_process = Process(target=self.beetle_jobs.send_to_beetle_job, 
+            #                                     args=(self.node_to_imu, beetle_1))
+            # self.processes.append(self.send_to_imu_process)
+            # self.send_to_imu_process.start()
+
+            #  # Send to IR Process
+            # self.send_to_ir_process = Process(target=self.beetle_jobs.send_to_beetle_job, 
+            #                                     args=(self.node_to_ir, beetle_2))
+            # self.processes.append(self.send_to_ir_process)
+            # self.send_to_ir_process.start()
+
+            # TODO: Format the data into required format + str
         
             for p in self.processes:
                 p.join()
