@@ -47,7 +47,7 @@ class RelayServerJobs:
         try:
             msg = await self.relay_server.receive_from_node(conn_socket_num)
             if self.relay_server.is_running:
-                node_to_parser.put()
+                node_to_parser.put(msg)
                 print('Received from relay node: ', msg)
 
         except Exception as e:
@@ -77,11 +77,11 @@ class RelayServerJobs:
             try:
                 # Send dummy message to relay node every 10 s
                 
-                #msg = relay_server_to_node.get()
-                msg = self.get_dummy_packet()
+                msg = relay_server_to_node.get()
+                #msg = self.get_dummy_packet()
                 print('Sent to relay node: ', msg)
                 self.relay_server.send_to_node(msg.encode(), conn_socket_num)
-                time.sleep(5)
+
             except Exception as e:
                 print(e, 'got errrr')
                 break

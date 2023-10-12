@@ -25,7 +25,7 @@ class GameEngineJobs:
             else:
                 print('Received from eval server ', msg)
     
-    def gen_action_task(self, relay_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine):
+    def gen_action_task(self, relay_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine, server_to_node):
         while True:
             try:
                 # game engine
@@ -46,9 +46,10 @@ class GameEngineJobs:
                     updated_game_state = self.gameLogic.ai_logic(msgIn, hit_miss)     
                 # game_state_str = json.dumps(updated_game_state)
                 engine_to_eval.put(updated_game_state)
-                time.sleep(2)
+
                 engine_to_vis_gamestate.put(updated_game_state)
-               
+                server_to_node.put(updated_game_state)
+
                 # grab msg queues
                 # if is relay node
                 # run game_engine.relay_logic(msg)
@@ -69,18 +70,15 @@ class GameEngineJobs:
                 break
     
     
-    def game_engine_job(self, eval_to_engine, engine_to_eval, engine_to_vis_gamestate, engine_to_vis_hit, vis_to_engine, action_to_engine):
+    def game_engine_job(self, eval_to_engine, engine_to_eval, engine_to_vis_gamestate, engine_to_vis_hit, vis_to_engine, action_to_engine, server_to_node):
         
         try:
-            process_rcv_from_mqtt = Process(target=self.receive_from_mqtt_task, args=(vis_to_engine,), daemon=True)
-            self.processes.append(process_rcv_from_mqtt)
-            process_rcv_from_mqtt.start()
-
+        
             process_rcv_from_eval = Process(target=self.receive_from_eval_task, args=(eval_to_engine,), daemon=True)
             self.processes.append(process_rcv_from_eval)
             process_rcv_from_eval.start()
 
-            process_gen_action = Process(target=self.gen_action_task, args=(action_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine), daemon=True)
+            process_gen_action = Process(target=self.gen_action_task, args=(action_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine, server_to_node), daemon=True)
             self.processes.append(process_gen_action)
             process_gen_action.start()
             

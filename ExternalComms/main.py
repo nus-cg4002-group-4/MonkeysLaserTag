@@ -58,7 +58,8 @@ class Brain:
                                                     self.game_engine_to_vis_gamestate, 
                                                     self.game_engine_to_vis_hit,
                                                     self.vis_to_game_engine,
-                                                    self.relay_server_to_engine))
+                                                    self.relay_server_to_engine,
+                                                    self.relay_server_to_node))
             self.processes.append(self.game_engine_process)
             self.game_engine_process.start()
 
