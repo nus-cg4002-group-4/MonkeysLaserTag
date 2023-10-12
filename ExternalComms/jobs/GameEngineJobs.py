@@ -25,18 +25,7 @@ class GameEngineJobs:
             else:
                 print('Received from eval server ', msg)
     
-    def receive_from_ai_task(self, action_to_engine):
-        while True:
-            try:
-                action_to_engine.put((1, '1 3'))
-                time.sleep(60)
-                print('put')
-            
-            except Exception as e:
-                print(e)
-                break
-            except e:
-                break
+    
 
     def gen_action_task(self, action_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine, server_to_node):
         while True:
@@ -95,10 +84,6 @@ class GameEngineJobs:
     def game_engine_job(self, eval_to_engine, engine_to_eval, engine_to_vis_gamestate, engine_to_vis_hit, vis_to_engine, action_to_engine, server_to_node):
         
         try:
-            process_rcv_from_ai = Process(target=self.receive_from_ai_task, args=(action_to_engine,), daemon=True)
-            self.processes.append(process_rcv_from_ai)
-            process_rcv_from_ai.start()
-
             process_rcv_from_eval = Process(target=self.receive_from_eval_task, args=(eval_to_engine,), daemon=True)
             self.processes.append(process_rcv_from_eval)
             process_rcv_from_eval.start()

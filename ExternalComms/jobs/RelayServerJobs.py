@@ -6,6 +6,7 @@ import json
 import asyncio
 from helpers.RelayServer import RelayServer
 from helpers.Parser import Parser
+from helpers.Dma import Dma
 
 WINDOW = 80
 REMOVE = 20
@@ -30,6 +31,19 @@ class RelayServerJobs:
                     # DMA stuff
                     count = WINDOW - REMOVE
                     packets[:] = packets[REMOVE:WINDOW + 1]
+            
+            except Exception as e:
+                print(e)
+                break
+            except e:
+                break
+    
+    def receive_from_ai_task(self, relay_server_to_engine):
+        while True:
+            try:
+                relay_server_to_engine.put((1, '1 3'))
+                time.sleep(60)
+                print('put')
             
             except Exception as e:
                 print(e)
@@ -113,6 +127,14 @@ class RelayServerJobs:
         process_parse = Process(target=self.send_from_parser, args=(self.relay_node_to_parser, relay_server_to_engine, relay_server_to_ai), daemon=True)
         self.processes.append(process_parse)
         process_parse.start()
+
+        process_send_to_ai = Process(target=self.send_to_ai_task, args=(relay_server_to_ai,), daemon=True)
+        self.processes.append(process_send_to_ai)
+        process_send_to_ai.start()
+
+        process_rcv_from_ai = Process(target=self.receive_from_ai_task, args=(relay_server_to_engine,), daemon=True)
+        self.processes.append(process_rcv_from_ai)
+        process_rcv_from_ai.start()
 
         while conn_count < 2:
             try:
