@@ -35,7 +35,7 @@ class MainApp:
             wiggle = self.args_dict['expand'][2] - self.args_dict['expand'][1]
             step_size = self.args_dict['expand'][3]
 
-            if start - wiggle < 0 or (start + expand + wiggle) > self.data_df['acc_x'].size or wiggle < 0:
+            if start - wiggle < 0 or (start + expand + wiggle) > self.data_df['ax'].size or wiggle < 0:
                 print('Error: Index out of range.')
                 return
 
@@ -56,7 +56,7 @@ class MainApp:
             size = self.args_dict['trim'][1]
             save_df = pd.DataFrame()
 
-            if start < 0 or (start + size) > self.data_df['acc_x'].size:
+            if start < 0 or (start + size) > self.data_df['ax'].size:
                 print('Error: Index out of range.')
                 return
             
@@ -69,25 +69,26 @@ class MainApp:
             return
         
         numeric_cols = self.data_df.select_dtypes(include=[np.number]).columns
-        mod_df = self.data_df[numeric_cols].apply(signal.detrend)
-        mod_df = mod_df[numeric_cols].apply(zscore)
-        self.data_df.drop(labels=numeric_cols, axis="columns", inplace=True)
-        self.data_df[numeric_cols] = mod_df[numeric_cols]
+        # self.data_df[['az']].apply(signal.detrend)
+        #mod_df = self.data_df[numeric_cols].apply(signal.detrend)
+        # mod_df = self.data_df[numeric_cols].apply(zscore)
+        #self.data_df.drop(labels=numeric_cols, axis="columns", inplace=True)
+        #self.data_df[numeric_cols] = mod_df[numeric_cols]
         
-        for i in range(2):
-            self.data_df['acc_x'] = self.data_df['acc_x'].astype('float').cumsum()
-            self.data_df['acc_y'] = self.data_df['acc_y'].astype('float').cumsum()
-            self.data_df['acc_z'] = self.data_df['acc_z'].astype('float').cumsum()
+        for i in range(1):
+            self.data_df['ax'] = self.data_df['ax'].astype('float').cumsum()
+            self.data_df['ay'] = self.data_df['ay'].astype('float').cumsum()
+            self.data_df['az'] = self.data_df['az'].astype('float').cumsum()
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        ax.plot(self.data_df['acc_x'], self.data_df['acc_y'], self.data_df['acc_z'])
+        ax.plot(self.data_df['ax'], self.data_df['ay'], self.data_df['az'])
 
         plt.rc('font', size=8) 
         #ax.text2D(0, 1, self.data_df['id'][0], transform=ax.transAxes)
-        for i in range(self.data_df['acc_x'].size):
+        for i in range(self.data_df['ax'].size):
             if i % 5 == 0:
-                ax.text(self.data_df['acc_x'][i], self.data_df['acc_y'][i], self.data_df['acc_z'][i], i)
+                ax.text(self.data_df['ax'][i], self.data_df['ay'][i], self.data_df['az'][i], i)
         
         plt.show()
     
