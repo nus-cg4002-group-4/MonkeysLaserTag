@@ -7,6 +7,17 @@ from helpers.RelayServer import RelayServer, ClientDisconnectException
 from jobs.RelayServerJobs import RelayServerJobs
 from helpers.Parser import Parser
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 class RelayTest:
     def __init__(self):
         self.relay_server = RelayServer()
@@ -96,7 +107,7 @@ class RelayTest:
                 
                 #msg = relay_server_to_node.get()
                 msg = self.get_dummy_packet()
-                print('Sent to relay node: ', msg)
+                print(f"{bcolors.OKGREEN}'Sent to relay node: {msg}{bcolors.ENDC}")
                 self.relay_server.send_to_node(msg.encode(), conn_socket_num)
                 time.sleep(5)
             except Exception as e:

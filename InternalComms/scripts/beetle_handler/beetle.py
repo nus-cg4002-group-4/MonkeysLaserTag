@@ -377,8 +377,14 @@ class ReadDelegate(btle.DefaultDelegate):
                 self.health = pkt_data.health
 
                 # # TODO: Write data to ssh server
-                # if self.beetle.node_to_server:
-                #     self.beetle.node_to_server.put(asdict(pkt_data))
+                pkt_dict = asdict(pkt_data)
+
+                vest_data = {
+                    key: value for key, value in pkt_dict.items() if key != 'seq_no'
+                }
+    
+                if self.beetle.node_to_server:
+                    self.beetle.node_to_server.put(vest_data) # pkt_id = 2
 
                 print(f"VestPacket received successfully: {pkt_data}")
 
@@ -405,7 +411,7 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 # Convert dict_values to a list and then iterate to create AI_data
                 AI_data = { 
-                    key: value for key, value in pkt_dict.items() if key != 'bullets'
+                    key: value for key, value in pkt_dict.items() if key != 'bullets' or key != 'seq_no'
                 }
 
                 # TODO: Write data to ssh server
@@ -414,7 +420,7 @@ class ReadDelegate(btle.DefaultDelegate):
                     print(AI_data)
                     print({'pkt_id' : 3, 'bullets' : pkt_data.bullets})
                     if self.bullets != pkt_data.bullets:
-                        self.beetle.node_to_server.put({'pkt_id' : 3, 'bullets' : pkt_data.bullets})
+                        self.beetle.node_to_server.put({'pkt_id' : 3, 'bullets' : pkt_data.bullets}) # pkt_id 3
                         self.bullets = pkt_data.bullets
 
             elif (pkt_id == PacketId.GAMESTATE_PKT):
