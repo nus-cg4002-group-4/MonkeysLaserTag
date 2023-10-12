@@ -20,6 +20,7 @@ class RelayServerJobs:
             try:
                 data = node_to_parser.get()
                 data_arr = self.parser.convert_to_arr(data)
+                #print('data_arr', 'data arr')
                 pkt_id, msg = self.parser.decide_dest(data_arr)
                 if pkt_id == 1:
                     # hand
@@ -27,10 +28,10 @@ class RelayServerJobs:
                     continue
                 elif pkt_id == 2:
                     # goggle
-                    relay_server_to_engine.put((0, msg))
+                    relay_server_to_engine.put((pkt_id, msg))
                 elif pkt_id == 3:
                     # bullet
-                    relay_server_to_engine.put((0, msg))
+                    relay_server_to_engine.put((pkt_id, msg))
             
                 print('data arr', data_arr)
             except Exception as e:
@@ -46,8 +47,8 @@ class RelayServerJobs:
         try:
             msg = await self.relay_server.receive_from_node(conn_socket_num)
             if self.relay_server.is_running:
-                node_to_parser.put()
-                print('Received from relay node: ', msg)
+                node_to_parser.put(msg)
+                print('Received from relay node: ', 'msg')
 
         except Exception as e:
             print(e)
@@ -62,13 +63,9 @@ class RelayServerJobs:
             except:
                 break
 
-    def get_dummy_packet(self):
-        packet = {
-            'p1': 2,
-            'dummy': 3
-        }
+    def packet_to_len_str(self, packet):
 
-        p = json.dumps(packet).encode()
+        p = packet.encode()
         return str(len(p)) + '_' + p.decode()
     
     def send_to_relay_node_task(self, conn_socket_num, relay_server_to_node):
@@ -76,11 +73,11 @@ class RelayServerJobs:
             try:
                 # Send dummy message to relay node every 10 s
                 
-                #msg = relay_server_to_node.get()
-                msg = self.get_dummy_packet()
+                msg = relay_server_to_node.get()
+                #msg = self.get_dummy_packet()
                 print('Sent to relay node: ', msg)
-                self.relay_server.send_to_node(msg.encode(), conn_socket_num)
-                time.sleep(5)
+                self.relay_server.send_to_node(self.packet_to_len_str(msg).encode(), conn_socket_num)
+
             except Exception as e:
                 print(e, 'got errrr')
                 break
