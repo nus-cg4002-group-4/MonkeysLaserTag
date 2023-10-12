@@ -1,1 +1,22 @@
-{"playerID":1,"playerHP":50,"playerShieldHP":20,"playerShieldCount":2,"playerAmmos":5,"playerGrenades":2,"gestureID":1,"playerKill":2,"playerDeath":1}
+{
+            'player_id': 1,
+            'action': 'grenade',
+            'game_state': {
+                'p1': {
+                    'hp': 88,
+                    'bullets': 3,
+                    'grenades': 2,
+                    'shield_hp': 3,
+                    'deaths': 0,
+                    'shields': 3
+                },
+                'p2': {
+                    'hp': 88,
+                    'bullets': 3,
+                    'grenades': 2,
+                    'shield_hp': 3,
+                    'deaths': 0,
+                    'shields': 3
+                },
+            }
+        }

@@ -6,7 +6,7 @@ class RelayNode:
     def __init__(self):
         # self.server_host = 'makerslab-fpga-16.d2.comp.nus.edu.sg'
         self.server_host = 'localhost'
-        self.server_port = 26494
+        self.server_port = 26495
         self.server_pw = None
         self.conn_socket = None
         self.connection_count = 0
@@ -80,6 +80,7 @@ class RelayNode:
     def connect_to_server(self):
         self.conn_socket = socket(AF_INET, SOCK_STREAM)
         self.conn_socket.connect((self.server_host, self.server_port))
+
         
     def end_client(self):
         self.is_running = False

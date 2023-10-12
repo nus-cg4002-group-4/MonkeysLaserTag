@@ -6,6 +6,7 @@ from jobs.EvalClientJobs import EvalClientJobs
 from jobs.RelayServerJobs import RelayServerJobs
 from jobs.GameEngineJobs import GameEngineJobs
 from jobs.MqttClientJobs import MqttClientJobs
+from helpers.GameLogic import GameLogic
 
 
 class Brain:
@@ -33,9 +34,12 @@ class Brain:
 
     def start_processes(self):
         try:
+            # Define the game logic instance
+            self.game_logic = GameLogic()
+
             # DEFINE JOBS
             self.relay_server_jobs = RelayServerJobs()
-            self.game_engine_jobs = GameEngineJobs()
+            self.game_engine_jobs = GameEngineJobs(self.game_logic)
             self.eval_client_jobs = EvalClientJobs()
             self.mqtt_client_jobs = MqttClientJobs()
             self.eval_client_jobs.initialize()

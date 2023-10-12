@@ -43,7 +43,7 @@ class GameEngine:
                     enemy = self.player1
                 
                 if int(arguments[1]) == 1:
-                    if currentPlayer.isEnemyDetected(int(arguments[2])) and int(currentPlayer.ammo) > 0:
+                    if currentPlayer.isEnemyDetected(int(arguments[2])) and int(currentPlayer.bullets) > 0:
                         enemy.reduceHP(self.ammoDmg)
                     currentPlayer.shoot()
                 elif int(arguments[1]) == 2:
@@ -64,7 +64,7 @@ class GameEngine:
                 print("Player 1 HP: ", self.player1.hp)
                 print("Player 1 ShieldHP: ", self.player1.shieldHP)
                 print("Player 1 no. of Shield left: ", self.player1.shieldCount)
-                print("Player 1 bullets: ", self.player1.ammo)
+                print("Player 1 bullets: ", self.player1.bullets)
                 print("Player 1 Grenades: ", self.player1.grenades)
                 print("Player 1 kill: ", self.player1.kill)
                 print("Player 1 Deaths: ", self.player1.death)
@@ -74,7 +74,7 @@ class GameEngine:
                 print("Player 2 HP: ", self.player2.hp)
                 print("Player 2 ShieldHP: ", self.player2.shieldHP)
                 print("Player 2 no. of Shield left: ", self.player2.shieldCount)
-                print("Player 2 bullets: ", self.player2.ammo)
+                print("Player 2 bullets: ", self.player2.bullets)
                 print("Player 2 Grenades: ", self.player2.grenades)
                 print("Player 2 kill: ", self.player2.kill)
                 print("Player 2 Deaths: ", self.player2.death)
