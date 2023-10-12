@@ -60,17 +60,15 @@ proc step_failed { step } {
   close $ch
 }
 
+set_msg_config -id {Common 17-41} -limit 10000000
 
 start_step init_design
 set ACTIVE_STEP init_design
 set rc [catch {
   create_msg_db init_design.pb
-  set_param power.BramSDPPropagationFix 1
   set_param chipscope.maxJobs 5
-  set_param power.enableUnconnectedCarry8PinPower 1
-  set_param power.enableCarry8RouteBelPower 1
-  set_param power.enableLutRouteBelPower 1
-  create_project -in_memory -part xczu3eg-sbva484-1-e
+  set_param synth.incrementalSynthesisCache C:/Users/rondayvoo/AppData/Roaming/Xilinx/Vivado/.Xil/Vivado-8908-TUF-RDV/incrSyn
+  create_project -in_memory -part xczu3eg-sbva484-2-i
   set_property design_mode GateLvl [current_fileset]
   set_param project.singleFileAddWarning.threshold 0
   set_property webtalk.parent_dir C:/Xilinx/Vivado/projects/test_adder_2019_1/test_adder_2019_1.cache/wt [current_project]
@@ -86,7 +84,7 @@ set rc [catch {
   add_files C:/Xilinx/Vivado/projects/test_adder_2019_1/test_adder_2019_1.srcs/sources_1/bd/design_1/design_1.bd
   set_param project.isImplRun false
   set_param project.isImplRun true
-  link_design -top design_1_wrapper -part xczu3eg-sbva484-1-e
+  link_design -top design_1_wrapper -part xczu3eg-sbva484-2-i
   set_param project.isImplRun false
   write_hwdef -force -file design_1_wrapper.hwdef
   close_msg_db -file init_design.pb
