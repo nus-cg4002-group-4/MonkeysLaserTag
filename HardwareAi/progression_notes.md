@@ -17,13 +17,14 @@ Enumerations:
 * Hammer
 * Portal
 * Spider
+* Logout
 * Idle/Aiming?
 
 ## CSV
 
 Headers of the CSV file:
 ```csv
-[timestamp],[x_accel],[y_accel],[z_accel],[x_gyro],[y_gyro],[z_gyro],[flex]
+[ax],[ay],[az],[gx],[gy],[gz],[flex]
 ```
 
 Name of CSV file: 
@@ -40,9 +41,11 @@ All filenames should be **unique** and should contain **only one underscore**.
     * Detrend formula for $N$ points:
 $$
 y=mx+c
-$$$$
+$$
+$$
 m = \frac{N\,\Sigma(xy)-\Sigma x\,\Sigma y}{N\,\Sigma(x^2)-(\Sigma x)^2}
-$$$$
+$$
+$$
 c = \frac{\Sigma y - m\,\Sigma x}{N}
 $$
     * Z-score formula:
