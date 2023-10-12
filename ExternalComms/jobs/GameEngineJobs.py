@@ -37,12 +37,6 @@ class GameEngineJobs:
                 break
             except e:
                 break
-    
-
-    def packet_to_len_str(self, packet):
-
-        p = packet.encode()
-        return str(len(p)) + '_' + p.decode()
 
     def gen_action_task(self, action_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine, server_to_node):
         while True:
@@ -71,10 +65,11 @@ class GameEngineJobs:
                     if  id >= 4 and id <= 8 or id == 2: #grenades, and all skill
                         engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
                         hit_miss = vis_to_engine.get()
-                    updated_game_state = self.gameLogic.ai_logic(msgIn, msg)     
+                    updated_game_state = self.gameLogic.ai_logic(msgIn, msg)  
+                
                 engine_to_eval.put(updated_game_state)
                 engine_to_vis_gamestate.put(updated_game_state)
-                server_to_node.put((self.packet_to_len_str(updated_game_state)))
+                server_to_node.put(updated_game_state)
             except Exception as e:
                 print(e)
                 break

@@ -63,13 +63,9 @@ class RelayServerJobs:
             except:
                 break
 
-    def get_dummy_packet(self):
-        packet = {
-            'p1': 2,
-            'dummy': 3
-        }
+    def packet_to_len_str(self, packet):
 
-        p = json.dumps(packet).encode()
+        p = packet.encode()
         return str(len(p)) + '_' + p.decode()
     
     def send_to_relay_node_task(self, conn_socket_num, relay_server_to_node):
@@ -80,7 +76,7 @@ class RelayServerJobs:
                 msg = relay_server_to_node.get()
                 #msg = self.get_dummy_packet()
                 print('Sent to relay node: ', msg)
-                self.relay_server.send_to_node(msg.encode(), conn_socket_num)
+                self.relay_server.send_to_node(self.packet_to_len_str(msg).encode(), conn_socket_num)
 
             except Exception as e:
                 print(e, 'got errrr')
