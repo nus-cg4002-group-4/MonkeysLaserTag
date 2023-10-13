@@ -48,7 +48,7 @@ class GameEngineJobs:
                     #dummy ai input
                     #get message input from AI function format:: "player_id enum"
                     id = int(msg[2])
-                    if  id >= 4 and id <= 8 or id == 2: #grenades, and all skill
+                    if  id >= 3 and id <= 7 or id == 0: #grenades, and all skill
 
                         engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
                         #hit_miss = vis_to_engine.get()

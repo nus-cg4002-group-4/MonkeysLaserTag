@@ -87,7 +87,7 @@ class GameLogic:
         elif msgIn_arugments[0] == 2:
             currentPlayer = self.player_2
 
-        if msgIn_arugments[1] == 1:
+        if msgIn_arugments[1] == 2:
             # packetID 1: hit, health, shield
             currentPlayer.reduceHP(10)
             pass      
@@ -114,14 +114,14 @@ class GameLogic:
             enemyPlayer = self.player_1
             pass
 
-        if args[1] == 0: #none
+        if args[1] == -1: #none
             currentPlayer.action = "none"
             pass
         elif args[1] == 1: #shield
             currentPlayer.action = "shield"
             currentPlayer.shieldActivate()
             pass
-        elif args[1] == 2: #grenade
+        elif args[1] == 0: #grenade
             print("player " + str(currentPlayer.id) + " grenade player " + str(enemyPlayer.id))
             currentPlayer.action = "grenade"
             if currentPlayer.grenadeThrow():
@@ -129,18 +129,18 @@ class GameLogic:
                     enemyPlayer.reduceHP(self.grenadeDMG)
                 pass
             pass
-        elif args[1] == 3: #reload
+        elif args[1] == 2: #reload
             print("player " + str(currentPlayer.id) + " reload")
             currentPlayer.action = "reload"
             currentPlayer.reload()
             pass
-        elif args[1] == 4: #web
+        elif args[1] == 7: #web
             print("player 2 activate skill")
             currentPlayer.action = "web"
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
-        elif args[1] == 5: #portal
+        elif args[1] == 6: #portal
             currentPlayer.action = "portal"
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
@@ -150,17 +150,17 @@ class GameLogic:
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
-        elif args[1] == 7: #hammer
+        elif args[1] == 5: #hammer
             currentPlayer.action = "hammer"
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
-        elif args[1] == 8: #spear
+        elif args[1] == 4: #spear
             currentPlayer.action = "spear"
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
-        elif args[1] == 9: #logout
+        elif args[1] == 8: #logout
             currentPlayer.action = "logout"
             pass
         else:
