@@ -1,5 +1,5 @@
 from pynq import Overlay, allocate
-import sys, os, time
+import sys, os, time, struct
 import numpy as np
 
 cfd = sys.path[0]
@@ -21,7 +21,7 @@ for file in os.listdir(dir):
 
         start_time = time.time()
         in_buffer = allocate(shape=(560,), dtype=np.float32)
-        out_buffer = allocate(shape=(1,), dtype=np.int32)
+        out_buffer = allocate(shape=(2,), dtype=np.int32)
         in_buffer[:] = np.array(data).astype(np.float32)
 
         dma.sendchannel.transfer(in_buffer)
@@ -29,5 +29,7 @@ for file in os.listdir(dir):
         dma.recvchannel.transfer(out_buffer)
         dma.recvchannel.wait()
         end_time = time.time()
-        print('Output:', out_buffer)
+        
+        print('Output:', out_buffer[0])
+        print('Certainty:', struct.unpack('f', struct.pack('i', out_buffer[1])))
         print('Time taken:', end_time - start_time)
