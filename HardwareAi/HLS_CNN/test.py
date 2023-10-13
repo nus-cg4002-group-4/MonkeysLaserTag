@@ -1,5 +1,5 @@
 from pynq import Overlay, allocate
-import sys, os, re, time
+import sys, os, time
 import numpy as np
 
 cfd = sys.path[0]
