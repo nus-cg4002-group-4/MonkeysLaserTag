@@ -1,7 +1,7 @@
 # Data collection
 
-* Sample rate: 20 Hz
-* Window size: 40 samples (2s)
+* Sample rate: 40 Hz
+* Window size: 80 samples (2s)
 * Stride: ?? (some groups have 10 samples/0.5s)
 
 Rate of data output = ?? (Once every 10 samples/0.5s if above stride is taken)
@@ -26,14 +26,6 @@ Headers of the CSV file:
 ```csv
 [ax],[ay],[az],[gx],[gy],[gz],[flex]
 ```
-
-Name of CSV file: 
-```
-[activity]_[name of person]_[id].csv
-```
-For example `punch_darren_1.csv` and `spear_weida_54.csv`. 
-
-All filenames should be **unique** and should contain **only one underscore**.
 
 # Preprocessing
 
@@ -126,12 +118,14 @@ $$
 
 Maybe send several windows over and confirm if all windows return the same output?
 
+**Idea**: Use two neural networks, one to check if window is a move and the second for move idenification
+
 # Porting to HLS
 
 https://www.youtube.com/watch?v=EjjzIimyiM0
 
 Quantization-aware training
-xczu3eg-sbva484-1-i with 150MHz clock
+xczu3eg-sbva484-2-i with 150MHz clock
 
 ## Working With HLS
 
@@ -139,4 +133,6 @@ Apparently Vivado 2022.2 cannot synthesize/has bugs with AXI stream, so switched
 
 Initially values were integrated as part of BRAM, but Vivado 2019.1 takes extremely long time to synthesize (around 10 hours), and there is not enough area for implementation. 
 
-Switched to loading values into IP using AXI stream, synthesis now takes 10 mins, enough area for implementation.
+~~Switched to loading values into IP using AXI stream, synthesis now takes 10 mins, enough area for implementation.~~
+
+Bad idea, nightmare to initialize. Reduce network size to fit onto FPGA.
