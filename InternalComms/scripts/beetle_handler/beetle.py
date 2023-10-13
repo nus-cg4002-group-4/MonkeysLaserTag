@@ -136,14 +136,18 @@ class Beetle():
                 fn() # execute fn
 
     def try_writing_to_beetle(self, data: str):
-        print(self.handshake_complete)
         if self.handshake_complete:
             getDict = json.loads(data)
 
             # "{\"player_id\": 1, \"action\": \"reload\", \"game_state\": {\"p1\": {\"hp\": 100, \"bullets\": 6, \"grenades\": 2, \"shield_hp\": 0, \"deaths\": 0, \"shields\": 3}, \"p2\": {\"hp\": 100, \"bullets\": 6, \"grenades\": 2, \"shield_hp\": 0, \"deaths\": 0, \"shields\": 3}}}"
+            
             print("getDict action: ", getDict['action'])
-            if getDict['action'] == 'reload' and self.beetle.delegate.bullets == 0:
+
+            if self.beetle_id == 1 and getDict['action'] == 'reload' and self.beetle.delegate.bullets == 0:
                 self.send_reload()
+            elif self.beetle_id == 2:
+                self.send_shield(getDict['gamestate']['p1']['shield_hp'])
+                self.send_health(getDict['gamestate']['p1']['hp'])
     
     # def try_writing_to_beetle(self):
     #     self.on_keypress("h", self.send_health)
@@ -155,17 +159,13 @@ class Beetle():
         self.characteristic.write(bytes('r', "utf-8"))
         self.sent_reload = True
     
-    def send_shield(self): # simulate gamestate update
-        # Simulate obtaining a value from queue
-        value = 0
+    def send_shield(self, value): # simulate gamestate update
         # Invoke gamestate to receive data for gamestate in beetle
         self.emit_gamestate(type=SHIELD, value=value)
         self.ack_shield_value = value
         self.sent_shield = True
 
-    def send_health(self): # simulate gamestate update
-        # Simulate obtaining a value from queue
-        value = 0
+    def send_health(self, value): # simulate gamestate update
         # Invoke gamestate to receive data for gamestate in beetle
         self.emit_gamestate(type=HEALTH, value=value)
         self.ack_health_value = value
@@ -182,7 +182,7 @@ class Beetle():
 
     def initiate_program(self, 
                          node_to_server: Queue,
-                         node_to_imu: Queue
+                         node_from_server: Queue
                          #stats_queue: Queue
                          ):
         """Main function to run the program."""
@@ -257,8 +257,8 @@ class Beetle():
                 if self.handshake_complete:
 
                     # Attempt to event to beetle
-                    if not node_to_imu.empty():
-                        data = node_to_imu.get()
+                    if not node_from_server.empty():
+                        data = node_from_server.get()
                         self.try_writing_to_beetle(data)
 
                     # Simulate if shield, health or reload is not updated properly
