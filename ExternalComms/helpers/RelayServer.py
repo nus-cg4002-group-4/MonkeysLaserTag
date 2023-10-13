@@ -10,10 +10,8 @@ class ClientDisconnectException(Exception):
 class RelayServer:
     def __init__(self):
         self.server_name = ''
-        self.port1 = 26496
+        self.port1 = 26497
         self.port2 = 26590
-        self.conn_socket1 = None
-        self.conn_socket2 = None
         self.connection_count = 0
         self.is_running = True
         self.timeout = 60
@@ -42,7 +40,6 @@ class RelayServer:
                         data += _d
                     if len(data) == 0:
                         print('recv_text: relay client disconnected')
-                        self.re_accept_connection(0)
                         raise ClientDisconnectException
                         break
                     data = data.decode("utf-8")
@@ -59,7 +56,6 @@ class RelayServer:
                         data += _d
                     if len(data) == 0:
                         print('recv_text: relay client disconnected')
-                        self.re_accept_connection(0)
                         raise ClientDisconnectException
                         break
                     text_received = data.decode("utf8")  # Decode raw bytes to UTF-8
@@ -67,7 +63,6 @@ class RelayServer:
                     break
             except ConnectionResetError:
                 print('recv_text: Connection Reset for relay')
-                self.re_accept_connection(0)
                 raise ClientDisconnectException
             except asyncio.TimeoutError:
                 print('recv_text: Timeout while receiving data from relay')
@@ -114,10 +109,6 @@ class RelayServer:
         conn_socket, client_addr2 = server_socket.accept()
         self.conn_sockets[socket_num] = conn_socket
         self.is_conncted[socket_num] = True
-        if socket_num == 0:
-            self.conn_socket1 = conn_socket
-        else:
-            self.conn_socket2 = conn_socket
         print('reconnected')
         return conn_socket
     

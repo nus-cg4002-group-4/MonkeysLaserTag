@@ -25,56 +25,38 @@ class GameEngineJobs:
             else:
                 print('Received from eval server ', msg)
     
-    def receive_from_ai_task(self, action_to_engine):
-        while True:
-            try:
-                action_to_engine.put((1, '1 3'))
-                time.sleep(5)
-                print('put')
-            
-            except Exception as e:
-                print(e)
-                break
-            except e:
-                break
     
-
-    def packet_to_len_str(self, packet):
-
-        p = packet.encode()
-        return str(len(p)) + '_' + p.decode()
 
     def gen_action_task(self, action_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine, server_to_node):
         while True:
             
             try:
                 # game engine
-                msg, signal = action_to_engine.get()
-                print(msg, 'game engine')
-                if msg == 2:
-                    # relay nodes
-                    #engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
-                    #hit_miss = vis_to_engine.get()
+                signal, msg = action_to_engine.get()
+                hit_miss = '1 1'
+                print(signal, msg, 'game engine')
+                if signal == 2:
+                    # goggle
 
-                    updated_game_state = self.gameLogic.relay_logic(signal)
-                elif msg == 3:
-                    # relay nodes
-                    #engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
-                    #hit_miss = vis_to_engine.get()
+                    updated_game_state = self.gameLogic.relay_logic(msg)
+                elif signal == 3:
+                    # bullet
 
-                    updated_game_state = self.gameLogic.relay_logic(signal)
-                elif msg == 1:
+                    updated_game_state = self.gameLogic.relay_logic(msg)
+                elif signal == 1:
                     # ai nodes
                     #dummy ai input
-                    msgIn = "1 3" #get message input from AI function format:: "player_id enum"
-                    id = int(msgIn[2])
+                    #get message input from AI function format:: "player_id enum"
+                    id = int(msg[2])
                     if  id >= 4 and id <= 8 or id == 2: #grenades, and all skill
+
                         engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
-                        hit_miss = vis_to_engine.get()
-                    updated_game_state = self.gameLogic.ai_logic(msgIn, msg)     
+                        #hit_miss = vis_to_engine.get()
+                    updated_game_state = self.gameLogic.ai_logic(msg, hit_miss)  
+                    print('udpated game state ', updated_game_state)
                 engine_to_eval.put(updated_game_state)
                 engine_to_vis_gamestate.put(updated_game_state)
-                server_to_node.put((self.packet_to_len_str(updated_game_state)))
+                server_to_node.put(updated_game_state)
             except Exception as e:
                 print(e)
                 break
@@ -103,10 +85,6 @@ class GameEngineJobs:
     def game_engine_job(self, eval_to_engine, engine_to_eval, engine_to_vis_gamestate, engine_to_vis_hit, vis_to_engine, action_to_engine, server_to_node):
         
         try:
-            process_rcv_from_ai = Process(target=self.receive_from_ai_task, args=(action_to_engine,), daemon=True)
-            self.processes.append(process_rcv_from_ai)
-            process_rcv_from_ai.start()
-
             process_rcv_from_eval = Process(target=self.receive_from_eval_task, args=(eval_to_engine,), daemon=True)
             self.processes.append(process_rcv_from_eval)
             process_rcv_from_eval.start()

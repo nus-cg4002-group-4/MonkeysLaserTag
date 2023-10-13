@@ -35,7 +35,40 @@ class GameLogic:
     def subscribeFromEval(self, msgIn):
         # msg from eval
         # decode msgIn
-        pass
+
+        try:
+            eval_output = msgIn
+    
+            if int(eval_output["player_id"]) == 1:
+                currentPlayer = self.player_1
+            elif int(eval_output["player_id"]) == 2:
+                currentPlayer = self.player_2
+
+            currentPlayer.action = "none"
+            player1_state = eval_output["game_state"]["p1"]
+            player2_state = eval_output["game_state"]["p2"]
+
+            self.player_1.hp = player1_state["hp"]
+            self.player_1.bullets = player1_state["bullets"]
+            self.player_1.grenades = player1_state["grenades"]
+            self.player_1.shieldHP = player1_state["shield_hp"]
+            self.player_1.death = player1_state["deaths"]
+            self.player_1.shieldCount = player1_state["shields"]
+
+            self.player_2.hp = player2_state["hp"]
+            self.player_2.bullets = player2_state["bullets"]
+            self.player_2.grenades = player2_state["grenades"]
+            self.player_2.shieldHP = player2_state["shield_hp"]
+            self.player_2.death = player2_state["deaths"]
+            self.player_2.shieldCount = player2_state["shields"]
+
+        except Exception as e:
+            print(e)
+            pass
+        except:
+            pass
+
+        return self.convert_to_json(self.player_1, self.player_2)
 
     
 
@@ -45,47 +78,50 @@ class GameLogic:
         # playerID, packetID, hit, health, shield
         # playerID, packetID, bullets
 
-        msgIn_arugments = msgIn.split()
+        msgIn_arugments = list(map(int, msgIn.split()))
+        print(msgIn_arugments)
         
-        if int(msgIn_arugments[0]) == 1:
+        if msgIn_arugments[0] == 1:
             # player 1
             currentPlayer = self.player_1
-        elif int(msgIn_arugments[0]) == 2:
+        elif msgIn_arugments[0] == 2:
             currentPlayer = self.player_2
 
-        if int(msgIn_arugments[1]) == 1:
+        if msgIn_arugments[1] == 1:
             # packetID 1: hit, health, shield
             currentPlayer.reduceHP(10)
             pass      
-        elif int(msgIn_arugments[1]) == 3:
+        elif msgIn_arugments[1] == 3:
             #bullets
-            currentPlayer.ammo = msgIn_arugments[2]
+            currentPlayer.bullets = msgIn_arugments[2]
+            currentPlayer.action = "gun"
             pass   
         return self.convert_to_json(self.player_1, self.player_2)
 
     def ai_logic(self, msgIn, can_see):
         # msgIn "playerId enum"
         # can_see "playerId hit/miss"
-        args = msgIn.split();
-        if (int(args[0]) == 1):
+        args = list(map(int, msgIn.split()))
+        can_see = list(map(int, can_see.split()))
+        if args[0] == 1:
             #player 1
             currentPlayer = self.player_1
             enemyPlayer = self.player_2
             pass
-        elif int(args[0]) == 2:
+        elif args[0] == 2:
             #player 2
             currentPlayer = self.player_2
             enemyPlayer = self.player_1
             pass
 
-        if (int(args[1]) == 0): #none
+        if args[1] == 0: #none
             currentPlayer.action = "none"
             pass
-        elif (int(args[1]) == 1): #shield
+        elif args[1] == 1: #shield
             currentPlayer.action = "shield"
             currentPlayer.shieldActivate()
             pass
-        elif (int(args[1]) == 2): #grenade
+        elif args[1] == 2: #grenade
             print("player " + str(currentPlayer.id) + " grenade player " + str(enemyPlayer.id))
             currentPlayer.action = "grenade"
             if currentPlayer.grenadeThrow():
@@ -93,41 +129,42 @@ class GameLogic:
                     enemyPlayer.reduceHP(self.grenadeDMG)
                 pass
             pass
-        elif (int(args[1]) == 3): #reload
+        elif args[1] == 3: #reload
             print("player " + str(currentPlayer.id) + " reload")
             currentPlayer.action = "reload"
             currentPlayer.reload()
             pass
-        elif (int(args[1]) == 4): #web
+        elif args[1] == 4: #web
             print("player 2 activate skill")
             currentPlayer.action = "web"
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
-        elif (int(args[1]) == 5): #portal
+        elif args[1] == 5: #portal
             currentPlayer.action = "portal"
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
-        elif (int(args[1]) == 6): #punch
+        elif args[1] == 6: #punch
             currentPlayer.action = "punch"
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
-        elif (int(args[1]) == 7): #hammer
+        elif args[1] == 7: #hammer
             currentPlayer.action = "hammer"
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
-        elif (int(args[1]) == 8): #spear
+        elif args[1] == 8: #spear
             currentPlayer.action = "spear"
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             pass
-        elif (int(args[1]) == 9): #logout
+        elif args[1] == 9: #logout
             currentPlayer.action = "logout"
             pass
         else:
+            currentPlayer.action = "none"
             pass
         pass
         return self.convert_to_json(self.player_1, self.player_2)
