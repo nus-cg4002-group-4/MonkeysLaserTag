@@ -54,9 +54,9 @@ class MqttClientJobs:
             self.processes.append(process_send_gamestate)
             process_send_gamestate.start()
 
-            process_send_request = Process(target=self.send_to_vis_hit_task, args=(engine_to_vis_hit,), daemon=True)
-            self.processes.append(process_send_request)
-            process_send_request.start()
+            # process_send_request = Process(target=self.send_to_vis_hit_task, args=(engine_to_vis_hit,), daemon=True)
+            # self.processes.append(process_send_request)
+            # process_send_request.start()
 
             for p in self.processes:
                 p.join()
@@ -73,5 +73,5 @@ class MqttClientJobs:
     def close_job(self):
         self.mqtt_client1.close_client()
         self.mqtt_client2.close_client()
-        self.mqtt_client3.close_client()
+        # self.mqtt_client3.close_client()
         print('Closed Mqtt Connection')

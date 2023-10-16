@@ -20,7 +20,7 @@ class GameEngineJobs:
             try:
                 msg = eval_to_engine.get()
                 updated_game_state = self.gameLogic.subscribeFromEval(msg)
-                engine_to_vis_gamestate.put(updated_game_state)
+                engine_to_vis.put(updated_game_state)
                 server_to_node.put(updated_game_state)
                 
             except:
@@ -55,7 +55,7 @@ class GameEngineJobs:
                     if  id >= 3 and id <= 7 or id == 0: #grenades, and all skill
 
                         print('i sent vis request')
-                        engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
+                        engine_to_vis_gamestate.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
                         #hit_miss = vis_to_engine.get()
                     updated_game_state = self.gameLogic.ai_logic(msg, hit_miss)  
                     print('udpated game state ', updated_game_state)
