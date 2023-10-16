@@ -31,12 +31,12 @@ class RelayServerJobs:
         while True:
             try:
                 
-            #    for file in os.listdir(dir):
-            #        if file.endswith(".in"):
-            #            print('Testing file', file)
-            #            f = open(os.path.join(dir, file), 'r')
-            #            data = f.read().split(',')
-            #            self.dma.send_to_ai(data)
+                for file in os.listdir(dir):
+                    if file.endswith(".in"):
+                        print('Testing file', file)
+                        f = open(os.path.join(dir, file), 'r')
+                        data = f.read().split(',')
+                        self.dma.send_to_ai(data)
                 
                 data_arr = relay_server_to_ai.get()
                 packets.append(data_arr[1:])

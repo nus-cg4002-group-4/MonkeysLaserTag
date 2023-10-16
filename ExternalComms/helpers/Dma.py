@@ -9,7 +9,7 @@ class Dma:
         self.dma = None
     
     def initialize(self):
-        cfd = f'{sys.path[0]}/../HardwareAi/HLS_CNN'
+        cfd = f'{sys.path[0]}/../../../darren/MonkeysLaserTag/HardwareAi/HLS_CNN'
         print('Loading overlay...')
         self.overlay = Overlay(os.path.join(cfd, 'design_1_wrapper.bit'))
         self.dma = self.overlay.axi_dma_0
@@ -37,7 +37,7 @@ class Dma:
         self.dma.recvchannel.transfer(out_buffer)
         self.dma.recvchannel.wait()
         print(out_buffer)
-        certainty = struct.unpack('f', struct.pack('i', out_buffer[0]))[0]
+        certainty = struct.unpack('f', out_buffer[0])[0]
         print(certainty)
 
         return (int(result), float(certainty))
