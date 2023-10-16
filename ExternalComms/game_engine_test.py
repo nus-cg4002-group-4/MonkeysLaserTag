@@ -6,6 +6,9 @@ from helpers.EvalClient import EvalClient
 from helpers.GameLogic import GameLogic
 from multiprocessing.managers import BaseManager
 from helpers.PlayerClass import Player
+import types
+
+class MyManager(BaseManager): pass
 
 class GameEngineJobs:
 
@@ -18,20 +21,31 @@ class GameEngineJobs:
     def __init__(self, game_logic: GameLogic):
         self.processes = []
         self.gameLogic = game_logic
-        BaseManager.register('Player', Player)
-        self.manager = BaseManager()
+        # BaseManager.register('Player', Player)
+        # self.manager = BaseManager()
+        # self.manager.start()
+        MyManager.register('Player', Player)
+        self.manager = MyManager()
         self.manager.start()
-        self.player1 = self.manager.Player()
-        self.player2 = self.manager.Player()
+        self.player1 = self.manager.Player(1)
+        self.player2 = self.manager.Player(2)
+
     
-    def receive_from_eval_task(self, eval_to_engine, engine_to_vis, server_to_node, p1, p2):
+    def receive_from_eval_task(self, p1, p2):
         while True:
             try:
-                msg = eval_to_engine.get()
-                updated_game_state = self.gameLogic.subscribeFromEval(msg, p1, p2)
-                engine_to_vis.put(updated_game_state)
-                server_to_node.put(updated_game_state)
-                
+                time.sleep(10)
+                msg = EvalClient.get_dummy_response_from_eval_str()
+                print(msg, 'msg')
+                one, two, updated_game_state = self.gameLogic.subscribeFromEval(msg, p1, p2)
+                print('received fom eval ', updated_game_state)
+                p1.print()
+                p2.print()
+                one.print()
+                two.print()
+            except Exception as e:
+                print(e)
+                break
             except:
                 break
             else:
@@ -39,12 +53,13 @@ class GameEngineJobs:
     
     
 
-    def gen_action_task(self, action_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine, server_to_node, p1, p2):
+    def gen_action_task(self, p1, p2):
         while True:
             
             try:
                 # game engine
-                signal, msg = action_to_engine.get()
+                signal, msg = (1, '1 5')
+                
                 hit_miss = '1 1'
                 print(signal, msg, 'game engine')
                 if signal == 2:
@@ -64,46 +79,28 @@ class GameEngineJobs:
                     if  id >= 3 and id <= 7 or id == 0: #grenades, and all skill
 
                         print('i sent vis request')
-                        engine_to_vis_gamestate.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
                         #hit_miss = vis_to_engine.get()
+                    print('before update')
+                    p2.print()
                     updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2)  
                     print('udpated game state ', updated_game_state)
-                engine_to_eval.put(updated_game_state)
-                engine_to_vis_gamestate.put(updated_game_state)
-                server_to_node.put(updated_game_state)
+                    print('after update')
+                    p2.print()
+                time.sleep(3)
             except Exception as e:
                 print(e)
                 break
             except:
                 break
-
-            # grab msg queues
-            # if is relay node
-            # run game_engine.relay_logic(msg)
-            # sent gamestate json
-            # else if is PMA (AI Gesture)
-            # run game_engine.ai_logic(msg)
-            # sent gamestate json
-
-            # dummy inputs
-            # signal = relay_to_engine.get()
-            # state = EvalClient.get_dummy_eval_state_json()
-            # state_str = json.dumps(state)
-            # engine_to_eval.put(state_str)
-            # engine_to_vis_gamestate.put(state_str)
-            # if state['action'] == 'grenade':
-            #     engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
-
     
     
-    def game_engine_job(self, eval_to_engine, engine_to_eval, engine_to_vis_gamestate, engine_to_vis_hit, vis_to_engine, action_to_engine, server_to_node):
-        
+    def game_engine_job(self):
         try:
-            process_rcv_from_eval = Process(target=self.receive_from_eval_task, args=(eval_to_engine, engine_to_vis_gamestate, server_to_node, self.player1, self.player2), daemon=True)
+            process_rcv_from_eval = Process(target=self.receive_from_eval_task, args=(self.player1, self.player2), daemon=True)
             self.processes.append(process_rcv_from_eval)
             process_rcv_from_eval.start()
 
-            process_gen_action = Process(target=self.gen_action_task, args=(action_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine, server_to_node, self.player1, self.player2), daemon=True)
+            process_gen_action = Process(target=self.gen_action_task, args=(self.player1, self.player2), daemon=True)
             self.processes.append(process_gen_action)
             process_gen_action.start()
             
@@ -118,6 +115,19 @@ class GameEngineJobs:
             print(e)
         
         return True
+
+gl = GameLogic()
+gej = GameEngineJobs(gl)
+try:
+    proc1 = Process(target=gej.game_engine_job)
+    proc1.start()
+    proc1.join()
+except KeyboardInterrupt:
+    print('Terminating Game Engine Job')
+        
+except Exception as e:
+    print(e)
+
 
     
 

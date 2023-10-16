@@ -73,6 +73,9 @@ class RelayServerJobs:
         recents = [-1] * 3
         while True:
             try:
+                relay_server_to_engine.put((1, '1 3'))
+                time.sleep(7)
+                continue
                 ai_result, certainty = self.dma.recv_from_ai()
                 print(ai_result, ' ',  certainty, ' certainty')
                 if certainty > 0.8 and ai_result != -1:
@@ -121,6 +124,7 @@ class RelayServerJobs:
         # print('recv from relay node')
         # print(conn_socket_num)
         try:
+
             msg = await self.relay_server.receive_from_node(conn_socket_num)
             if self.relay_server.is_running:
                 node_to_parser.put(msg)
