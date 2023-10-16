@@ -45,7 +45,7 @@ class MqttClientJobs:
         try:
             self.mqtt_client1.start_client(on_message_hit_miss)
             self.mqtt_client2.start_client()
-            self.mqtt_client3.start_client()
+            # self.mqtt_client3.start_client()
 
             # Thread for subscription
             self.mqtt_client1.subscribe_to_topic(self.mqtt_client1.hit_miss_topic)
