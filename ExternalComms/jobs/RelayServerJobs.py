@@ -38,24 +38,24 @@ class RelayServerJobs:
             #            data = f.read().split(',')
             #            self.dma.send_to_ai(data)
                 
-                 data_arr = relay_server_to_ai.get()
-                 packets.append(data_arr[1:])
-                 count += 1
+                data_arr = relay_server_to_ai.get()
+                packets.append(data_arr[1:])
+                count += 1
 
-                 if count == WINDOW:
-                     # DMA stuff
-                     print('80 reached')
-                     count = WINDOW - REMOVE
-                     var_threshold = 2.4902001983892765e+17
-                     data_ndarray = np.array(packets)
-                     # Put actual data here
-                     data_var = np.var([s[0] ** 2 + s[1] ** 2 + s[2] ** 2 for s in data_ndarray])
+                if count == WINDOW:
+                        # DMA stuff
+                    print('80 reached')
+                    count = WINDOW - REMOVE
+                    #  var_threshold = 2.4902001983892765e+17
+                    #  data_ndarray = np.array(packets)
+                    #  # Put actual data here
+                    #  data_var = np.var([s[0] ** 2 + s[1] ** 2 + s[2] ** 2 for s in data_ndarray])
 
-                     if data_var > var_threshold:
-                     # Send to FPGA pass
-                     
-                        self.dma.send_to_ai_input_2d(packets)
-                     packets[:] = packets[REMOVE:WINDOW + 1]
+                    #  if data_var > var_threshold:
+                    #  # Send to FPGA pass
+                        
+                    self.dma.send_to_ai_input_2d(packets)
+                    packets[:] = packets[REMOVE:WINDOW + 1]
             
             except Exception as e:
                 print(e)

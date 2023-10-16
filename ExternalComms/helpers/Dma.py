@@ -30,12 +30,12 @@ class Dma:
     def recv_from_ai(self):
         out_buffer = allocate(shape=(1,), dtype=np.int32)
 
-        dma.recvchannel.transfer(out_buffer)
-        dma.recvchannel.wait()
+        self.dma.recvchannel.transfer(out_buffer)
+        self.dma.recvchannel.wait()
         result = out_buffer[0]
 
-        dma.recvchannel.transfer(out_buffer)
-        dma.recvchannel.wait()
+        self.dma.recvchannel.transfer(out_buffer)
+        self.dma.recvchannel.wait()
         certainty = struct.unpack('f', struct.pack('i', out_buffer[0]))[0]
 
         return (int(result), float(certainty))
