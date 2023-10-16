@@ -31,12 +31,12 @@ class RelayServerJobs:
         while True:
             try:
                 
-                for file in os.listdir(dir):
-                    if file.endswith(".in"):
-                        print('Testing file', file)
-                        f = open(os.path.join(dir, file), 'r')
-                        data = f.read().split(',')
-                        self.dma.send_to_ai(data)
+                # for file in os.listdir(dir):
+                #     if file.endswith(".in"):
+                #         print('Testing file', file)
+                #         f = open(os.path.join(dir, file), 'r')
+                #         data = f.read().split(',')
+                #         self.dma.send_to_ai(data)
                 
                 data_arr = relay_server_to_ai.get()
                 packets.append(data_arr[1:])
@@ -46,15 +46,25 @@ class RelayServerJobs:
                         # DMA stuff
                     print('80 reached')
                     count = WINDOW - REMOVE
-                    #  var_threshold = 2.4902001983892765e+17
-                    #  data_ndarray = np.array(packets)
-                    #  # Put actual data here
-                    #  data_var = np.var([s[0] ** 2 + s[1] ** 2 + s[2] ** 2 for s in data_ndarray])
-
-                    #  if data_var > var_threshold:
-                    #  # Send to FPGA pass
-                        
-                    self.dma.send_to_ai_input_2d(packets)
+                    var_threshold = 2.4902001983892765e+17
+                    data_ndarray = np.array(packets)
+                    # Put actual data here
+                    data_var = np.var([s[0] ** 2 + s[1] ** 2 + s[2] ** 2 for s in data_ndarray])
+ 
+                    mean_threshold = 814047927.2074074 
+                    var_threshold = 2.4902001983892765e+17 
+                    data_ndarray = np.array(data_arr)# Put actual data here 
+                    # Uncomment for mean threshold 
+                    data_mean = np.mean([s[0] ** 2 + s[1] ** 2 + s[2] ** 2 for s in data_ndarray]) # 
+                    if data_mean > mean_threshold: # 
+                        print('sent to ai')
+                        self.dma.send_to_ai_input_2d(packets)
+                    
+                    # Send to FPGA # pass
+                     # Uncomment for var threshold 
+                    # data_var = np.var([s[0] 2 + s[1] 2 + s[2] 2 for s in data_ndarray]) 
+                    # if data_var > var_threshold: # # 
+                    #Send to FPGA # pass
                     packets[:] = packets[REMOVE:WINDOW + 1]
             
             except Exception as e:
