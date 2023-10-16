@@ -56,6 +56,8 @@ class RelayServerJobs:
                     except queue.Empty:
                         print('now empty queue.')
 
+                    count = 0
+
                     # Send to FPGA # pass
                     # Uncomment for var threshold 
                     # data_var = np.var([s[0] 2 + s[1] 2 + s[2] 2 for s in data_ndarray]) 

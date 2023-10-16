@@ -23,7 +23,9 @@ class Dma:
     
     def send_to_ai_input_2d(self, data):
         in_buffer = allocate(shape=(560,), dtype=np.float32)
-        in_buffer[:] = np.array(data).astype(np.float32).flatten()
+        asfloat = lambda i: float(i + 2**15) / 2**15 - 1.0
+        inp = np.vectorize(asfloat)(data)
+        in_buffer[:] = np.array(inp).astype(np.float32).flatten()
         self.dma.sendchannel.transfer(in_buffer)
         self.dma.sendchannel.wait()
 
