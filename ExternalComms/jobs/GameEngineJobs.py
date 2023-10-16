@@ -15,11 +15,14 @@ class GameEngineJobs:
         self.processes = []
         self.gameLogic = game_logic
     
-    def receive_from_eval_task(self, eval_to_engine):
+    def receive_from_eval_task(self, eval_to_engine, engine_to_vis, server_to_node):
         while True:
             try:
                 msg = eval_to_engine.get()
-                self.gameLogic.subscribeFromEval(msg)
+                updated_game_state = self.gameLogic.subscribeFromEval(msg)
+                engine_to_vis_gamestate.put(updated_game_state)
+                server_to_node.put(updated_game_state)
+                
             except:
                 break
             else:
@@ -48,8 +51,10 @@ class GameEngineJobs:
                     #dummy ai input
                     #get message input from AI function format:: "player_id enum"
                     id = int(msg[2])
-                    if  id >= 4 and id <= 8 or id == 2: #grenades, and all skill
+                    print('id was ', id)
+                    if  id >= 3 and id <= 7 or id == 0: #grenades, and all skill
 
+                        print('i sent vis request')
                         engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
                         #hit_miss = vis_to_engine.get()
                     updated_game_state = self.gameLogic.ai_logic(msg, hit_miss)  
@@ -85,7 +90,7 @@ class GameEngineJobs:
     def game_engine_job(self, eval_to_engine, engine_to_eval, engine_to_vis_gamestate, engine_to_vis_hit, vis_to_engine, action_to_engine, server_to_node):
         
         try:
-            process_rcv_from_eval = Process(target=self.receive_from_eval_task, args=(eval_to_engine,), daemon=True)
+            process_rcv_from_eval = Process(target=self.receive_from_eval_task, args=(eval_to_engine, engine_to_vis_gamestate, server_to_node), daemon=True)
             self.processes.append(process_rcv_from_eval)
             process_rcv_from_eval.start()
 

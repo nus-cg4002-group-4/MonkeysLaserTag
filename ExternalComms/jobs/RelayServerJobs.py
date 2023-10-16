@@ -30,22 +30,32 @@ class RelayServerJobs:
         count = 0
         while True:
             try:
-                for file in os.listdir(dir):
-                    if file.endswith(".in"):
-                        print('Testing file', file)
-                        f = open(os.path.join(dir, file), 'r')
-                        data = f.read().split(',')
-                        self.dma.send_to_ai(data)
-                # data_arr = relay_server_to_ai.get()
-                # packets.append(data_arr)
-                # count += 1
+                
+               # for file in os.listdir(dir):
+                #    if file.endswith(".in"):
+                 #       print('Testing file', file)
+                  #      f = open(os.path.join(dir, file), 'r')
+                   #     data = f.read().split(',')
+                    #    self.dma.send_to_ai(data)
+                
+                 data_arr = relay_server_to_ai.get()
+                 packets.append(data_arr[1:])
+                 count += 1
 
-                # if count == WINDOW:
-                #     # DMA stuff
-                #     count = WINDOW - REMOVE
-                #     
-                #     #self.dma.send_to_ai_input_2d(n)
-                #     packets[:] = packets[REMOVE:WINDOW + 1]
+                 if count == WINDOW:
+                     # DMA stuff
+                     print('80 reached')
+                     count = WINDOW - REMOVE
+                     var_threshold = 2.4902001983892765e+17
+                     data_ndarray = np.array(packets)
+                     # Put actual data here
+                     data_var = np.var([s[0] ** 2 + s[1] ** 2 + s[2] ** 2 for s in data_ndarray])
+
+                     if data_var > var_threshold:
+                     # Send to FPGA pass
+                     
+                        self.dma.send_to_ai_input_2d(packets)
+                     packets[:] = packets[REMOVE:WINDOW + 1]
             
             except Exception as e:
                 print(e)
@@ -54,10 +64,16 @@ class RelayServerJobs:
                 break
     
     def receive_from_ai_task(self, relay_server_to_engine):
+        recents = [-1] * 3
         while True:
             try:
                 ai_result = self.dma.recv_from_ai()
-                relay_server_to_engine.put((1, '1 ' + str(ai_result)))
+                if ai_result == recents[1] and ai_result == recents[2]:
+                    print('ai result', ai_result)
+                    if ai_result != -1:
+                        relay_server_to_engine.put((1, '1 ' + str(ai_result)))
+                recents.pop(0)
+                recents.append(ai_result)
                 # relay_server_to_engine.put((1, '1 3'))
                 # time.sleep(60)
                 # print('put')
@@ -103,7 +119,7 @@ class RelayServerJobs:
             msg = await self.relay_server.receive_from_node(conn_socket_num)
             if self.relay_server.is_running:
                 node_to_parser.put(msg)
-                #print('Received from relay node: ', 'msg')
+                #print('Received from relay node: ', msg)
         except ClientDisconnectException:
             is_connected.value = 0
             new_socket = self.relay_server.re_accept_connection(0)
@@ -116,7 +132,7 @@ class RelayServerJobs:
     def receive_from_relay_node_task(self, conn_socket_num, action_to_engine, is_connected, client_socket_update):
         while self.relay_server.is_running:
             try:
-                asyncio.run(self.receive_from_relay_node(conn_socket_num, action_to_engine, client_socket_update))
+                asyncio.run(self.receive_from_relay_node(conn_socket_num, action_to_engine, is_connected, client_socket_update))
             except Exception as e:
                 print(e)
                 break
