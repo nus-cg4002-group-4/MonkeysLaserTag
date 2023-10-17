@@ -54,7 +54,7 @@ class EvalClientJobs:
             try:
                 asyncio.run(self.eval_client_task(eval_client_to_server, eval_client_to_game_engine))
             except Exception as e:
-                print(e)
+                print(e, 'error at eval client')
             except:
                 break
             

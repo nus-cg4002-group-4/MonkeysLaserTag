@@ -65,6 +65,7 @@ class GameLogic:
 
         msgIn_arugments = list(map(int, msgIn.split()))
         print(msgIn_arugments)
+        is_shoot = False
         
         if msgIn_arugments[0] == 1:
             # player 1
@@ -83,7 +84,7 @@ class GameLogic:
             is_shoot = currentPlayer.shoot()
             currentPlayer.set_action("gun")
             pass   
-        return self.convert_to_json(player_1, player_2)
+        return is_shoot, self.convert_to_json(player_1, player_2)
 
     def ai_logic(self, msgIn, can_see, player_1, player_2):
         # msgIn "playerId enum"
@@ -108,7 +109,7 @@ class GameLogic:
             currentPlayer.shieldActivate()
             
         elif args[1] == 0: #grenade
-            print("player " + str(currentPlayer.id) + " grenade player " + str(enemyPlayer.id))
+            print("player " + str(currentPlayer.get_id()) + " grenade player " + str(enemyPlayer.get_id()))
             currentPlayer.set_action("grenade")
             if currentPlayer.grenadeThrow():
                 if can_see[1]:
@@ -116,7 +117,7 @@ class GameLogic:
 
             
         elif args[1] == 2: #reload
-            print("player " + str(currentPlayer.id) + " reload")
+            print("player " + str(currentPlayer.get_id()) + " reload")
             currentPlayer.set_action("reload")
             currentPlayer.reload()
             

@@ -48,8 +48,9 @@ class GameEngineJobs:
         while True:
             
             try:
+                time.sleep(10)
                 # game engine
-                signal, msg = (1, '1 ' + str(random.choice([7, 6, 3, 5, 4])))
+                signal, msg = (1, '1 ' + str(random.choice([7, 6, 3, 5, 4, 0])))
                 #signal, msg = action_to_engine.get()
                 hit_miss = '1 1'
                 if signal == 2:
@@ -69,11 +70,14 @@ class GameEngineJobs:
                     id = int(msg[2])
                     print('id was ', id)
                     if  id >= 3 and id <= 7 or id == 0: #grenades, and all skill
+                        
                         print('i sent vis request')
                         engine_to_vis_gamestate.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
-                        hit_miss = vis_to_engine.get()
-                        hit_miss = hit_miss[2:-1]
-                        print(hit_miss)
+                        #hit_miss = vis_to_engine.get()
+                        
+                        #print(hit_miss)
+                        #hit_miss = hit_miss[2:-1] if len(hit_miss) > 3 else '1 1'
+                        #print(hit_miss)
 
                     updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2)  
                 
@@ -81,9 +85,9 @@ class GameEngineJobs:
                 engine_to_eval.put(updated_game_state)
                 engine_to_vis_gamestate.put(updated_game_state)
                 server_to_node.put(updated_game_state)
-                time.sleep(10)
+                
             except Exception as e:
-                print(e)
+                print(e, 'at game engine')
                 break
             except:
                 break
