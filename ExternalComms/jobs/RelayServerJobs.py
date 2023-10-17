@@ -49,7 +49,7 @@ class RelayServerJobs:
                     print('sent to ai')
                     self.dma.send_to_ai_input_2d(packets)
                     packets[:] = []
-                    time.sleep(2)
+                    time.sleep(1)
                     try:
                         while True:
                             relay_server_to_ai.get_nowait()
@@ -58,13 +58,6 @@ class RelayServerJobs:
 
                     count = 0
 
-                    # Send to FPGA # pass
-                    # Uncomment for var threshold 
-                    # data_var = np.var([s[0] 2 + s[1] 2 + s[2] 2 for s in data_ndarray]) 
-                    # if data_var > var_threshold: # # 
-                    # Send to FPGA # pass
-                    # packets[:] = packets[REMOVE:WINDOW + 1]
-            
             except Exception as e:
                 print(e)
                 break

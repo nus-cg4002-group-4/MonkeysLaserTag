@@ -54,7 +54,7 @@ class GameLogic:
             pass
         print('-----------------')
 
-        return player_1, player_2, self.convert_to_json(player_1, player_2)
+        return self.convert_to_json(player_1, player_2)
 
     
 

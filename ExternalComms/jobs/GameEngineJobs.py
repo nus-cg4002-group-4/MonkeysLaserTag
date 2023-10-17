@@ -7,6 +7,8 @@ from helpers.GameLogic import GameLogic
 from multiprocessing.managers import BaseManager
 from helpers.PlayerClass import Player
 
+class MyManager(BaseManager): pass
+
 class GameEngineJobs:
 
     # Attributes
@@ -18,11 +20,11 @@ class GameEngineJobs:
     def __init__(self, game_logic: GameLogic):
         self.processes = []
         self.gameLogic = game_logic
-        BaseManager.register('Player', Player)
-        self.manager = BaseManager()
+        MyManager.register('Player', Player)
+        self.manager = MyManager()
         self.manager.start()
-        self.player1 = self.manager.Player()
-        self.player2 = self.manager.Player()
+        self.player1 = self.manager.Player(1)
+        self.player2 = self.manager.Player(2)
     
     def receive_from_eval_task(self, eval_to_engine, engine_to_vis, server_to_node, p1, p2):
         while True:
@@ -31,7 +33,9 @@ class GameEngineJobs:
                 updated_game_state = self.gameLogic.subscribeFromEval(msg, p1, p2)
                 engine_to_vis.put(updated_game_state)
                 server_to_node.put(updated_game_state)
-                
+            except Exception as e:
+                print(e)
+                break
             except:
                 break
             else:
