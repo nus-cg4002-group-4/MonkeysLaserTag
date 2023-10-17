@@ -19,7 +19,8 @@ class Parser:
             
         elif pkt_id == 2:
             # goggle
-            msg = to_viz + ' '.join(map(str, msg_arr))
+            # TODO: Change for 2 player game
+            msg = '2 ' + ' '.join(map(str, msg_arr))
             
         elif pkt_id == 3:
             # bullet

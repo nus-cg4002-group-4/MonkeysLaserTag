@@ -38,7 +38,7 @@ class RelayServerJobs:
                 #         data = f.read().split(',')
                 #         self.dma.send_to_ai(data)
                 
-                data_arr = relay_server_to_ai.get()
+                data_arr = relay_server_to_ai.get(timeout=20)
                 packets.append(data_arr[1:])
                 count += 1
 
@@ -57,7 +57,10 @@ class RelayServerJobs:
                         print('now empty queue.')
 
                     count = 0
-
+            except queue.Empty:
+                count = 0
+                packets[:] = []
+                print('Discarded relay packets')
             except Exception as e:
                 print(e)
                 break

@@ -69,16 +69,18 @@ class GameLogic:
         if msgIn_arugments[0] == 1:
             # player 1
             currentPlayer = player_1
+            enemyPlayer = player_2
         elif msgIn_arugments[0] == 2:
             currentPlayer = player_2
+            enemyPlayer = player_1
 
-        if msgIn_arugments[1] == 1:
+        if msgIn_arugments[1] == 2:
             # packetID 1: hit, health, shield
             currentPlayer.reduceHP(10)
             pass      
         elif msgIn_arugments[1] == 3:
             #bullets
-            currentPlayer.set_bullets(msgIn_arugments[2])
+            is_shoot = currentPlayer.shoot()
             currentPlayer.set_action("gun")
             pass   
         return self.convert_to_json(player_1, player_2)
