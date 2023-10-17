@@ -78,7 +78,7 @@ struct rightHandDataPacket {
 	int16_t gy; // h
 	int16_t gz; // h
   uint16_t flex; // H
-  uint8_t bullets; // B
+  uint8_t button_press; // B
   uint8_t padding; 
 
 	uint16_t crc; // Assign it to 0 H
@@ -175,7 +175,7 @@ void loop() {
     }
   }
 
-
+  gun_handler();
 }
 
 // Hardware Functions
@@ -185,21 +185,11 @@ void gun_handler()
 {
   int button_read = digitalRead(2);
   if(!button_read && button_prev != button_read) {
-    if (bullets > 0) {
       IrSender.sendNEC(0x00, sCommand, sRepeats);// shoot if button pressed (does not shoot more than once if held)
       digitalWrite(BUZZER_PIN, HIGH);
       delay(10);
       digitalWrite(BUZZER_PIN, LOW);
       bullets -= 1;
-    } else {
-      digitalWrite(BUZZER_PIN, HIGH);
-      delay(10);
-      digitalWrite(BUZZER_PIN, LOW);
-      delay(30);
-      digitalWrite(BUZZER_PIN, HIGH);
-      delay(10);
-      digitalWrite(BUZZER_PIN, LOW);
-    }
   }
   button_prev = button_read;
 }
@@ -249,7 +239,7 @@ void sendRightHandPacket(float ax, float ay, float az, float gx, float gy, float
     pkt.gy = static_cast<int16_t>(gy / gyroDeg * SHRT_MAX);
     pkt.gz = static_cast<int16_t>(gz / gyroDeg * SHRT_MAX);
 
-    pkt.bullets = bullets; // For actual data
+    pkt.button_press = button_prev; // For actual data
     pkt.flex = flex;
     pkt.padding = 0;
     pkt.crc = calculateRightHandCrc16(&pkt);
@@ -295,7 +285,7 @@ uint16_t calculateRightHandCrc16(rightHandDataPacket *pkt) {
     sizeof(pkt->ax) +
     sizeof(pkt->ay) +
     sizeof(pkt->az) +
-    sizeof(pkt->bullets) +
+    sizeof(pkt->button_press) +
     sizeof(pkt->flex)
   );
 }

@@ -1,6 +1,6 @@
 from multiprocessing import Process
 from beetle import Beetle
-from constants import BEETLE_MACS, BEETLE1_MAC, BEETLE2_MAC, BEETLE3_MAC, BEETLE4_MAC_GLOVE
+from constants import BEETLE_MACS, BEETLE1_MAC, BEETLE2_MAC, BEETLE3_MAC, BEETLE4_MAC
 
 if __name__ == "__main__":
 
