@@ -26,19 +26,55 @@ class MqttClientJobs:
                 msg = engine_to_vis.get()
                 print('Sent gamestate to Visualizer: ')
                 self.mqtt_client2.publish_to_topic(self.mqtt_client2.game_state_topic, msg)
+            except Exception as e:
+                print(e)
+                print('Attempt Mqtt re-publish')
+                try:
+                    self.mqtt_client2.close_client()
+                except:
+                    print('Failed to close. Starting new without closing.')
+                self.mqtt_client2 = MqttClient()
+                self.mqtt_client2.start_client()
+                time.sleep(5)
             except:
                 break
+            
+        try:
+            self.mqtt_client2.close_client()
+        except:
+            pass
+        print('Closed Mqtt Publish')
+        
     
-    def send_to_vis_hit_task(self, engine_to_vis):
+    def recv_from_hit_miss_task(self, vis_to_engine):
+        def on_message_hit_miss(client, userdata, msg):
+            vis_to_engine.put(str(msg.payload))
+
         while True:
             try:
-                msg = engine_to_vis.get()
-                print('Sent to Visualizer request: ', msg)
-                self.mqtt_client3.publish_to_topic(self.mqtt_client3.request_topic, msg)
+                self.mqtt_client1.subscribe_to_topic(self.mqtt_client1.hit_miss_topic)
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                print(e)
+                print('Attempt Mqtt re-subscribe')
+                try:
+                    self.mqtt_client1.close_client()
+                except:
+                    print('Failed to close. Starting new without closing.')
+                self.mqtt_client1 = MqttClient()
+                self.mqtt_client1.start_client(on_message_hit_miss)
+                time.sleep(5)
             except:
                 break
+            
+        try:
+            self.mqtt_client1.close_client()
+        except:
+            pass
+        print('Closed Mqtt Subscribe')
     
-    def mqtt_client_job(self, engine_to_vis_gamestate, engine_to_vis_hit, vis_to_engine):
+    def mqtt_client_job(self, engine_to_vis_gamestate, vis_to_engine):
         def on_message_hit_miss(client, userdata, msg):
             vis_to_engine.put(str(msg.payload))
 
@@ -48,8 +84,11 @@ class MqttClientJobs:
             # self.mqtt_client3.start_client()
 
             # Thread for subscription
-            self.mqtt_client1.subscribe_to_topic(self.mqtt_client1.hit_miss_topic)
+            process_recv_hit_miss = Process(target=self.recv_from_hit_miss_task, args=(engine_to_vis_gamestate,), daemon=True)
+            self.processes.append(process_recv_hit_miss)
+            process_recv_hit_miss.start()
 
+            
             process_send_gamestate = Process(target=self.send_to_vis_gamestate_task, args=(engine_to_vis_gamestate,), daemon=True)
             self.processes.append(process_send_gamestate)
             process_send_gamestate.start()
@@ -67,7 +106,7 @@ class MqttClientJobs:
         except KeyboardInterrupt:
             print('Terminating Mqtt Client Job')
         
-        self.close_job()
+        #self.close_job()
         return True
     
     def close_job(self):

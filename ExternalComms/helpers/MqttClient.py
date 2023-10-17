@@ -17,7 +17,7 @@ class MqttClient:
         self.is_subscribed = False
     
     def on_connect(self, client, userdata, flags, rc):
-        print('CONNACK received with code %d.' % (rc))
+        print('\nCONNACK received with code %d.' % (rc))
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
         print("Subscribed: "+str(mid)+" "+str(granted_qos))
@@ -46,7 +46,7 @@ class MqttClient:
     
     def subscribe_to_topic(self, topic):
         self.client.subscribe(topic, qos=0)
-        self.client.loop_start()
+        self.client.loop_forever()
 
     def publish_to_topic(self, topic, msg):
         self.client.publish(topic, msg, qos=0)

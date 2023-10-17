@@ -20,7 +20,6 @@ class Player:
         self.enemyDetected: int = 0
         self.action = "none"
         self.death: int = 0
-        self.kill = 0
     
     def print(self):
         print(f'hp: {self.hp} bullets: {self.bullets} ')
@@ -35,7 +34,6 @@ class Player:
         return detected == 1
 
     def reduceHP(self, dmg):
-        print(self.hp)
         if self.shieldHP > 0:
             remainingShieldHP = self.shieldHP - dmg
             if remainingShieldHP > 0:
