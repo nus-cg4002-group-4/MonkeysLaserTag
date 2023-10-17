@@ -6,6 +6,7 @@ from helpers.EvalClient import EvalClient
 from helpers.GameLogic import GameLogic
 from multiprocessing.managers import BaseManager
 from helpers.PlayerClass import Player
+import random
 
 class MyManager(BaseManager): pass
 
@@ -52,12 +53,14 @@ class GameEngineJobs:
                 hit_miss = '1 1'
                 if signal == 2:
                     # goggle
-
                     updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
                 elif signal == 3:
                     # bullet
 
-                    updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
+                    bullet_game_state = self.gameLogic.relay_logic(msg, p1, p2)
+                    engine_to_vis_gamestate.put(bullet_game_state)
+                    recv_signal, recv_msg = action_to_engine.get()
+                    updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)
                 elif signal == 1:
                     # ai nodes
                     #dummy ai input
@@ -65,20 +68,24 @@ class GameEngineJobs:
                     id = int(msg[2])
                     print('id was ', id)
                     if  id >= 3 and id <= 7 or id == 0: #grenades, and all skill
+                        
                         print('i sent vis request')
                         engine_to_vis_gamestate.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
                         #hit_miss = vis_to_engine.get()
-                        #hit_miss = hit_miss[2:-1]
+                        
+                        #print(hit_miss)
+                        #hit_miss = hit_miss[2:-1] if len(hit_miss) > 3 else '1 1'
                         #print(hit_miss)
 
                     updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2)  
-                    print('udpated game state ', updated_game_state)
+                
+                print('udpated game state ', updated_game_state)
                 engine_to_eval.put(updated_game_state)
                 engine_to_vis_gamestate.put(updated_game_state)
                 server_to_node.put(updated_game_state)
-                time.sleep(10)
+                
             except Exception as e:
-                print(e)
+                print(e, 'at game engine')
                 break
             except:
                 break

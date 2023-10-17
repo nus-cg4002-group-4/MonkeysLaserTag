@@ -38,8 +38,9 @@ class RelayServerJobs:
                 #         data = f.read().split(',')
                 #         self.dma.send_to_ai(data)
                 
-                data_arr = relay_server_to_ai.get()
+                data_arr = relay_server_to_ai.get(timeout=20)
                 packets.append(data_arr[1:])
+
                 count += 1
 
                 if count == WINDOW:
@@ -49,7 +50,7 @@ class RelayServerJobs:
                     print('sent to ai')
                     self.dma.send_to_ai_input_2d(packets)
                     packets[:] = []
-                    time.sleep(1)
+                    time.sleep(2)
                     try:
                         while True:
                             relay_server_to_ai.get_nowait()
@@ -57,7 +58,10 @@ class RelayServerJobs:
                         print('now empty queue.')
 
                     count = 0
-
+            except queue.Empty:
+                count = 0
+                packets[:] = []
+                print('Discarded relay packets')
             except Exception as e:
                 print(e)
                 break
@@ -66,11 +70,23 @@ class RelayServerJobs:
     
     def receive_from_ai_task(self, relay_server_to_engine):
         recents = [-1] * 3
+        actions = {
+                0: 'grenade',
+                1: 'shield',
+                2: 'reload',
+                7: 'web',
+                6: 'portal',
+                3: 'punch',
+                5: 'hammer',
+                4: 'spear',
+                8: 'logout',
+                9: 'raise hand'
+        }
         while True:
             try:
                 ai_result, certainty = self.dma.recv_from_ai()
-                print(ai_result, ' ',  certainty, ' certainty')
-                if certainty > 0.8 and ai_result != -1:
+                print(actions[ai_result], ai_result, ' ',  certainty, ' certainty')
+                if certainty > 0.8 and ai_result != 9:
                     relay_server_to_engine.put((1, '1 ' + str(ai_result)))
                 #recents.pop(0)
                 #recents.append(ai_result)

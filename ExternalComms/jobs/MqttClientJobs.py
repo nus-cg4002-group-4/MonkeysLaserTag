@@ -100,7 +100,7 @@ class MqttClientJobs:
             for p in self.processes:
                 p.join()
         except Exception as e:
-            print(e)
+            print(e, 'at mqtt')
             
 
         except KeyboardInterrupt:
