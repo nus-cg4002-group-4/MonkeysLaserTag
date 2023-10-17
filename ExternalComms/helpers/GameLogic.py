@@ -37,7 +37,6 @@ class GameLogic:
         try:
             eval_output = json.loads(msgIn)
 
-
             player_1.set_action("none")
             player_2.set_action("none")
 
@@ -45,7 +44,7 @@ class GameLogic:
             player2_state = eval_output["p2"]
 
             player_1.set_state(player1_state)
-            player_2.set_state(player2_state)            
+            player_2.set_state(player2_state)    
 
         except Exception as e:
             print(e)
@@ -98,8 +97,7 @@ class GameLogic:
             #player 2
             currentPlayer = player_2
             enemyPlayer = player_1
-            
-
+      
         if args[1] == -1: #none
             currentPlayer.set_action("none")
             

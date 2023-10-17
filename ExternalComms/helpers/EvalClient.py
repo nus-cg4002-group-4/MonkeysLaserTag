@@ -126,7 +126,7 @@ class EvalClient:
     def get_dummy_eval_state_json():
         state = {
             'player_id': 1,
-            'action': random.choice(['grenade']),
+            'action': random.choice(['grenade', 'punch', 'spear', 'web', 'hammer', 'portal', 'shield']),
             'game_state': {
                 'p1': EvalClient.get_dummy_game_state_json(),
                 'p2': EvalClient.get_dummy_game_state_json()
