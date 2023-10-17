@@ -70,11 +70,13 @@ class GameEngineJobs:
                         #hit_miss = vis_to_engine.get()
                         #hit_miss = hit_miss[2:-1]
                         #print(hit_miss)
+
                     updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2)  
                     print('udpated game state ', updated_game_state)
                 engine_to_eval.put(updated_game_state)
                 engine_to_vis_gamestate.put(updated_game_state)
                 server_to_node.put(updated_game_state)
+                time.sleep(10)
             except Exception as e:
                 print(e)
                 break
