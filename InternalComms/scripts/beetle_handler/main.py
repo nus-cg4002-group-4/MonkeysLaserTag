@@ -1,6 +1,6 @@
 from multiprocessing import Process, Queue
 from beetle import Beetle, bcolors
-from constants import BEETLE_MACS, BEETLE1_MAC, BEETLE2_MAC, BEETLE3_MAC
+from constants import BEETLE_MACS, BEETLE1_MAC, BEETLE2_MAC, BEETLE3_MAC, BEETLE4_MAC
 import pandas as pd
 import time
 from tabulate import tabulate
@@ -32,12 +32,18 @@ queue_1 = Queue()
 queue_2 = Queue()
 queue_3 = Queue()
 
+dummy_node_to_vest = Queue()
+
 # beetle_1 = Beetle(BEETLE1_MAC, beetle_id=1)
 # process_1 = Process(target=beetle_1.initiate_program, args=(queue_1,))
 # processes.append(process_1)
 
-beetle_2 = Beetle(BEETLE2_MAC, beetle_id=2)
-process_2 = Process(target=beetle_2.initiate_program, args=(queue_2,))
+# beetle_2 = Beetle(BEETLE2_MAC, beetle_id=2)
+# process_2 = Process(target=beetle_2.initiate_program, args=(queue_2, dummy_node_to_vest))
+# processes.append(process_2)
+
+beetle_2 = Beetle(BEETLE3_MAC, beetle_id=2)
+process_2 = Process(target=beetle_2.initiate_program, args=(queue_2, dummy_node_to_vest))
 processes.append(process_2)
 
 

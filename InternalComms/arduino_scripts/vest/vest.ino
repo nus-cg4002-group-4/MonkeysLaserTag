@@ -341,7 +341,7 @@ void receiver_handler()
 {
   if (IrReceiver.decode()) {
     IrReceiver.resume();
-    hit = true;
+    hit = (IrReceiver.decodedIRData.command == BUL_DMG_CODE);
   }
 }
 
