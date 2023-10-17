@@ -3,7 +3,7 @@ from multiprocessing import Lock, Process, Queue, current_process
 import queue
 
 from jobs.EvalClientJobs import EvalClientJobs
-from jobs.RelayServerJobs import RelayServerJobs
+# from jobs.RelayServerJobs import RelayServerJobs
 from jobs.GameEngineJobs import GameEngineJobs
 from jobs.MqttClientJobs import MqttClientJobs
 from helpers.GameLogic import GameLogic
@@ -39,7 +39,7 @@ class Brain:
             self.game_logic = GameLogic()
 
             # DEFINE JOBS
-            self.relay_server_jobs = RelayServerJobs()
+            # self.relay_server_jobs = RelayServerJobs()
             self.game_engine_jobs = GameEngineJobs(self.game_logic)
             self.mqtt_client_jobs = MqttClientJobs()
             
@@ -66,12 +66,12 @@ class Brain:
 
 
             # Relay Server Process
-            self.relay_server_process = Process(target=self.relay_server_jobs.relay_server_job, 
-                                                args=(self.relay_server_to_engine, 
-                                                    self.relay_server_to_node,
-                                                    self.relay_server_to_ai))
-            self.processes.append(self.relay_server_process)
-            self.relay_server_process.start()
+            # self.relay_server_process = Process(target=self.relay_server_jobs.relay_server_job, 
+            #                                     args=(self.relay_server_to_engine, 
+            #                                         self.relay_server_to_node,
+            #                                         self.relay_server_to_ai))
+            # self.processes.append(self.relay_server_process)
+            # self.relay_server_process.start()
 
 
              # Eval Client Process  
