@@ -16,9 +16,14 @@ import struct
 from tabulate import tabulate
 from multiprocessing import Queue
 import json
+import math
 
 SHIELD = 'k'
 HEALTH = 'l'
+
+AX_THRESHOLD = 200000
+AY_THRESHOLD = 200000
+AZ_THRESHOLD = 200000
 
 class bcolors:
     HEADER = '\033[95m'
@@ -136,14 +141,18 @@ class Beetle():
                 fn() # execute fn
 
     def try_writing_to_beetle(self, data: str):
-        print(self.handshake_complete)
         if self.handshake_complete:
             getDict = json.loads(data)
 
             # "{\"player_id\": 1, \"action\": \"reload\", \"game_state\": {\"p1\": {\"hp\": 100, \"bullets\": 6, \"grenades\": 2, \"shield_hp\": 0, \"deaths\": 0, \"shields\": 3}, \"p2\": {\"hp\": 100, \"bullets\": 6, \"grenades\": 2, \"shield_hp\": 0, \"deaths\": 0, \"shields\": 3}}}"
+            
             print("getDict action: ", getDict['action'])
-            if getDict['action'] == 'reload' and self.beetle.delegate.bullets == 0:
+
+            if self.beetle_id == 1 and getDict['action'] == 'reload' and self.beetle.delegate.bullets == 0:
                 self.send_reload()
+            elif self.beetle_id == 2:
+                self.send_shield(getDict['gamestate']['p1']['shield_hp'])
+                self.send_health(getDict['gamestate']['p1']['hp'])
     
     # def try_writing_to_beetle(self):
     #     self.on_keypress("h", self.send_health)
@@ -155,17 +164,13 @@ class Beetle():
         self.characteristic.write(bytes('r', "utf-8"))
         self.sent_reload = True
     
-    def send_shield(self): # simulate gamestate update
-        # Simulate obtaining a value from queue
-        value = 0
+    def send_shield(self, value): # simulate gamestate update
         # Invoke gamestate to receive data for gamestate in beetle
         self.emit_gamestate(type=SHIELD, value=value)
         self.ack_shield_value = value
         self.sent_shield = True
 
-    def send_health(self): # simulate gamestate update
-        # Simulate obtaining a value from queue
-        value = 0
+    def send_health(self, value): # simulate gamestate update
         # Invoke gamestate to receive data for gamestate in beetle
         self.emit_gamestate(type=HEALTH, value=value)
         self.ack_health_value = value
@@ -182,7 +187,7 @@ class Beetle():
 
     def initiate_program(self, 
                          node_to_server: Queue,
-                         node_to_imu: Queue
+                         node_from_server: Queue
                          #stats_queue: Queue
                          ):
         """Main function to run the program."""
@@ -257,8 +262,8 @@ class Beetle():
                 if self.handshake_complete:
 
                     # Attempt to event to beetle
-                    if not node_to_imu.empty():
-                        data = node_to_imu.get()
+                    if not node_from_server.empty():
+                        data = node_from_server.get()
                         self.try_writing_to_beetle(data)
 
                     # Simulate if shield, health or reload is not updated properly
@@ -330,6 +335,13 @@ class ReadDelegate(btle.DefaultDelegate):
         self.shield = 0
         self.health = 0
 
+        self.prev_button_press = 0
+
+        self.last_10_packets = []
+        self.accel_sums: list(int) = [0, 0, 0] # ax, ay, az
+        self.old_accel_sums = [0, 0, 0]
+        self.send_to_ext = False
+
     def handleNotification(self, cHandle, data):
         if self.total_calls == 0: 
             self.beetle.start_timer = time.time()
@@ -351,7 +363,7 @@ class ReadDelegate(btle.DefaultDelegate):
     def process_packet(self, data):
 
         # Statistics/debugging purposes
-        self.count += 1 # Number of packets processed
+        # self.count += 1 # Number of packets processed
         self.fragmented_count = self.total_calls - self.count # Number of fragmented packets
 
         # print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
@@ -416,10 +428,8 @@ class ReadDelegate(btle.DefaultDelegate):
                 # Resets error count since packet received successfully
                 self.corrupted_packet_counter = 0
 
-                # self.bullets = pkt_data.bullets
-
-                # print(f"{self.beetle.beetle_id}: \
-                #       Right Hand Packet received successfully: {pkt_data}")
+                print(f"{self.beetle.beetle_id}: \
+                      Right Hand Packet received successfully: {pkt_data}")
 
                 # Convert pkt_data to a dictionary
                 pkt_dict = asdict(pkt_data)
@@ -429,15 +439,62 @@ class ReadDelegate(btle.DefaultDelegate):
                     key: value for key, value in pkt_dict.items() if key != 'bullets' and key != 'seq_no'
                 }
 
-                # TODO: Write data to ssh server
+                if self.prev_button_press == 1 and pkt_data.button_press == 0:
+                        self.beetle.node_to_server.put({'pkt_id' : 3, 'button_press' : 1}) # pkt_id 3
+
+                self.prev_button_press = pkt_data.button_press
+
                 if self.beetle.handshake_complete:
-                    self.beetle.node_to_server.put(AI_data) # pkt_id 1
-                    # print(f"AI_data: {AI_data}")
-                    print(pkt_data.bullets)
-                    if self.bullets != pkt_data.bullets:
-                        print(pkt_data.bullets)
-                        self.beetle.node_to_server.put({'pkt_id' : 3, 'bullets' : pkt_data.bullets}) # pkt_id 3
-                        self.bullets = pkt_data.bullets
+
+                    self.last_10_packets.append(pkt_dict)
+
+                    if len(self.last_10_packets) >= 10:
+
+                        for pkt in self.last_10_packets:
+                            self.accel_sums[0] += pkt['ax']
+                            self.accel_sums[1] += pkt['ay']
+                            self.accel_sums[2] += pkt['az']
+                        
+                        # perform comparison
+                        dp = 1
+
+                        # check that the first 10 packets are initialized first
+                        if self.old_accel_sums[0] != 0:
+                            dp = self.normalized_dot_product(self.accel_sums, self.old_accel_sums)
+                            print(dp)
+
+                        if dp < 0.5:
+                            self.send_to_ext = True
+                            print("Sending to ext comms")
+                        #reset
+                        self.old_accel_sums = self.accel_sums
+                        self.accel_sums = [0, 0, 0]
+
+                        # do not reset the 10 packets if sending to ext comms, cos u wanna append it
+                        if not self.send_to_ext:
+                            self.last_10_packets = []
+
+                    if self.send_to_ext:
+
+                        # Append the first 10 packets that is the start of the action
+                        if len(self.last_10_packets) >= 10:
+                            for pkt in self.last_10_packets:
+
+                                prev_10_ai_data = { 
+                                    key: value for key, value in pkt.items() if key != 'bullets' and key != 'seq_no'
+                                }
+                                self.beetle.node_to_server.put(prev_10_ai_data)
+
+                            self.last_10_packets = []
+
+                        self.beetle.node_to_server.put(AI_data) # pkt_id 1
+                        self.count += 1
+
+                        # Append the remaining 70 packets
+                        if (self.count >= 70):
+                            self.send_to_ext = False
+                            self.count = 0
+                            print("Sent 80 packets to ext comms")
 
             elif (pkt_id == PacketId.GAMESTATE_PKT):
                 pass
@@ -499,4 +556,11 @@ class ReadDelegate(btle.DefaultDelegate):
             for field in dataclass_instance.__dataclass_fields__.values()
             if field.name in attribute
         }
+    
+    def normalized_dot_product(self, vec1, vec2):
+        mag1 = math.sqrt(vec1[0]**2 + vec1[1]**2 + vec1[2]**2)
+        mag2 = math.sqrt(vec2[0]**2 + vec2[1]**2 + vec2[2]**2)
+        norm_vec1 = [v/mag1 for v in vec1]
+        norm_vec2 = [v/mag2 for v in vec2]
+        return norm_vec1[0]*norm_vec2[0] + norm_vec1[1]*norm_vec2[1] + norm_vec1[2]*norm_vec2[2]
     

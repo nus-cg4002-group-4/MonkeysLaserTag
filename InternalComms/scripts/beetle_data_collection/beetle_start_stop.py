@@ -10,11 +10,6 @@ from exceptions import DisconnectException, HandshakeException, PacketIDExceptio
 
 import time
 import struct
-import math
-
-AX_THRESHOLD = 200000
-AY_THRESHOLD = 200000
-AZ_THRESHOLD = 200000
 
 class Beetle():
 
@@ -252,13 +247,8 @@ class ReadDelegate(btle.DefaultDelegate):
         self.file_count = 0
         self.timer = 0
 
+        # self.start = False
         self.last_press_time = 0
-
-        self.last_10_packets = []
-        self.accel_sums: list(int) = [0, 0, 0] # ax, ay, az
-        self.old_accel_sums = [0, 0, 0]
-        self.send_to_ext = False
-
 
     def handleNotification(self, cHandle, data):
         
@@ -302,66 +292,45 @@ class ReadDelegate(btle.DefaultDelegate):
                     # pass
                     return
 
-
-                if not self.send_to_ext: self.last_10_packets.append(pkt_data)
-
-                if len(self.last_10_packets) >= 10:
-
-                    for pkt in self.last_10_packets:
-                        self.accel_sums[0] += pkt.ax
-                        self.accel_sums[1] += pkt.ay
-                        self.accel_sums[2] += pkt.az
-
-                    dp = 1
-
-                    if self.old_accel_sums[0] != 0:
-                        dp = self.normalized_dot_product(self.accel_sums, self.old_accel_sums)
-                        print(dp)
-
-                    if dp < 0.5 and self.trigger_record:
-                        self.send_to_ext = True
-                        self.beetle.packet_window = self.last_10_packets
-                        print("Triggered")
-                    
-                    #reset
-                    self.old_accel_sums = self.accel_sums
-                    self.accel_sums = [0, 0, 0]
-                    if not self.send_to_ext:
-                        self.last_10_packets = []
-
-                if not self.trigger_record and pkt_data.bullets == 1: 
+                if pkt_data.bullets == 1 and time.time() - self.last_press_time >= 0.5: 
                     # Assuming bullets == button for recording purposes
-                    print("Action window triggered. Please perform action now.")
-                    self.trigger_record = True
-                    self.count = 0
+                    self.last_press_time = time.time()
 
-                if self.trigger_record and self.send_to_ext:
+                    if not self.trigger_record:
+                        print("Action window triggered. Please perform action now.")
+                        self.trigger_record = True
 
+                    elif self.trigger_record:
+                        print(f"Action saved. Time taken: {time.time()-self.timer}")
+                        self.trigger_record = False
+                        self.start = False
+                        self.file_count += 1
+                        self.count = 0
+                        packets = self.beetle.packet_window
+                        self.beetle.packet_window = []
+                        write_to_csv(packets, self.file_count)
+
+                if pkt_data.bullets == 0 and self.trigger_record:
+                    self.start = True
                     self.count += 1
-                    current_length = len(self.beetle.packet_window)
+                    print(f"Right Hand Packet received successfully: {pkt_data}")
 
-                    # print(f"Right Hand Packet received successfully: {pkt_data}")
-                    if current_length == 10:
+                    if self.count == 1:
                         self.timer = time.time()
-                    
-                    if current_length <= RECORD_PACKETS_LIMIT:
+                    if len(self.beetle.packet_window) <= RECORD_PACKETS_LIMIT:
                         self.beetle.packet_window.append(pkt_data)
-                        print(current_length)
                         # print(f"Packet window length: {len(self.beetle.packet_window)}")
-                        # Record 80 packets into a csv file
-                        if current_length >= RECORD_PACKETS_LIMIT - 1: 
-                            print(f"Action saved. Time taken: {time.time()-self.timer}")
-                            self.last_10_packets = []
-                            self.file_count += 1
-                            self.trigger_record = False
-                            self.count = 0
-                            self.send_to_ext = False
-                            packets = self.beetle.packet_window
-                            self.beetle.packet_window = []
-                            write_to_csv(packets, self.file_count)
+                        # Record 200 packets into a csv file
+                        # if len(self.beetle.packet_window) == RECORD_PACKETS_LIMIT: 
+                            # print(f"Action saved. Time taken: {time.time()-self.timer}")
+                            # self.file_count += 1
+                            # self.trigger_record = False
+                            # self.count = 0
+                            # packets = self.beetle.packet_window
+                            # self.beetle.packet_window = []
+                            # write_to_csv(packets, self.file_count)
 
-                
-
+                # TODO: Write data to ssh server
 
             elif (pkt_id == PacketId.LHAND_PKT):
                 pass
@@ -422,11 +391,5 @@ class ReadDelegate(btle.DefaultDelegate):
             # append an empty data
             self.beetle.packet_window.append(RHandDataPacket(0,0,0,0,0,0,0,0,0,0)) 
     
-    def normalized_dot_product(self, vec1, vec2):
-        mag1 = math.sqrt(vec1[0]**2 + vec1[1]**2 + vec1[2]**2)
-        mag2 = math.sqrt(vec2[0]**2 + vec2[1]**2 + vec2[2]**2)
-        norm_vec1 = [v/mag1 for v in vec1]
-        norm_vec2 = [v/mag2 for v in vec2]
-        return norm_vec1[0]*norm_vec2[0] + norm_vec1[1]*norm_vec2[1] + norm_vec1[2]*norm_vec2[2]
-    
+        
     
