@@ -20,6 +20,10 @@ Enumerations:
 * Logout
 * Idle/Aiming?
 
+Actions which are confused:
+* Grenade and punch
+* Portal and hammer
+
 ## CSV
 
 Headers of the CSV file:
@@ -119,6 +123,9 @@ $$
 Maybe send several windows over and confirm if all windows return the same output?
 
 **Idea**: Use two neural networks, one to check if window is a move and the second for move idenification
+
+Since accelerometer essentially measures forces, take average of 10 vectors and use for calculations between windows
+* $\cos \theta = \frac{A\cdot B}{\lvert A\rvert\lvert B\rvert}$
 
 # Porting to HLS
 
