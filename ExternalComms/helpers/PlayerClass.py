@@ -58,6 +58,8 @@ class Player:
     def shoot(self):
         if (self.bullets > 0):
             self.bullets -= 1
+            return True
+        return False
 
     def grenadeThrow(self):
         if (self.grenades > 0):

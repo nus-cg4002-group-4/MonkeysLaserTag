@@ -48,10 +48,8 @@ class GameEngineJobs:
         while True:
             
             try:
-                time.sleep(10)
                 # game engine
-                signal, msg = (1, '1 ' + str(random.choice([7, 6, 3, 5, 4, 0])))
-                #signal, msg = action_to_engine.get()
+                signal, msg = action_to_engine.get()
                 hit_miss = '1 1'
                 if signal == 2:
                     # goggle

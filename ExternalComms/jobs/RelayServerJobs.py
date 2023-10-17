@@ -48,6 +48,9 @@ class RelayServerJobs:
                     print('80 reached')
                     count = WINDOW - REMOVE
                     print('sent to ai')
+                    print('first and last ')
+                    print(packets[0])
+                    print(packets[79])
                     self.dma.send_to_ai_input_2d(packets)
                     packets[:] = []
                     time.sleep(2)
@@ -86,7 +89,7 @@ class RelayServerJobs:
             try:
                 ai_result, certainty = self.dma.recv_from_ai()
                 print(actions[ai_result], ai_result, ' ',  certainty, ' certainty')
-                if certainty > 0.8 and ai_result != 9:
+                if certainty > 0.8 and ai_result != 9 and ai_result != 8:
                     relay_server_to_engine.put((1, '1 ' + str(ai_result)))
                 #recents.pop(0)
                 #recents.append(ai_result)
@@ -168,7 +171,7 @@ class RelayServerJobs:
                 if is_connected.value:
                     msg = relay_server_to_node.get()
                     #msg = self.get_dummy_packet()
-                    print('Sent to relay node: ', msg)
+                    #print('Sent to relay node: ', msg)
                     self.relay_server.send_to_node(self.packet_to_len_str(msg).encode(), conn_socket_num)
                 else:
                     print('waiting to reconnect')

@@ -68,7 +68,7 @@ class EvalClient:
                             break
                         data += _d
                     if len(data) == 0:
-                        print('recv_text: Eval server disconnected')
+                        print('recv_text: Eval server disconnected with length of', length)
                         self.close_client()
                         break
                     text_received = data.decode("utf8")  # Decode raw bytes to UTF-8
