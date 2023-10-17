@@ -341,6 +341,7 @@ class ReadDelegate(btle.DefaultDelegate):
         self.accel_sums: list(int) = [0, 0, 0] # ax, ay, az
         self.old_accel_sums = [0, 0, 0]
         self.send_to_ext = False
+        self.add_to_queue = False
 
     def handleNotification(self, cHandle, data):
         if self.total_calls == 0: 
@@ -428,19 +429,21 @@ class ReadDelegate(btle.DefaultDelegate):
                 # Resets error count since packet received successfully
                 self.corrupted_packet_counter = 0
 
-                print(f"{self.beetle.beetle_id}: \
-                      Right Hand Packet received successfully: {pkt_data}")
+                # print(f"{self.beetle.beetle_id}: \
+                #       Right Hand Packet received successfully: {pkt_data}")
 
                 # Convert pkt_data to a dictionary
                 pkt_dict = asdict(pkt_data)
 
                 # Convert dict_values to a list and then iterate to create AI_data
                 AI_data = { 
-                    key: value for key, value in pkt_dict.items() if key != 'bullets' and key != 'seq_no'
+                    key: value for key, value in pkt_dict.items() if key != 'button_press' and key != 'seq_no'
                 }
 
-                if self.prev_button_press == 1 and pkt_data.button_press == 0:
-                        self.beetle.node_to_server.put({'pkt_id' : 3, 'button_press' : 1}) # pkt_id 3
+                # print(AI_data)
+
+                # if self.prev_button_press == 1 and pkt_data.button_press == 0:
+                #     self.beetle.node_to_server.put({'pkt_id' : 3, 'button_press' : 1}) # pkt_id 3
 
                 self.prev_button_press = pkt_data.button_press
 
@@ -463,35 +466,38 @@ class ReadDelegate(btle.DefaultDelegate):
                             dp = self.normalized_dot_product(self.accel_sums, self.old_accel_sums)
                             print(dp)
 
-                        if dp < 0.5:
+                        if dp < 0.5 and not self.send_to_ext:
                             self.send_to_ext = True
+                            self.add_to_queue = True
                             print("Sending to ext comms")
                         #reset
                         self.old_accel_sums = self.accel_sums
                         self.accel_sums = [0, 0, 0]
 
                         # do not reset the 10 packets if sending to ext comms, cos u wanna append it
-                        if not self.send_to_ext:
+                        if not self.add_to_queue:
                             self.last_10_packets = []
 
                     if self.send_to_ext:
 
                         # Append the first 10 packets that is the start of the action
-                        if len(self.last_10_packets) >= 10:
+                        if self.add_to_queue:
                             for pkt in self.last_10_packets:
 
                                 prev_10_ai_data = { 
-                                    key: value for key, value in pkt.items() if key != 'bullets' and key != 'seq_no'
+                                    key: value for key, value in pkt.items() if key != 'button_press' and key != 'seq_no'
                                 }
                                 self.beetle.node_to_server.put(prev_10_ai_data)
+                                self.count += 1
+                            self.add_to_queue = False
 
-                            self.last_10_packets = []
+                        print(self.count)
 
                         self.beetle.node_to_server.put(AI_data) # pkt_id 1
                         self.count += 1
 
                         # Append the remaining 70 packets
-                        if (self.count >= 70):
+                        if (self.count >= 80):
                             self.send_to_ext = False
                             self.count = 0
                             print("Sent 80 packets to ext comms")
