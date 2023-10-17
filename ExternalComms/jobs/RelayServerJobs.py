@@ -68,9 +68,6 @@ class RelayServerJobs:
         recents = [-1] * 3
         while True:
             try:
-                relay_server_to_engine.put((1, '1 3'))
-                time.sleep(7)
-                continue
                 ai_result, certainty = self.dma.recv_from_ai()
                 print(ai_result, ' ',  certainty, ' certainty')
                 if certainty > 0.8 and ai_result != -1:

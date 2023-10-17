@@ -50,7 +50,6 @@ class GameEngineJobs:
                 # game engine
                 signal, msg = action_to_engine.get()
                 hit_miss = '1 1'
-                print(signal, msg, 'game engine')
                 if signal == 2:
                     # goggle
 
@@ -66,10 +65,11 @@ class GameEngineJobs:
                     id = int(msg[2])
                     print('id was ', id)
                     if  id >= 3 and id <= 7 or id == 0: #grenades, and all skill
-
                         print('i sent vis request')
                         engine_to_vis_gamestate.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
                         #hit_miss = vis_to_engine.get()
+                        #hit_miss = hit_miss[2:-1]
+                        #print(hit_miss)
                     updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2)  
                     print('udpated game state ', updated_game_state)
                 engine_to_eval.put(updated_game_state)

@@ -96,7 +96,7 @@ class RelayServer:
         conn_socket, client_addr2 = server_socket.accept()
         self.conn_sockets.append(conn_socket)
         self.is_conncted[conn_num] = True
-        print('accep 1')
+        print('\naccep 1')
         self.connection_count += 1
         return conn_socket
         
