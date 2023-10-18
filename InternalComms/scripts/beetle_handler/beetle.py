@@ -149,13 +149,8 @@ class Beetle():
     def try_writing_to_beetle(self, data: str):
         getDict = json.loads(data)
 
-        # "{\"player_id\": 1, \"action\": \"reload\", \"game_state\": {\"p1\": {\"hp\": 100, \"bullets\": 6, \"grenades\": 2, \"shield_hp\": 0, \"deaths\": 0, \"shields\": 3}, \"p2\": {\"hp\": 100, \"bullets\": 6, \"grenades\": 2, \"shield_hp\": 0, \"deaths\": 0, \"shields\": 3}}}"
         
         print("getDict action: ", getDict['action'])
-
-
-        # if self.beetle_id == 1 and getDict['action'] == 'reload' and self.beetle.delegate.bullets == 0:
-        #     self.send_reload()
 
         health = int(getDict['game_state']['p2']['hp'])
         shield = int(getDict['game_state']['p2']['shield_hp'])
@@ -163,8 +158,8 @@ class Beetle():
         print("Received health: ", health)
         print("Received shield: ", shield)
 
-        self.send_shield(shield)
-        self.send_health(health)
+        #self.send_shield(shield)
+        self.send_health(str(health)[0]) # send the first digit of the number
     
     # def try_writing_to_beetle(self):
     #     self.on_keypress("h", self.send_health)
@@ -190,7 +185,7 @@ class Beetle():
         self.sent_health = True
 
     def emit_gamestate(self, type, value):
-        self.characteristic.write(bytes(f'g', "utf-8"))
+        self.characteristic.write(bytes('g', "utf-8"))
         self.characteristic.write(bytes(str(type), "utf-8"))
         self.characteristic.write(bytes(str(value), "utf-8"))
         self.ack_gamestate_timer = time.time()
@@ -219,7 +214,7 @@ class Beetle():
 
         # Used for acknowledgements
         self.ack_gamestate_timer = time.time()
-
+        flag = True
         while True:
 
             current_time = time.time()
@@ -275,20 +270,20 @@ class Beetle():
                 if self.handshake_complete:
 
                     # Attempt to event to beetle
+                    # item = node_from_server.get_nowait()
                     if not node_from_server.empty():
                         data = node_from_server.get()
                         self.try_writing_to_beetle(data)
 
-                    # self.on_keypress("h", self.send_health)
-                    # self.on_keypress("j", self.send_shield)
-                    if keyboard.is_pressed("h"):
-                        getDict = {"player_id": 1, "action": "gun", "game_state": {"p1": {"hp": 100, "bullets": 0, "grenades": 2, "shield_hp": 0, "deaths": 0, "shields": 3}, "p2": {"hp": 90, "bullets": 6, "grenades": 2, "shield_hp": 0, "deaths": 1, "shields": 3}}}
+                    if keyboard.is_pressed("h") and flag and self.beetle_id == 2:
+                        getDict = {"player_id": 1, "action": "gun", "game_state": {"p1": {"hp": 100, "bullets": 0, "grenades": 2, "shield_hp": 0, "deaths": 0, "shields": 3}, "p2": {"hp": 99, "bullets": 6, "grenades": 2, "shield_hp": 0, "deaths": 1, "shields": 3}}}
                         health = int(getDict['game_state']['p2']['hp'])
                         print("Sending health", health)
                         self.send_health(health)
+                        flag = False
 
                     # Simulate if shield, health or reload is not updated properly
-                    self.check_gamestate_sent(current_time)
+                    # self.check_gamestate_sent(current_time)
 
             except HandshakeException as e:
                 print(f"{e}")
@@ -303,7 +298,7 @@ class Beetle():
                 self.set_to_connect()
 
     def check_gamestate_sent(self, current_time):
-        if current_time - self.ack_gamestate_timer >= 0.2:
+        if current_time - self.ack_gamestate_timer >= 0.5:
             if self.sent_shield:
                 if self.beetle.delegate.shield != self.ack_shield_value:
                     self.send_shield(self.ack_shield_value)
@@ -389,7 +384,8 @@ class ReadDelegate(btle.DefaultDelegate):
         # self.count += 1 # Number of packets processed
         self.fragmented_count = self.total_calls - self.count # Number of fragmented packets
 
-        # print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
+        # if self.beetle.beetle_id == 2: print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
+
         try:
             # Check packet id
             if data[0] < 1 or data[0] > 5:
@@ -414,8 +410,7 @@ class ReadDelegate(btle.DefaultDelegate):
                 if pkt_data.seq_no == self.seq_no:
                     # May receive packets while still handshaking
                     # Clears the buffer on the vest side 
-                    self.beetle.send_ack(pkt_data.seq_no)
-                    print(pkt_data)
+                    # self.beetle.send_ack(pkt_data.seq_no)
                     raise DuplicateException()
                 
                 self.corrupted_packet_counter = 0
@@ -426,8 +421,8 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 # # Update sequence number afterwards to send ack
                 self.seq_no = pkt_data.seq_no
-                if self.beetle.handshake_complete:
-                    self.beetle.send_ack(self.seq_no)
+                # if self.beetle.handshake_complete:
+                #     self.beetle.send_ack(self.seq_no)
 
                 # Check if packet received for Beetle() gamestate emissions
                 self.shield = pkt_data.shield

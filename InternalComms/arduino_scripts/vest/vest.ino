@@ -109,13 +109,20 @@ void setup() {
 
 uint16_t convertGamestateInt(){
   String number = "";
-  while (Serial.available() && isDigit(Serial.peek())) {
-    number += char(Serial.read());
-  }
-  return number.toInt();
+  while (!Serial.available()) {
+    if (Serial.peek() == STATE_HANDSHAKE) {
+      Serial.read();
+      resetFlags();
+      setStateToHandshake();
+      return 0;
+    }
+  };
+  char num = Serial.read();
+  return (num - '0') * 10;
+
 }
 
-void updateGamestate(char gamestate) {
+void updateGamestate(char gamestateType) {
 
   switch (gamestateType) {
     case HEALTH:
@@ -162,6 +169,14 @@ void loop() {
     switch (Serial.peek()){
       case GAMESTATE:
         Serial.read(); // Read g
+        while (!Serial.available()) {
+          if (Serial.peek() == STATE_HANDSHAKE) {
+            Serial.read();
+            resetFlags();
+            setStateToHandshake();
+            break;
+          }
+        };
         gamestateType = Serial.read(); // Read and update gamestate type
         updateGamestate(gamestateType); // Read and update gamestate type
         break;
@@ -169,6 +184,7 @@ void loop() {
         currentState = Serial.read();  // Clears the serial, set handshake
         break;
       default:
+        Serial.read();
         break;
     }
   }
@@ -177,7 +193,7 @@ void loop() {
     switch(currentState) {
       case STATE_SEND:
         sendDummyVestDataPacket();
-        setStateToAck();
+        // setStateToAck();
         break;
       case STATE_HANDSHAKE:
         resetFlags();
@@ -185,13 +201,13 @@ void loop() {
         waitForHandshakeAck();
         setStateToSend();
         break;
-      case STATE_ACK:
-        waitForAck();
-        if (ackReceived || isTimeout) {
-          setStateToSend();
-          isTimeout = false;
-        }
-        break;
+      // case STATE_ACK:
+      //   waitForAck();
+      //   if (ackReceived || isTimeout) {
+      //     setStateToSend();
+      //     isTimeout = false;
+      //   }
+      //   break;
       default:
         resetFlags();
         break;
@@ -259,13 +275,13 @@ void waitForAck() {
 }
 
 void sendDummyVestDataPacket(){
-  if ((isTimeout) && (sentHandshakeAck && prevPacket.id != NULL)) {
-    Serial.write((uint8_t *)&prevPacket, sizeof(prevPacket));
-    delay(50);
-  } else {
+  // if ((isTimeout) && (sentHandshakeAck && prevPacket.id != NULL)) {
+  //   Serial.write((uint8_t *)&prevPacket, sizeof(prevPacket));
+  //   delay(50);
+  // } else {
     vestDataPacket pkt;
     pkt.id = VEST_PKT;
-    pkt.seq_no = seqNum;
+    pkt.seq_no = seqNum++;
     pkt.ir_rcv = hit;
     pkt.health = currentHealth;
     pkt.shield = currentShield;
@@ -276,7 +292,7 @@ void sendDummyVestDataPacket(){
     ackReceived = false;
     Serial.write((uint8_t *)&pkt, sizeof(pkt)); 
     delay(50);
-  }
+  // }
 }
 
 int randomint(int min, int max) {

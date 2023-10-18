@@ -35,7 +35,7 @@ queue_3 = Queue()
 dummy_node_to_imu = Queue()
 dummy_node_to_vest = Queue()
 
-beetle_1 = Beetle(BEETLE1_MAC, beetle_id=1)
+beetle_1 = Beetle(BEETLE1_MAC, beetle_id=2)
 process_1 = Process(target=beetle_1.initiate_program, args=(queue_1, dummy_node_to_imu))
 processes.append(process_1)
 
