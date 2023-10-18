@@ -1,25 +1,42 @@
 import time
-from multiprocessing import Lock, Process, Queue, current_process
+from multiprocessing import Lock, Process, Queue, current_process, Manager
 import queue
 import json
 from helpers.EvalClient import EvalClient
 from helpers.GameLogic import GameLogic
+from multiprocessing.managers import BaseManager
+from helpers.PlayerClass import Player
+import random
+
+class MyManager(BaseManager): pass
 
 class GameEngineJobs:
 
     # Attributes
     processes: list
     gameLogic: GameLogic
+    player1: Player
+    player2: Player
 
     def __init__(self, game_logic: GameLogic):
         self.processes = []
         self.gameLogic = game_logic
+        MyManager.register('Player', Player)
+        self.manager = MyManager()
+        self.manager.start()
+        self.player1 = self.manager.Player(1)
+        self.player2 = self.manager.Player(2)
     
-    def receive_from_eval_task(self, eval_to_engine):
+    def receive_from_eval_task(self, eval_to_engine, engine_to_vis, server_to_node, p1, p2):
         while True:
             try:
                 msg = eval_to_engine.get()
-                self.gameLogic.subscribeFromEval(msg)
+                updated_game_state = self.gameLogic.subscribeFromEval(msg, p1, p2)
+                engine_to_vis.put(updated_game_state)
+                server_to_node.put(updated_game_state)
+            except Exception as e:
+                print(e)
+                break
             except:
                 break
             else:
@@ -27,38 +44,64 @@ class GameEngineJobs:
     
     
 
-    def gen_action_task(self, action_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine, server_to_node):
+    def gen_action_task(self, action_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine, server_to_node, p1, p2):
         while True:
             
             try:
                 # game engine
                 signal, msg = action_to_engine.get()
+                print('game engine ', msg)
                 hit_miss = '1 1'
-                print(signal, msg, 'game engine')
                 if signal == 2:
-                    # goggle
+                    # goggle then bullet
+                    is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
+                    try:
+                        recv_signal, recv_msg = action_to_engine.get(timeout=1)
+                        is_shoot, updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)
+                    except queue.Empty:
+                        print('bullet timeout, regard as shot')
+                        is_shoot, updated_game_state = self.gameLogic.relay_logic('2 3 6', p1, p2)
 
-                    updated_game_state = self.gameLogic.relay_logic(msg)
                 elif signal == 3:
-                    # bullet
-
-                    updated_game_state = self.gameLogic.relay_logic(msg)
+                    # bullet then goggle
+                    is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
+                    engine_to_vis_gamestate.put(updated_game_state)
+                    recv_signal = 0
+                    if is_shoot:
+                        try:
+                            recv_signal, recv_msg = action_to_engine.get(timeout=1)
+                        except queue.Empty:
+                            print('goggle timeout, regard as no shot')
+                    if recv_signal == 2:
+                        is_shoot, updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)
                 elif signal == 1:
                     # ai nodes
                     #dummy ai input
                     #get message input from AI function format:: "player_id enum"
                     id = int(msg[2])
+                    print('id was ', id)
                     if  id >= 3 and id <= 7 or id == 0: #grenades, and all skill
+                        
+                        print('i sent vis request')
+                        engine_to_vis_gamestate.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
+                        try:
+                            hit_miss = vis_to_engine.get(timeout=5)
+                        except queue.Empty:
+                            hit_miss = '1 1'
+                            print('timeout for viz hit_miss')
+                        print(hit_miss)
+                        hit_miss = hit_miss[2:-1] if len(hit_miss) > 3 else '1 1'
+                        print(hit_miss)
 
-                        engine_to_vis_hit.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
-                        #hit_miss = vis_to_engine.get()
-                    updated_game_state = self.gameLogic.ai_logic(msg, hit_miss)  
-                    print('udpated game state ', updated_game_state)
+                    updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2)  
+                
+                print('udpated game state ', updated_game_state)
                 engine_to_eval.put(updated_game_state)
                 engine_to_vis_gamestate.put(updated_game_state)
                 server_to_node.put(updated_game_state)
+                
             except Exception as e:
-                print(e)
+                print(e, 'at game engine')
                 break
             except:
                 break
@@ -85,11 +128,11 @@ class GameEngineJobs:
     def game_engine_job(self, eval_to_engine, engine_to_eval, engine_to_vis_gamestate, engine_to_vis_hit, vis_to_engine, action_to_engine, server_to_node):
         
         try:
-            process_rcv_from_eval = Process(target=self.receive_from_eval_task, args=(eval_to_engine,), daemon=True)
+            process_rcv_from_eval = Process(target=self.receive_from_eval_task, args=(eval_to_engine, engine_to_vis_gamestate, server_to_node, self.player1, self.player2), daemon=True)
             self.processes.append(process_rcv_from_eval)
             process_rcv_from_eval.start()
 
-            process_gen_action = Process(target=self.gen_action_task, args=(action_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine, server_to_node), daemon=True)
+            process_gen_action = Process(target=self.gen_action_task, args=(action_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine, server_to_node, self.player1, self.player2), daemon=True)
             self.processes.append(process_gen_action)
             process_gen_action.start()
             

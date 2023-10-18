@@ -68,7 +68,7 @@ class EvalClient:
                             break
                         data += _d
                     if len(data) == 0:
-                        print('recv_text: Eval server disconnected')
+                        print('recv_text: Eval server disconnected with length of', length)
                         self.close_client()
                         break
                     text_received = data.decode("utf8")  # Decode raw bytes to UTF-8
@@ -126,7 +126,7 @@ class EvalClient:
     def get_dummy_eval_state_json():
         state = {
             'player_id': 1,
-            'action': random.choice(['grenade']),
+            'action': random.choice(['grenade', 'punch', 'spear', 'web', 'hammer', 'portal', 'shield']),
             'game_state': {
                 'p1': EvalClient.get_dummy_game_state_json(),
                 'p2': EvalClient.get_dummy_game_state_json()
@@ -134,7 +134,7 @@ class EvalClient:
         }   
         return state
     
-    def get_dummy_response_from_eval_str(self):
+    def get_dummy_response_from_eval_str():
         state = {
             'p1': EvalClient.get_dummy_game_state_json(),
             'p2': EvalClient.get_dummy_game_state_json()
@@ -143,11 +143,19 @@ class EvalClient:
 
     
     def get_dummy_game_state_json():
+        # state = {
+        #             'hp': random.choice(range(101)),
+        #             'bullets': random.choice(range(7)),
+        #             'grenades': 2,
+        #             'shield_hp': random.choice(range(31)),
+        #             'deaths': 0,
+        #             'shields': random.choice(range(4))
+        #         }
         state = {
-                    'hp': random.choice(range(101)),
-                    'bullets': random.choice(range(7)),
+                    'hp':100,
+                    'bullets': 6,
                     'grenades': 2,
-                    'shield_hp': random.choice(range(31)),
+                    'shield_hp': 0,
                     'deaths': 0,
                     'shields': random.choice(range(4))
                 }
@@ -156,3 +164,4 @@ class EvalClient:
 EvalClient.get_dummy_eval_state_str = staticmethod(EvalClient.get_dummy_eval_state_str)    
 EvalClient.get_dummy_eval_state_json = staticmethod(EvalClient.get_dummy_eval_state_json)
 EvalClient.get_dummy_game_state_json = staticmethod(EvalClient.get_dummy_game_state_json)
+EvalClient.get_dummy_response_from_eval_str = staticmethod(EvalClient.get_dummy_response_from_eval_str)

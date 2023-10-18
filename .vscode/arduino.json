@@ -2,5 +2,5 @@
     "port": "/dev/ttyACM0",
     "board": "arduino:avr:uno",
     "programmer": "arduinoisp",
-    "sketch": "InternalComms/arduino_scripts/right_data_collection/right_data_collection.ino"
+    "sketch": "InternalComms/arduino_scripts/right/right.ino"
 }

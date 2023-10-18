@@ -41,16 +41,16 @@ class Brain:
             # DEFINE JOBS
             self.relay_server_jobs = RelayServerJobs()
             self.game_engine_jobs = GameEngineJobs(self.game_logic)
-            self.eval_client_jobs = EvalClientJobs()
             self.mqtt_client_jobs = MqttClientJobs()
-            self.eval_client_jobs.initialize()
+            
             
             # DEFINE PROCESSES
-            # Eval Client Process        
-            self.eval_client_process = Process(target=self.eval_client_jobs.eval_client_job, 
-                                                args=(self.eval_client_to_server, self.eval_client_to_game_engine))
-            self.processes.append(self.eval_client_process)
-            self.eval_client_process.start()
+            # Mqtt Client Process
+            self.mqtt_client_process = Process(target=self.mqtt_client_jobs.mqtt_client_job, 
+                                                args=(self.game_engine_to_vis_gamestate, 
+                                                    self.vis_to_game_engine))
+            self.processes.append(self.mqtt_client_process)
+            self.mqtt_client_process.start()
 
             # Game Engine Process
             self.game_engine_process = Process(target=self.game_engine_jobs.game_engine_job, 
@@ -64,13 +64,6 @@ class Brain:
             self.processes.append(self.game_engine_process)
             self.game_engine_process.start()
 
-            # Mqtt Client Process
-            self.mqtt_client_process = Process(target=self.mqtt_client_jobs.mqtt_client_job, 
-                                                args=(self.game_engine_to_vis_gamestate,
-                                                self.game_engine_to_vis_hit, 
-                                                    self.vis_to_game_engine))
-            self.processes.append(self.mqtt_client_process)
-            self.mqtt_client_process.start()
 
             # Relay Server Process
             self.relay_server_process = Process(target=self.relay_server_jobs.relay_server_job, 
@@ -80,6 +73,15 @@ class Brain:
             self.processes.append(self.relay_server_process)
             self.relay_server_process.start()
 
+
+             # Eval Client Process  
+            self.eval_client_jobs = EvalClientJobs()
+            self.eval_client_jobs.initialize()
+                 
+            self.eval_client_process = Process(target=self.eval_client_jobs.eval_client_job, 
+                                                args=(self.eval_client_to_server, self.eval_client_to_game_engine))
+            self.processes.append(self.eval_client_process)
+            self.eval_client_process.start()
         
             for p in self.processes:
                 p.join()

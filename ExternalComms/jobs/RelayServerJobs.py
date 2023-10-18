@@ -30,23 +30,41 @@ class RelayServerJobs:
         count = 0
         while True:
             try:
-                for file in os.listdir(dir):
-                    if file.endswith(".in"):
-                        print('Testing file', file)
-                        f = open(os.path.join(dir, file), 'r')
-                        data = f.read().split(',')
-                        self.dma.send_to_ai(data)
-                # data_arr = relay_server_to_ai.get()
-                # packets.append(data_arr)
-                # count += 1
+                
+                # for file in os.listdir(dir):
+                #     if file.endswith(".in"):
+                #         print('Testing file', file)
+                #         f = open(os.path.join(dir, file), 'r')
+                #         data = f.read().split(',')
+                #         self.dma.send_to_ai(data)
+                
+                data_arr = relay_server_to_ai.get(timeout=20)
+                packets.append(data_arr[1:])
 
-                # if count == WINDOW:
-                #     # DMA stuff
-                #     count = WINDOW - REMOVE
-                #     
-                #     #self.dma.send_to_ai_input_2d(n)
-                #     packets[:] = packets[REMOVE:WINDOW + 1]
-            
+                count += 1
+
+                if count == WINDOW:
+                        # DMA stuff
+                    print('80 reached')
+                    count = WINDOW - REMOVE
+                    print('sent to ai')
+                    print('first and last ')
+                    print(packets[0])
+                    print(packets[79])
+                    self.dma.send_to_ai_input_2d(np.array(packets))
+                    packets[:] = []
+                    time.sleep(2)
+                    try:
+                        while True:
+                            relay_server_to_ai.get_nowait()
+                    except queue.Empty:
+                        print('now empty queue.')
+
+                    count = 0
+            except queue.Empty:
+                count = 0
+                packets[:] = []
+                print('Discarded relay packets')
             except Exception as e:
                 print(e)
                 break
@@ -54,10 +72,27 @@ class RelayServerJobs:
                 break
     
     def receive_from_ai_task(self, relay_server_to_engine):
+        recents = [-1] * 3
+        actions = {
+                0: 'grenade',
+                1: 'shield',
+                2: 'reload',
+                7: 'web',
+                6: 'portal',
+                3: 'punch',
+                5: 'hammer',
+                4: 'spear',
+                8: 'logout',
+                9: 'raise hand'
+        }
         while True:
             try:
-                ai_result = self.dma.recv_from_ai()
-                relay_server_to_engine.put((1, '1 ' + str(ai_result)))
+                ai_result, certainty = self.dma.recv_from_ai()
+                print(actions[ai_result], ai_result, ' ',  certainty, ' certainty')
+                if certainty > 0.8 and ai_result != 9 and ai_result != 8:
+                    relay_server_to_engine.put((1, '1 ' + str(ai_result)))
+                #recents.pop(0)
+                #recents.append(ai_result)
                 # relay_server_to_engine.put((1, '1 3'))
                 # time.sleep(60)
                 # print('put')
@@ -100,10 +135,11 @@ class RelayServerJobs:
         # print('recv from relay node')
         # print(conn_socket_num)
         try:
+
             msg = await self.relay_server.receive_from_node(conn_socket_num)
             if self.relay_server.is_running:
                 node_to_parser.put(msg)
-                #print('Received from relay node: ', 'msg')
+                #print('Received from relay node: ', msg)
         except ClientDisconnectException:
             is_connected.value = 0
             new_socket = self.relay_server.re_accept_connection(0)
@@ -116,7 +152,7 @@ class RelayServerJobs:
     def receive_from_relay_node_task(self, conn_socket_num, action_to_engine, is_connected, client_socket_update):
         while self.relay_server.is_running:
             try:
-                asyncio.run(self.receive_from_relay_node(conn_socket_num, action_to_engine, client_socket_update))
+                asyncio.run(self.receive_from_relay_node(conn_socket_num, action_to_engine, is_connected, client_socket_update))
             except Exception as e:
                 print(e)
                 break
@@ -135,7 +171,7 @@ class RelayServerJobs:
                 if is_connected.value:
                     msg = relay_server_to_node.get()
                     #msg = self.get_dummy_packet()
-                    print('Sent to relay node: ', msg)
+                    #print('Sent to relay node: ', msg)
                     self.relay_server.send_to_node(self.packet_to_len_str(msg).encode(), conn_socket_num)
                 else:
                     print('waiting to reconnect')
