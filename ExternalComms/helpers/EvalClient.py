@@ -15,7 +15,7 @@ class EvalClient:
         self.port = None
         self.secret_key = None
         self.client_socket = None
-        self.timeout = 60
+        self.timeout = 600
         self.is_running = True
     
     def encrypt_and_format(self, msg):

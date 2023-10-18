@@ -32,8 +32,10 @@ class GameEngineJobs:
             try:
                 msg = eval_to_engine.get()
                 updated_game_state = self.gameLogic.subscribeFromEval(msg, p1, p2)
-                engine_to_vis.put(updated_game_state)
                 server_to_node.put(updated_game_state)
+                if p1.get_action() == 'gun':
+                    time.sleep(2)
+                    engine_to_vis.put(updated_game_state)
             except Exception as e:
                 print(e)
                 break
@@ -57,7 +59,7 @@ class GameEngineJobs:
                     # goggle then bullet
                     is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
                     try:
-                        recv_signal, recv_msg = action_to_engine.get(timeout=1)
+                        recv_signal, recv_msg = action_to_engine.get(timeout=0.5)
                         is_shoot, updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)
                     except queue.Empty:
                         print('bullet timeout, regard as shot')
@@ -71,7 +73,7 @@ class GameEngineJobs:
                     recv_signal = 0
                     if is_shoot:
                         try:
-                            recv_signal, recv_msg = action_to_engine.get(timeout=1)
+                            recv_signal, recv_msg = action_to_engine.get(timeout=0.5)
                         except queue.Empty:
                             delete = True
                             print('goggle timeout, regard as no shot')
@@ -96,7 +98,7 @@ class GameEngineJobs:
                         print('i sent vis request')
                         engine_to_vis_gamestate.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
                         try:
-                            hit_miss = vis_to_engine.get(timeout=2)
+                            hit_miss = vis_to_engine.get(timeout=1.3)
                             print('recv from viz ', hit_miss)
                         except queue.Empty:
                             hit_miss = '1 1'
