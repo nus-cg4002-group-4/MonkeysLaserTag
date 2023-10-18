@@ -53,10 +53,17 @@ class GameEngineJobs:
                 print('game engine ', msg)
                 hit_miss = '1 1'
                 if signal == 2:
-                    # goggle
+                    # goggle then bullet
                     is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
+                    try:
+                        recv_signal, recv_msg = action_to_engine.get(timeout=1)
+                        is_shoot, updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)
+                    except queue.Empty:
+                        print('bullet timeout, regard as shot')
+                        is_shoot, updated_game_state = self.gameLogic.relay_logic('2 3 6', p1, p2)
+
                 elif signal == 3:
-                    # bullet
+                    # bullet then goggle
                     is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
                     engine_to_vis_gamestate.put(updated_game_state)
                     recv_signal = 0
