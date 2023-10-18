@@ -21,6 +21,13 @@ class MqttClientJobs:
     #             break
     
     def send_to_vis_gamestate_task(self, engine_to_vis):
+        try:
+            time.sleep(5)
+            self.mqtt_client2.publish_to_topic(self.mqtt_client2.game_state_topic, 'test')
+            print('Attempt mqtt test. Check on viz')
+        except Exception as e:
+            print(e, 'mqtt test fail')
+            
         while True:
             try:
                 msg = engine_to_vis.get()
