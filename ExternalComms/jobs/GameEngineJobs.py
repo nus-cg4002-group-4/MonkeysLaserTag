@@ -50,13 +50,13 @@ class GameEngineJobs:
             try:
                 # game engine
                 signal, msg = action_to_engine.get()
+                print('game engine ', msg)
                 hit_miss = '1 1'
                 if signal == 2:
                     # goggle
-                    updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
+                    is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
                 elif signal == 3:
                     # bullet
-
                     is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
                     engine_to_vis_gamestate.put(updated_game_state)
                     recv_signal = 0

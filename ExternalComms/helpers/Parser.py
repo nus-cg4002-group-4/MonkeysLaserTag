@@ -21,6 +21,7 @@ class Parser:
             # goggle
             # TODO: Change for 2 player game
             msg = '2 ' + ' '.join(map(str, msg_arr))
+            print('msg was ',  msg)
             
         elif pkt_id == 3:
             # bullet
