@@ -34,7 +34,7 @@ class EvalClientJobs:
                     prev = self.game_logic.subscribeFromEval(last_recvd, p1, p2)
                     msg = '1 ' + str(random.choice([7, 6, 3, 5, 4]))
                     hit_miss = '1 1'
-                    to_send = self.game_logic.ai_logic(msg, hit_miss, p1, p2)
+                    to_send = self.game_logic.ai_logic(msg, hit_miss, p1, p2, False)
                     response = await self.eval_client.send_to_server_w_res(to_send)
                     last_recvd = response
                     print('Send to eval server: ', to_send)
