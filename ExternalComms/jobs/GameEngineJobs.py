@@ -85,7 +85,7 @@ class GameEngineJobs:
                         print('i sent vis request')
                         engine_to_vis_gamestate.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
                         try:
-                            hit_miss = vis_to_engine.get(timeout=5)
+                            hit_miss = vis_to_engine.get(timeout=2)
                             print('recv from viz ', hit_miss)
                         except queue.Empty:
                             hit_miss = '1 1'
