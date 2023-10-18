@@ -36,6 +36,7 @@ class EvalClientJobs:
                     hit_miss = '1 1'
                     to_send = self.game_logic.ai_logic(msg, hit_miss, p1, p2)
                     response = await self.eval_client.send_to_server_w_res(to_send)
+                    last_recvd = response
                     print('Send to eval server: ', to_send)
                     eval_client_to_game_engine.put(response)
                 except Exception as e:
