@@ -51,7 +51,7 @@ class RelayServerJobs:
                     print('first and last ')
                     print(packets[0])
                     print(packets[79])
-                    self.dma.send_to_ai_input_2d(packets)
+                    self.dma.send_to_ai_input_2d(np.array(packets))
                     packets[:] = []
                     time.sleep(2)
                     try:

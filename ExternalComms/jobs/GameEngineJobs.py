@@ -57,10 +57,16 @@ class GameEngineJobs:
                 elif signal == 3:
                     # bullet
 
-                    bullet_game_state = self.gameLogic.relay_logic(msg, p1, p2)
-                    engine_to_vis_gamestate.put(bullet_game_state)
-                    recv_signal, recv_msg = action_to_engine.get()
-                    updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)
+                    is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
+                    engine_to_vis_gamestate.put(updated_game_state)
+                    recv_signal = 0
+                    if is_shoot:
+                        try:
+                            recv_signal, recv_msg = action_to_engine.get(timeout=1)
+                        except queue.Empty:
+                            print('goggle timeout, regard as no shot')
+                    if recv_signal == 2:
+                        is_shoot, updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)
                 elif signal == 1:
                     # ai nodes
                     #dummy ai input
@@ -71,11 +77,14 @@ class GameEngineJobs:
                         
                         print('i sent vis request')
                         engine_to_vis_gamestate.put('request ' + time.strftime("%H:%M:%S", time.localtime()) )
-                        #hit_miss = vis_to_engine.get()
-                        
-                        #print(hit_miss)
-                        #hit_miss = hit_miss[2:-1] if len(hit_miss) > 3 else '1 1'
-                        #print(hit_miss)
+                        try:
+                            hit_miss = vis_to_engine.get(timeout=5)
+                        except queue.Empty:
+                            hit_miss = '1 1'
+                            print('timeout for viz hit_miss')
+                        print(hit_miss)
+                        hit_miss = hit_miss[2:-1] if len(hit_miss) > 3 else '1 1'
+                        print(hit_miss)
 
                     updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2)  
                 

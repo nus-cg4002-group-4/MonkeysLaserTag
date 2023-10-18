@@ -10,11 +10,11 @@ class ClientDisconnectException(Exception):
 class RelayServer:
     def __init__(self):
         self.server_name = ''
-        self.port1 = 26489
+        self.port1 = 26488
         self.port2 = 26590
         self.connection_count = 0
         self.is_running = True
-        self.timeout = 60
+        self.timeout = 600 
         self.conn_sockets = []
         self.listen_sockets = []
         self.is_conncted = [False, False]

@@ -23,6 +23,9 @@ class Dma:
     
     def send_to_ai_input_2d(self, data):
         in_buffer = allocate(shape=(560,), dtype=np.float32)
+        normalize_flex = lambda i: i * (2**15 / 2**10)
+        data[:,6] = np.vectorize(normalize_flex)(data[:,6])
+
         asfloat = lambda i: float(i + 2**15) / 2**15 - 1.0
         inp = np.vectorize(asfloat)(data)
         in_buffer[:] = np.array(inp).astype(np.float32).flatten()
