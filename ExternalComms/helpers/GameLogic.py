@@ -85,7 +85,7 @@ class GameLogic:
             currentPlayer.set_action("gun")
         return is_shoot, self.convert_to_json(player_1, player_2)
 
-    def ai_logic(self, msgIn, can_see, player_1, player_2):
+    def ai_logic(self, msgIn, can_see, player_1, player_2, can_reload):
         # msgIn "playerId enum"
         # can_see "playerId hit/miss"
         args = list(map(int, msgIn.split()))
@@ -118,7 +118,8 @@ class GameLogic:
         elif args[1] == 2: #reload
             print("player " + str(currentPlayer.get_id()) + " reload")
             currentPlayer.set_action("reload")
-            currentPlayer.reload()
+            if can_reload:
+                currentPlayer.reload()
             
         elif args[1] == 7: #web
             print("player 2 activate skill")

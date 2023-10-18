@@ -45,6 +45,7 @@ class GameEngineJobs:
     
 
     def gen_action_task(self, action_to_engine, engine_to_vis_gamestate, engine_to_vis_hit, engine_to_eval, vis_to_engine, server_to_node, p1, p2):
+        delete = False
         while True:
             
             try:
@@ -60,7 +61,8 @@ class GameEngineJobs:
                         is_shoot, updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)
                     except queue.Empty:
                         print('bullet timeout, regard as shot')
-                        is_shoot, updated_game_state = self.gameLogic.relay_logic('2 3 6', p1, p2)
+                        delete = True
+                        is_shoot, updated_game_state = self.gameLogic.relay_logic('1 3 6', p1, p2)
 
                 elif signal == 3:
                     # bullet then goggle
@@ -71,6 +73,7 @@ class GameEngineJobs:
                         try:
                             recv_signal, recv_msg = action_to_engine.get(timeout=1)
                         except queue.Empty:
+                            delete = True
                             print('goggle timeout, regard as no shot')
                     if recv_signal == 2:
                         is_shoot, updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)
@@ -80,6 +83,14 @@ class GameEngineJobs:
                     #get message input from AI function format:: "player_id enum"
                     id = int(msg[2])
                     print('id was ', id)
+                    if id == 2: #reload
+                        updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2, False)
+                        engine_to_vis_gamestate.put(updated_game_state)
+                        print('udpated game state ', updated_game_state)
+                        updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2, True)
+                        engine_to_eval.put(updated_game_state)
+                        server_to_node.put(updated_game_state)
+                        continue
                     if  id >= 3 and id <= 7 or id == 0: #grenades, and all skill
                         
                         print('i sent vis request')
@@ -94,12 +105,21 @@ class GameEngineJobs:
                         hit_miss = hit_miss[2:-1] if len(hit_miss) > 3 else '1 1'
                         print(hit_miss)
 
-                    updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2)  
+                    updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2, False)  
                 
                 print('udpated game state ', updated_game_state)
                 engine_to_eval.put(updated_game_state)
                 engine_to_vis_gamestate.put(updated_game_state)
                 server_to_node.put(updated_game_state)
+
+                if delete:
+                    while True:
+                        try:
+                            action_to_engine.get_nowait()
+                        except queue.Empty:
+                            print('deleted actions in the queue')
+                            break
+                delete = False
                 
             except Exception as e:
                 print(e, 'at game engine')

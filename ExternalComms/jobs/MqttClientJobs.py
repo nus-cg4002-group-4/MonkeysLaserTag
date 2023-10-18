@@ -22,8 +22,11 @@ class MqttClientJobs:
     
     def send_to_vis_gamestate_task(self, engine_to_vis):
         try:
-            time.sleep(5)
+            time.sleep(3)
             self.mqtt_client2.publish_to_topic(self.mqtt_client2.game_state_topic, 'test')
+            time.sleep(1)
+            self.mqtt_client2.publish_to_topic(self.mqtt_client2.game_state_topic, 'tt')
+
             print('Attempt mqtt test. Check on viz')
         except Exception as e:
             print(e, 'mqtt test fail')
@@ -55,6 +58,7 @@ class MqttClientJobs:
     
     def recv_from_hit_miss_task(self, vis_to_engine):
         def on_message_hit_miss(client, userdata, msg):
+            print(str(msg.payload), 'recv from viz')
             vis_to_engine.put(str(msg.payload))
 
         while True:
