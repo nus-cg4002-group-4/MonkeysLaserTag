@@ -44,6 +44,7 @@ int health = 100;
 int shields = 3;
 int shield_health = 0;
 
+unsigned long hit_time = 0;
 unsigned long hit_time_10 = 0;
 unsigned long grenade_hit_time = 0;
 
@@ -129,7 +130,15 @@ void updateGamestate(char gamestate) {
       }
       break;
     case SHIELD:
+      uint16_t prevShield = currentShield;
       currentShield = convertGamestateInt();
+      if (prevShield - currentShield == 10) {
+        hit_time_10 = micros();
+        hit_10 = true;
+      } else if (prevShield - currentShield == 30) {
+        grenade_hit_time = micros();
+        grenade_hit = true;
+      }
       break;
   }
 }
@@ -356,7 +365,10 @@ void receiver_handler()
   if (IrReceiver.decode()) {
     IrReceiver.resume();
     hit = true;
+    hit_time = millis();
     // hit_time_10 = micros(); // no hit time, shoot + skill hit same dmg, updated from state
+  } else {
+    if (millis() - hit_time > 50) hit = false;
   }
 }
 
@@ -381,7 +393,6 @@ void dmg_10_beeper()
   if (hit_10 && timeDiff > wait) {
   // if (hit && timeDiff > wait) {
     digitalWrite(BUZZER_PIN, LOW);
-    hit = false;
     hit_10 = false;
   }
 }
