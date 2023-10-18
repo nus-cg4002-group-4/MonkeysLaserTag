@@ -6,7 +6,7 @@ class RelayNode:
     def __init__(self):
         self.server_host = 'makerslab-fpga-37.d2.comp.nus.edu.sg'
         # self.server_host = 'localhost'
-        self.server_port = 26489
+        self.server_port = 26488
         self.server_pw = None
         self.conn_socket = None
         self.connection_count = 0
@@ -25,7 +25,7 @@ class RelayNode:
                     while not data.endswith(b'_'):
                         start_time = perf_counter()
                         task = loop.sock_recv(self.conn_socket, 1)
-                        _d = await asyncio.wait_for(task, timeout=timeout)
+                        _d = await asyncio.wait_for(task)
                         timeout -= (perf_counter() - start_time)
                         if not _d:
                             data = b''
@@ -41,7 +41,7 @@ class RelayNode:
                     while len(data) < length:
                         start_time = perf_counter()
                         task = loop.sock_recv(self.conn_socket, length - len(data))
-                        _d = await asyncio.wait_for(task, timeout=timeout)
+                        _d = await asyncio.wait_for(task)
                         timeout -= (perf_counter() - start_time)
                         if not _d:
                             data = b''

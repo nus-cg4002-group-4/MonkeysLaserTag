@@ -32,22 +32,21 @@ queue_1 = Queue()
 queue_2 = Queue()
 queue_3 = Queue()
 
+dummy_node_to_imu = Queue()
 dummy_node_to_vest = Queue()
 
-# beetle_1 = Beetle(BEETLE1_MAC, beetle_id=1)
-# process_1 = Process(target=beetle_1.initiate_program, args=(queue_1,))
+# beetle_1 = Beetle(BEETLE3_MAC, beetle_id=1)
+# process_1 = Process(target=beetle_1.initiate_program, args=(queue_1, dummy_node_to_imu))
 # processes.append(process_1)
 
-# beetle_2 = Beetle(BEETLE2_MAC, beetle_id=2)
-# process_2 = Process(target=beetle_2.initiate_program, args=(queue_2, dummy_node_to_vest))
-# processes.append(process_2)
-
-beetle_2 = Beetle(BEETLE3_MAC, beetle_id=2)
+beetle_2 = Beetle(BEETLE2_MAC, beetle_id=2)
 process_2 = Process(target=beetle_2.initiate_program, args=(queue_2, dummy_node_to_vest))
 processes.append(process_2)
 
+# beetle = Beetle(BEETLE3_MAC, beetle_id=1)
+# process_2 = Process(target=beetle.initiate_program, args=(queue_1, dummy_node_to_imu))
+# processes.append(process_2)
 
-print(df)
 
 try:
     # process_1.start()
@@ -65,7 +64,7 @@ try:
             df.iloc[1] = list(data.values())[0]
 
         # print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
-    
+        # if not dummy_node_to_imu.empty(): print(dummy_node_to_imu.get(timeout=0.1))
 
 except KeyboardInterrupt:
     print("Terminating processes...")

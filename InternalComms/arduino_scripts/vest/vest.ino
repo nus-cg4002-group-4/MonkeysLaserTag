@@ -166,8 +166,10 @@ void loop() {
         break;
       case STATE_ACK:
         waitForAck();
-        if (ackReceived || isTimeout) 
+        if (ackReceived || isTimeout) {
           setStateToSend();
+          isTimeout = false;
+        }
         break;
       default:
         resetFlags();
@@ -236,7 +238,7 @@ void waitForAck() {
 }
 
 void sendDummyVestDataPacket(){
-  if (isTimeout || (!ackReceived && (sentHandshakeAck && prevPacket.id != NULL))) {
+  if ((isTimeout) && (sentHandshakeAck && prevPacket.id != NULL)) {
     Serial.write((uint8_t *)&prevPacket, sizeof(prevPacket));
     delay(50);
   } else {
@@ -341,7 +343,7 @@ void receiver_handler()
 {
   if (IrReceiver.decode()) {
     IrReceiver.resume();
-    hit = (IrReceiver.decodedIRData.command == BUL_DMG_CODE);
+    hit = true;
   }
 }
 
@@ -357,7 +359,7 @@ void dmg_beeper_handler(int x)
 int gun_dmg_handler()
 {
   if (hit) {
-    dmg_beeper_handler(BASE_DMG);
+    // dmg_beeper_handler(BASE_DMG);
     hit = false;
     return BASE_DMG;
   }

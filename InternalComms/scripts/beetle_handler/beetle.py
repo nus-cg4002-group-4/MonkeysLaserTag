@@ -367,7 +367,7 @@ class ReadDelegate(btle.DefaultDelegate):
         # self.count += 1 # Number of packets processed
         self.fragmented_count = self.total_calls - self.count # Number of fragmented packets
 
-        # print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
+        print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
         try:
             # Check packet id
             if data[0] < 1 or data[0] > 5:
@@ -380,7 +380,7 @@ class ReadDelegate(btle.DefaultDelegate):
                 unprocessed_vest_data = data[:7]
 
                 # = means native with no alignment, default is @ with alignment.
-                pkt = struct.unpack('=BB?HH', unprocessed_vest_data)
+                pkt = struct.unpack('=BBBHH', unprocessed_vest_data)
                 pkt_data = VestPacket(
                     *pkt
                 )
@@ -388,13 +388,16 @@ class ReadDelegate(btle.DefaultDelegate):
                 crc = struct.unpack('I', data[16:])[0]
                 if crc != custom_crc32(unprocessed_vest_data):
                     raise CRCException()
-                
+                                
                 if pkt_data.seq_no == self.seq_no:
                     # May receive packets while still handshaking
                     # Clears the buffer on the vest side 
                     self.beetle.send_ack(pkt_data.seq_no)
+                    print(pkt_data)
                     raise DuplicateException()
                 
+                self.corrupted_packet_counter = 0
+
                 # # Update sequence number afterwards to send ack
                 self.seq_no = pkt_data.seq_no
                 if self.beetle.handshake_complete:
@@ -404,17 +407,11 @@ class ReadDelegate(btle.DefaultDelegate):
                 self.shield = pkt_data.shield
                 self.health = pkt_data.health
 
-                # # TODO: Write data to ssh server
-                pkt_dict = asdict(pkt_data)
+                if pkt_data.ir_rcv and self.beetle.node_to_server:
+                    print("Hit")
+                    self.beetle.node_to_server.put({'pkt_id': 2, 'hit': pkt_data.ir_rcv}) # pkt_id = 2
 
-                vest_data = {
-                    key: value for key, value in pkt_dict.items() if key != 'seq_no'
-                }
-    
-                if self.beetle.node_to_server:
-                    self.beetle.node_to_server.put(vest_data) # pkt_id = 2
-
-                print(f"VestPacket received successfully: {pkt_data}")
+                # print(f"VestPacket received successfully: {pkt_data}")
 
             elif (pkt_id == PacketId.RHAND_PKT):
                 
@@ -442,8 +439,9 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 # print(AI_data)
 
-                # if self.prev_button_press == 1 and pkt_data.button_press == 0:
-                #     self.beetle.node_to_server.put({'pkt_id' : 3, 'button_press' : 1}) # pkt_id 3
+                if self.prev_button_press == 1 and pkt_data.button_press == 0:
+                    print("shot")
+                    self.beetle.node_to_server.put({'pkt_id' : 3, 'button_press' : 1}) # pkt_id 3
 
                 self.prev_button_press = pkt_data.button_press
 
@@ -464,7 +462,7 @@ class ReadDelegate(btle.DefaultDelegate):
                         # check that the first 10 packets are initialized first
                         if self.old_accel_sums[0] != 0:
                             dp = self.normalized_dot_product(self.accel_sums, self.old_accel_sums)
-                            print(dp)
+                            # print(dp)
 
                         if dp < 0.5 and not self.send_to_ext:
                             self.send_to_ext = True
@@ -539,6 +537,7 @@ class ReadDelegate(btle.DefaultDelegate):
 
         except Exception as e:
             print(f"Error occured: {e}")
+            self.track_corrupted_packets
 
     def track_corrupted_packets(self):
         self.corrupted_packet_counter += 1
