@@ -151,8 +151,8 @@ class Beetle():
             if self.beetle_id == 1 and getDict['action'] == 'reload' and self.beetle.delegate.bullets == 0:
                 self.send_reload()
             elif self.beetle_id == 2:
-                self.send_shield(getDict['gamestate']['p1']['shield_hp'])
-                self.send_health(getDict['gamestate']['p1']['hp'])
+                self.send_shield(getDict['gamestate']['p2']['shield_hp'])
+                self.send_health(getDict['gamestate']['p2']['hp'])
     
     # def try_writing_to_beetle(self):
     #     self.on_keypress("h", self.send_health)
@@ -336,6 +336,7 @@ class ReadDelegate(btle.DefaultDelegate):
         self.health = 0
 
         self.prev_button_press = 0
+        self.prev_hit = 0
 
         self.last_10_packets = []
         self.accel_sums: list(int) = [0, 0, 0] # ax, ay, az
@@ -367,7 +368,7 @@ class ReadDelegate(btle.DefaultDelegate):
         # self.count += 1 # Number of packets processed
         self.fragmented_count = self.total_calls - self.count # Number of fragmented packets
 
-        print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
+        # print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
         try:
             # Check packet id
             if data[0] < 1 or data[0] > 5:
@@ -407,10 +408,11 @@ class ReadDelegate(btle.DefaultDelegate):
                 self.shield = pkt_data.shield
                 self.health = pkt_data.health
 
-                if pkt_data.ir_rcv and self.beetle.node_to_server:
+                if self.prev_hit and not pkt_data.ir_rcv and self.beetle.node_to_server:
                     print("Hit")
-                    self.beetle.node_to_server.put({'pkt_id': 2, 'hit': pkt_data.ir_rcv}) # pkt_id = 2
+                    self.beetle.node_to_server.put({'pkt_id': 2, 'hit': 1}) # pkt_id = 2
 
+                self.prev_hit = pkt_data.ir_rcv
                 # print(f"VestPacket received successfully: {pkt_data}")
 
             elif (pkt_id == PacketId.RHAND_PKT):

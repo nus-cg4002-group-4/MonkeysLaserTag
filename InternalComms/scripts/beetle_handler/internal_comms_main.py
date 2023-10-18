@@ -60,13 +60,13 @@ class Brain:
             self.recv_from_server_process.start()
 
             # Receive from IMU Process
-            beetle_1 = Beetle(BEETLE4_MAC, beetle_id=1)
+            beetle_1 = Beetle(BEETLE1_MAC, beetle_id=1)
             process_1 = Process(target=beetle_1.initiate_program, args=(self.node_to_server, self.node_to_imu))
             self.processes.append(process_1)
             process_1.start()
 
             # Receive from IR Process
-            beetle_2 = Beetle(BEETLE2_MAC, beetle_id=2)
+            beetle_2 = Beetle(BEETLE4_MAC, beetle_id=2)
             process_2 = Process(target=beetle_2.initiate_program, args=(self.node_to_server, self.node_to_ir))
             self.processes.append(process_2)
             process_2.start()

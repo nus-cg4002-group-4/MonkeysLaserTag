@@ -31,6 +31,7 @@
 
 //Declare game event values
 bool hit = false;
+bool hit_10 = false;
 bool skill_hit = false;
 bool grenade_hit = false;
 bool shield = false;
@@ -42,6 +43,9 @@ bool dead = false;
 int health = 100;
 int shields = 3;
 int shield_health = 0;
+
+unsigned long hit_time_10 = 0;
+unsigned long grenade_hit_time = 0;
 
 // hardware code end
 
@@ -114,7 +118,15 @@ void updateGamestate(char gamestate) {
 
   switch (gamestateType) {
     case HEALTH:
+      uint16_t prevHealth = currentHealth;
       currentHealth = convertGamestateInt();
+      if (prevHealth - currentHealth == 10) {
+        hit_time_10 = micros();
+        hit_10 = true;
+      } else if (prevHealth - currentHealth == 30) {
+        grenade_hit_time = micros();
+        grenade_hit = true;
+      }
       break;
     case SHIELD:
       currentShield = convertGamestateInt();
@@ -177,10 +189,10 @@ void loop() {
     }
   }
 
-  gun_dmg_handler();
+  dmg_10_beeper();
+  grenade_dmg_beeper();
+  // Handles IR Receiver
   receiver_handler();
-  // health_calc();
-  // death_handler();
 }
 
 void resetFlags() {
@@ -193,7 +205,7 @@ void resetFlags() {
   prevPacket.ir_rcv = NULL;
   isTimeout = false;
   currentHealth = 100;
-  currentShield = 30;
+  currentShield = 0;
   delay(50);
 }
 
@@ -344,26 +356,56 @@ void receiver_handler()
   if (IrReceiver.decode()) {
     IrReceiver.resume();
     hit = true;
+    // hit_time_10 = micros(); // no hit time, shoot + skill hit same dmg, updated from state
   }
 }
 
-void dmg_beeper_handler(int x)
+//Handles gun and skill (exlcuding grenade) damage event 
+void dmg_10_beeper()
 {
-  for (int i = 0; i < x/10; i++) {
-    digitalWrite(BUZZER_PIN, HIGH);
+  unsigned long frequency = 5000;
+  if (currentShield > 0) frequency = 300;
+  unsigned long wait = 150000; // microseconds
+  unsigned long timeDiff = micros() - hit_time_10;
+
+  // Gun and skill dmg
+  if (hit_10 && timeDiff < wait) {
+  // if (hit && timeDiff < wait) {
+    if (timeDiff/(1000000/frequency/2)%2 == 0) {
+      digitalWrite(BUZZER_PIN, HIGH);
+    } else {
+      digitalWrite(BUZZER_PIN, LOW);
+    }
+  }
+
+  if (hit_10 && timeDiff > wait) {
+  // if (hit && timeDiff > wait) {
     digitalWrite(BUZZER_PIN, LOW);
+    hit = false;
+    hit_10 = false;
   }
 }
 
-//Handles gun damage event at current cycle
-int gun_dmg_handler()
-{
-  if (hit) {
-    // dmg_beeper_handler(BASE_DMG);
-    hit = false;
-    return BASE_DMG;
+// Grenade dmg - 30 dmg
+void grenade_dmg_beeper() {
+
+  unsigned long frequency = 1000;
+  if (currentShield > 0) frequency = 300;
+  unsigned long wait = 300000; // microseconds
+  unsigned long timeDiff = micros() - hit_time_10;
+
+  if (grenade_hit && timeDiff < wait) {
+    if (timeDiff/(1000000/frequency/2)%2 == 0) {
+      digitalWrite(BUZZER_PIN, HIGH);
+    } else {
+      digitalWrite(BUZZER_PIN, LOW);
+    }
   }
-  return 0;
+
+  if (grenade_hit && timeDiff > wait) {
+    digitalWrite(BUZZER_PIN, LOW);
+    grenade_hit = false;
+  }
 }
 
 //Handles skill damage event at current cycle
@@ -371,7 +413,7 @@ int skill_dmg_handler()
 {
   if(skill_hit) {
     // Serial.print("Skill hit   ");
-    dmg_beeper_handler(BASE_DMG);
+    // dmg_beeper_handler(BASE_DMG);
     skill_hit = false;
     return BASE_DMG;
   }
@@ -383,7 +425,7 @@ int grenade_dmg_handler()
 {
   if (grenade_hit) {
     // Serial.print("Grenade hit   ");
-    dmg_beeper_handler(GREN_DMG);
+    // dmg_beeper_handler(GREN_DMG);
     grenade_hit = false;
     return GREN_DMG;
   }
@@ -391,10 +433,10 @@ int grenade_dmg_handler()
 }
 
 //Calculates total damage at current cycle
-int dmg_handler()
-{
-  return gun_dmg_handler() + skill_dmg_handler() + grenade_dmg_handler();
-}
+// int dmg_handler()
+// {
+//   return gun_dmg_beeper() + skill_dmg_handler() + grenade_dmg_handler();
+// }
 
 //Handles shield deployment
 void shield_handler()
@@ -413,29 +455,29 @@ void shield_handler()
 }
 
 //calculate remaining health at current cycle
-void health_calc() {
-  int total_dmg = dmg_handler();
-  shield_handler();
-  if (total_dmg > 0) {
-    if (shield_active) {
-      if (shield_health > 0) {
-        shield_health -= total_dmg;
-      }
-      if (shield_health <= 0) {
-        health += shield_health;
-        shield_active = false;
-        shield_health = 0;
-      }
-    } else {
-      health -= total_dmg;
-    }
-    // Serial.println("");
-    // Serial.print("health remaining:");
-    // Serial.println(health);
-    // Serial.print("current shield health: ");
-    // Serial.println(shield_health);
-  }
-}
+// void health_calc() {
+//   int total_dmg = dmg_handler();
+//   shield_handler();
+//   if (total_dmg > 0) {
+//     if (shield_active) {
+//       if (shield_health > 0) {
+//         shield_health -= total_dmg;
+//       }
+//       if (shield_health <= 0) {
+//         health += shield_health;
+//         shield_active = false;
+//         shield_health = 0;
+//       }
+//     } else {
+//       health -= total_dmg;
+//     }
+//     // Serial.println("");
+//     // Serial.print("health remaining:");
+//     // Serial.println(health);
+//     // Serial.print("current shield health: ");
+//     // Serial.println(shield_health);
+//   }
+// }
 
 //Check if player is dead
 void death_handler()
