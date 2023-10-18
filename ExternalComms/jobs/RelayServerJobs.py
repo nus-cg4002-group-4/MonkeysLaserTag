@@ -139,7 +139,7 @@ class RelayServerJobs:
             msg = await self.relay_server.receive_from_node(conn_socket_num)
             if self.relay_server.is_running:
                 node_to_parser.put(msg)
-                print('Received from relay node: ', msg)
+                #print('Received from relay node: ', msg)
         except ClientDisconnectException:
             is_connected.value = 0
             new_socket = self.relay_server.re_accept_connection(0)
