@@ -101,6 +101,9 @@ class Player:
     def set_bullets(self, bullets):
         self.bullets = bullets
 
+    def get_bullets(self):
+        return self.bullets
+
     def set_state(self, state):
         self.hp = state["hp"]
         self.bullets = state["bullets"]

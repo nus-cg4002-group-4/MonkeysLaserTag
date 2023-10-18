@@ -77,13 +77,12 @@ class GameLogic:
 
         if msgIn_arugments[1] == 2:
             # packetID 1: hit, health, shield
-            currentPlayer.reduceHP(10)
-            pass      
+            if currentPlayer.get_bullets() > 0:
+                currentPlayer.reduceHP(10)
         elif msgIn_arugments[1] == 3:
             #bullets
             is_shoot = currentPlayer.shoot()
             currentPlayer.set_action("gun")
-            pass   
         return is_shoot, self.convert_to_json(player_1, player_2)
 
     def ai_logic(self, msgIn, can_see, player_1, player_2):

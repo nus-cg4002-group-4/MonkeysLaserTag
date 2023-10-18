@@ -89,7 +89,7 @@ class RelayServerJobs:
             try:
                 ai_result, certainty = self.dma.recv_from_ai()
                 print(actions[ai_result], ai_result, ' ',  certainty, ' certainty')
-                if certainty > 0.8 and ai_result != 9 and ai_result != 8:
+                if certainty > 0.4 and ai_result != 9:
                     relay_server_to_engine.put((1, '1 ' + str(ai_result)))
                 #recents.pop(0)
                 #recents.append(ai_result)
