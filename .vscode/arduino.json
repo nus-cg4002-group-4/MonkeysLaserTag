@@ -1,5 +1,5 @@
 {
-    "port": "/dev/ttyACM0",
+    "port": "/dev/ttyACM2",
     "board": "arduino:avr:uno",
     "programmer": "arduinoisp",
     "sketch": "InternalComms/arduino_scripts/vest/vest.ino"

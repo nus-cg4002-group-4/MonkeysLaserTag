@@ -159,7 +159,8 @@ class Beetle():
         print("Received shield: ", shield)
 
         #self.send_shield(shield)
-        self.send_health(str(health)[0]) # send the first digit of the number
+        if (health == 100): self.send_health(0)
+        else: self.send_health(str(health)[0]) # send the first digit of the number
     
     # def try_writing_to_beetle(self):
     #     self.on_keypress("h", self.send_health)

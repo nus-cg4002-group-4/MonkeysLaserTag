@@ -29,6 +29,8 @@
 #define BASE_DMG 10
 #define GREN_DMG 30
 
+uint8_t BULLET_DMG = 0xC9;
+
 //Declare game event values
 bool hit = false;
 bool hit_10 = false;
@@ -118,8 +120,9 @@ uint16_t convertGamestateInt(){
     }
   };
   char num = Serial.read();
-  return (num - '0') * 10;
-
+  int newHp = (num - '0') * 10;
+  if (newHp == 0) return 100;
+  return newHp;
 }
 
 void updateGamestate(char gamestateType) {
@@ -128,7 +131,10 @@ void updateGamestate(char gamestateType) {
     case HEALTH:
       uint16_t prevHealth = currentHealth;
       currentHealth = convertGamestateInt();
-      if (prevHealth - currentHealth == 10) {
+      if (currentHealth == 100) {
+        hit_10 = true;
+        hit_time_10 = micros();
+      } else if (prevHealth - currentHealth == 10) {
         hit_time_10 = micros();
         hit_10 = true;
       } else if (prevHealth - currentHealth == 30) {
@@ -378,14 +384,28 @@ uint32_t custom_crc32(const uint8_t *data, size_t len) {
 
 void receiver_handler()
 {
+  // if (!IrReceiver.decode()) {
+  //   if (millis() - hit_time > 50) hit = false;
+  //   return;
+  // }
+
+  // IrReceiver.resume();
+  // if (IrReceiver.decodedIRData.command == BUL_DMG_CODE) {
+  //   hit = true;
+  //   hit_time = millis();
+  //   currentHealth -= 10;
+  // }
+
   if (IrReceiver.decode()) {
     IrReceiver.resume();
-    hit = true;
-    hit_time = millis();
-    // hit_time_10 = micros(); // no hit time, shoot + skill hit same dmg, updated from state
+    if (IrReceiver.decodedIRData.command == BULLET_DMG) {
+      hit = true;
+      hit_time = millis();
+    }
   } else {
     if (millis() - hit_time > 50) hit = false;
   }
+    // hit_time_10 = micros(); // no hit time, shoot + skill hit same dmg, updated from state
 }
 
 //Handles gun and skill (exlcuding grenade) damage event 
