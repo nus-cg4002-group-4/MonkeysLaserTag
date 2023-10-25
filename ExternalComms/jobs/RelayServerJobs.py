@@ -105,7 +105,6 @@ class RelayServerJobs:
                 data_arr = self.parser.convert_to_arr(data)
                 #print('data_arr', 'data arr')
                 pkt_id, msg = self.parser.decide_dest(data_arr)
-                print('parser player was ', pkt_id, player_id, data)
                 if pkt_id == 1:
                     # hand
                     # send to ai
@@ -145,7 +144,7 @@ class RelayServerJobs:
             msg = await self.relay_server.receive_from_node(conn_socket_num)
             if self.relay_server.is_running:
                 node_to_parser.put((conn_socket_num + 1, msg))
-                print('Received from relay node: ', msg, conn_socket_num + 1)
+                #print('Received from relay node: ', msg, conn_socket_num + 1)
         except ClientDisconnectException:
             is_connected.value = 0
             new_socket = self.relay_server.re_accept_connection(conn_socket_num)
