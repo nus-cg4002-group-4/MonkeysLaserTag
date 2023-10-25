@@ -163,19 +163,23 @@ class RelayServerJobs:
         p = packet.encode()
         return str(len(p)) + '_' + p.decode()
     
-    def send_to_relay_node_task(self, conn_socket_num, relay_server_to_node, is_connected, client_socket_update):
+    def send_to_relay_node_task(self, relay_server_to_node):
         while True:
             try:
-                # Send dummy message to relay node every 10 s
-                if is_connected.value:
-                    msg = relay_server_to_node.get()
-                    #msg = self.get_dummy_packet()
-                    #print('Sent to relay node: ', msg)
-                    self.relay_server.send_to_node(self.packet_to_len_str(msg).encode(), conn_socket_num)
+                msg = relay_server_to_node.get()
+                if self.is_client1_connected.value:
+                    self.relay_server.send_to_node(self.packet_to_len_str(msg).encode(), 0)
                 else:
-                    print('waiting to reconnect')
-                    new_socket = client_socket_update.get()
-                    self.relay_server.conn_sockets[conn_socket_num] = new_socket
+                    print('waiting to reconnect', 'node 1')
+                    new_socket = self.client1_socket_update.get()
+                    self.relay_server.conn_sockets[0] = new_socket
+
+                if self.is_client2_connected.value:
+                    self.relay_server.send_to_node(self.packet_to_len_str(msg).encode(), 1)
+                else:
+                    print('waiting to reconnect', 'node 2')
+                    new_socket = self.client2_socket_update.get()
+                    self.relay_server.conn_sockets[1] = new_socket
             except Exception as e:
                 print(e, 'got errrr')
                 break
@@ -206,9 +210,6 @@ class RelayServerJobs:
             self.processes.append(process_receive)
             process_receive.start()
 
-            process_send = Process(target=self.send_to_relay_node_task, args=(conn_count, relay_server_to_node, is_client_connected, socket_update), daemon=True)
-            self.processes.append(process_send)
-            process_send.start()
         except Exception as e:
             print(e)
         except:

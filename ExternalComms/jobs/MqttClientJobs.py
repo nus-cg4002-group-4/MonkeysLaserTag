@@ -104,7 +104,7 @@ class MqttClientJobs:
             # self.mqtt_client3.start_client()
 
             # Thread for subscription
-            process_recv_hit_miss = Process(target=self.recv_from_hit_miss_task, args=(engine_to_vis_gamestate,), daemon=True)
+            process_recv_hit_miss = Process(target=self.recv_from_hit_miss_task, args=(vis_to_engine_p1, vis_to_engine_p2), daemon=True)
             self.processes.append(process_recv_hit_miss)
             process_recv_hit_miss.start()
 

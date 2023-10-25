@@ -38,7 +38,7 @@ class RelayNode:
         msg = str(arr)
         while True:
             self.send_to_server(str(len(msg)) + '_' + msg)
-            time.sleep(3)
+            time.sleep(10)
 
 
 relay_node = RelayNode()
