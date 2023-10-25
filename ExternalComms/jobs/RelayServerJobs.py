@@ -50,16 +50,14 @@ class RelayServerJobs:
 
                 if count == WINDOW:
                         # DMA stuff
-                    print('80 reached')
+                    print('80 reached ', conn_num + 1)
                     count = WINDOW - REMOVE
-                    print('sent to ai')
                     self.dma.send_to_ai_input_2d(np.array(packets))
                     ai_result, certainty = self.dma.recv_from_ai()
                     # ai_result, certainty = (3, 0.5)
                     print(actions[ai_result], ai_result, ' ',  certainty, ' certainty')
                     if certainty > 0.4 and ai_result != 9:
                         relay_server_to_engine.put((1, f'{conn_num + 1} {ai_result}'))
-
                     packets[:] = []
                     time.sleep(1)
                     try:
@@ -142,9 +140,7 @@ class RelayServerJobs:
         # print(conn_socket_num)
         try:
             msg = await self.relay_server.receive_from_node(conn_socket_num)
-            print('here was ok')
             if self.relay_server.is_running:
-                print('here is ok too')
                 node_to_parser.put((conn_socket_num + 1, msg))
                 print('Received from relay node: ', msg, conn_socket_num + 1)
         except ClientDisconnectException:

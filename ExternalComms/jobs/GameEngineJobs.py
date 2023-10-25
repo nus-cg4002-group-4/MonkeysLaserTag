@@ -47,13 +47,14 @@ class GameEngineJobs:
     
     def gen_action_task_player(self, action_to_engine, engine_to_vis_gamestate, engine_to_eval, vis_to_engine, server_to_node, p1, p2, conn_num):
         delete = False
+        player_id = conn_num + 1
         while True:
             
             try:
                 # game engine
                 signal, msg = action_to_engine.get()
                 print('game engine ', msg)
-                hit_miss = '1 1'
+                hit_miss = f'{player_id} 1'
                 if signal == 2:
                     # goggle then bullet
                     is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
@@ -63,7 +64,7 @@ class GameEngineJobs:
                     except queue.Empty:
                         print('bullet timeout, regard as shot')
                         delete = True
-                        is_shoot, updated_game_state = self.gameLogic.relay_logic(f'{conn_num + 1} 3 6', p1, p2)
+                        is_shoot, updated_game_state = self.gameLogic.relay_logic(f'{player_id} 3 6', p1, p2)
 
                 elif signal == 3:
                     # bullet then goggle
@@ -75,7 +76,7 @@ class GameEngineJobs:
                             recv_signal, recv_msg = action_to_engine.get(timeout=0.5)
                         except queue.Empty:
                             delete = True
-                            print('goggle timeout, regard as no shot')
+                            print('goggle timeout, regard as no shot ', player_id)
                     if recv_signal == 2:
                         is_shoot, updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)
                 elif signal == 1:
@@ -83,7 +84,7 @@ class GameEngineJobs:
                     #dummy ai input
                     #get message input from AI function format:: "player_id enum"
                     id = int(msg[2])
-                    print('id was ', id)
+                    print('id was ', player_id, id)
                     if id == 2: #reload
                         updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2, False)
                         engine_to_vis_gamestate.put(updated_game_state)
@@ -94,14 +95,13 @@ class GameEngineJobs:
                         continue
                     if  id >= 3 and id <= 7 or id == 0: #grenades, and all skill
                         
-                        print('i sent vis request')
-                        engine_to_vis_gamestate.put('r ' + str(conn_num + 1))
+                        print('i sent vis request ', player_id)
+                        engine_to_vis_gamestate.put('r ' + str(player_id))
                         try:
                             hit_miss = vis_to_engine.get(timeout=1.3)
-                            print('recv from viz ', hit_miss)
+                            print('recv from viz ', player_id, hit_miss)
                         except queue.Empty:
-                            hit_miss = '1 1'
-                            print('timeout for viz hit_miss')
+                            print('timeout for viz hit_miss ', player_id)
                         print(hit_miss)
 
                     updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2, False)  

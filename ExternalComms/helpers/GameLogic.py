@@ -64,7 +64,6 @@ class GameLogic:
         # playerID, packetID, bullets
 
         msgIn_arugments = list(map(int, msgIn.split()))
-        print(msgIn_arugments)
         is_shoot = False
         
         if msgIn_arugments[0] == 1:
