@@ -50,11 +50,11 @@ class RelayServerJobs:
 
                 if count == WINDOW:
                         # DMA stuff
-                    print('80 reached ', conn_num + 1)
+                    print('80 reached ', conn_num + 1, data_arr)
                     count = WINDOW - REMOVE
                     self.dma.send_to_ai_input_2d(np.array(packets))
                     ai_result, certainty = self.dma.recv_from_ai()
-                    # ai_result, certainty = (3, 0.5)
+                    # ai_result, certainty = (3 if conn_num == 0 else 7, 0.5)
                     print(actions[ai_result], ai_result, ' ',  certainty, ' certainty')
                     if certainty > 0.4 and ai_result != 9:
                         relay_server_to_engine.put((1, f'{conn_num + 1} {ai_result}'))
@@ -70,7 +70,7 @@ class RelayServerJobs:
             except queue.Empty:
                 count = 0
                 packets[:] = []
-                print('Discarded relay packets')
+                print('Discarded relay packets', conn_num + 1)
             except Exception as e:
                 print(e)
                 break
@@ -105,12 +105,15 @@ class RelayServerJobs:
                 data_arr = self.parser.convert_to_arr(data)
                 #print('data_arr', 'data arr')
                 pkt_id, msg = self.parser.decide_dest(data_arr)
+                print('parser player was ', pkt_id, player_id, data)
                 if pkt_id == 1:
                     # hand
                     # send to ai
                     if player_id == 1:
+                        print('send to ai 111')
                         relay_server_to_ai_p1.put(data_arr)
                     else:
+                        print('send to ai 222')
                         relay_server_to_ai_p2.put(data_arr)
                     continue
                 elif pkt_id == 2:

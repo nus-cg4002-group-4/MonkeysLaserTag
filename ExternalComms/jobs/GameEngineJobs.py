@@ -53,7 +53,7 @@ class GameEngineJobs:
             try:
                 # game engine
                 signal, msg = action_to_engine.get()
-                print('game engine ', msg)
+                print('game engine ', player_id,msg)
                 hit_miss = f'{player_id} 1'
                 if signal == 2:
                     # goggle then bullet

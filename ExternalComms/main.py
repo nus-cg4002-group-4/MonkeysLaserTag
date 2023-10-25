@@ -94,14 +94,14 @@ class Brain:
 
             relay_server_process_p2 = Process(target=self.relay_server_jobs.relay_server_job_player, 
                                                 args=(self.relay_server_to_engine_p2, 
-                                                    self.relay_server_to_node_p2,
+                                                    self.relay_server_to_node,
                                                     self.relay_server_to_ai_p2,
                                                     self.relay_server_to_parser,
                                                     1))
             self.processes.append(relay_server_process_p2)
             relay_server_process_p2.start()
 
-            process_send = Process(target=self.relay_server_jobs.send_to_relay_node_task, args=(self.relay_server_to_node), daemon=True)
+            process_send = Process(target=self.relay_server_jobs.send_to_relay_node_task, args=(self.relay_server_to_node,), daemon=True)
             self.processes.append(process_send)
             process_send.start()
 
