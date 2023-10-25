@@ -26,12 +26,17 @@ class Brain:
 
         self.eval_client_to_server = Queue()
         self.eval_client_to_game_engine = Queue()
-        self.relay_server_to_engine = Queue()
-        self.relay_server_to_ai = Queue()
-        self.relay_server_to_node = Queue()
+        self.relay_server_to_engine_p1 = Queue()
+        self.relay_server_to_engine_p2 = Queue()
+        self.relay_server_to_ai_p1 = Queue()
+        self.relay_server_to_ai_p2 = Queue()
+        self.relay_server_to_node_p1 = Queue()
+        self.relay_server_to_node_p2 = Queue()
         self.game_engine_to_vis_gamestate = Queue()
         self.game_engine_to_vis_hit = Queue()
-        self.vis_to_game_engine = Queue()
+        self.vis_to_game_engine_p1 = Queue()
+        self.vis_to_game_engine_p2 = Queue()
+        self.relay_server_to_parser = Queue()
 
     def start_processes(self):
         try:
@@ -48,7 +53,8 @@ class Brain:
             # Mqtt Client Process
             self.mqtt_client_process = Process(target=self.mqtt_client_jobs.mqtt_client_job, 
                                                 args=(self.game_engine_to_vis_gamestate, 
-                                                    self.vis_to_game_engine))
+                                                    self.vis_to_game_engine_p1,
+                                                    self.vis_to_game_engine_p2))
             self.processes.append(self.mqtt_client_process)
             self.mqtt_client_process.start()
 
@@ -57,21 +63,43 @@ class Brain:
                                                 args=(self.eval_client_to_game_engine,
                                                     self.eval_client_to_server,
                                                     self.game_engine_to_vis_gamestate, 
-                                                    self.game_engine_to_vis_hit,
-                                                    self.vis_to_game_engine,
-                                                    self.relay_server_to_engine,
-                                                    self.relay_server_to_node))
+                                                    self.vis_to_game_engine_p1,
+                                                    self.relay_server_to_engine_p1,
+                                                    self.relay_server_to_node_p1,
+                                                    self.vis_to_game_engine_p2,
+                                                    self.relay_server_to_engine_p2,))
             self.processes.append(self.game_engine_process)
             self.game_engine_process.start()
 
 
+            # Parser Process
+            self.relay_server_jobs.initialize()
+            process_parse = Process(target=self.relay_server_jobs.send_from_parser, args=(self.relay_server_to_parser,
+                                                                                        self.relay_server_to_engine_p1, 
+                                                                                        self.relay_server_to_ai_p1, 
+                                                                                        self.relay_server_to_engine_p2, 
+                                                                                        self.relay_server_to_ai_p2), daemon=True)
+            self.processes.append(process_parse)
+            process_parse.start()
+            
             # Relay Server Process
-            self.relay_server_process = Process(target=self.relay_server_jobs.relay_server_job, 
-                                                args=(self.relay_server_to_engine, 
-                                                    self.relay_server_to_node,
-                                                    self.relay_server_to_ai))
-            self.processes.append(self.relay_server_process)
-            self.relay_server_process.start()
+            relay_server_process_p1 = Process(target=self.relay_server_jobs.relay_server_job_player, 
+                                                args=(self.relay_server_to_engine_p1, 
+                                                    self.relay_server_to_node_p1,
+                                                    self.relay_server_to_ai_p1,
+                                                    self.relay_server_to_parser,
+                                                    0))
+            self.processes.append(relay_server_process_p1)
+            relay_server_process_p1.start()
+
+            relay_server_process_p2 = Process(target=self.relay_server_jobs.relay_server_job_player, 
+                                                args=(self.relay_server_to_engine_p2, 
+                                                    self.relay_server_to_node_p2,
+                                                    self.relay_server_to_ai_p2,
+                                                    self.relay_server_to_parser,
+                                                    1))
+            self.processes.append(relay_server_process_p2)
+            relay_server_process_p2.start()
 
 
              # Eval Client Process  
@@ -90,6 +118,8 @@ class Brain:
         
         except Exception as e:
             print(e)
+        finally:
+            self.relay_server_jobs.close_job()
 
         return True
     

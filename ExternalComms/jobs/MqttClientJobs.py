@@ -56,10 +56,14 @@ class MqttClientJobs:
         print('Closed Mqtt Publish')
         
     
-    def recv_from_hit_miss_task(self, vis_to_engine):
+    def recv_from_hit_miss_task(self, vis_to_engine_p1, vis_to_engine_p2):
         def on_message_hit_miss(client, userdata, msg):
             print(str(msg.payload), 'recv from viz')
-            vis_to_engine.put(str(msg.payload))
+            hit_miss = str(msg.payload)[2:-1]
+            if hit_miss[0] == '1':
+                vis_to_engine_p1.put(hit_miss)
+            else:
+                vis_to_engine_p2.put(hit_miss)
 
         while True:
             try:
@@ -85,9 +89,14 @@ class MqttClientJobs:
             pass
         print('Closed Mqtt Subscribe')
     
-    def mqtt_client_job(self, engine_to_vis_gamestate, vis_to_engine):
+    def mqtt_client_job(self, engine_to_vis_gamestate, vis_to_engine_p1, vis_to_engine_p2):
         def on_message_hit_miss(client, userdata, msg):
-            vis_to_engine.put(str(msg.payload))
+            print(str(msg.payload), 'recv from viz')
+            hit_miss = str(msg.payload)[2:-1]
+            if hit_miss[0] == '1':
+                vis_to_engine_p1.put(hit_miss)
+            else:
+                vis_to_engine_p2.put(hit_miss)
 
         try:
             self.mqtt_client1.start_client(on_message_hit_miss)

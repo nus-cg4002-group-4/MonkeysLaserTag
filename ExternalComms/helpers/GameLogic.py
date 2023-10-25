@@ -53,7 +53,7 @@ class GameLogic:
             pass
         print('-----------------')
 
-        return self.convert_to_json(player_1, player_2)
+        return self.convert_to_json(player_1, player_2, 1)
 
     
 
@@ -71,9 +71,11 @@ class GameLogic:
             # player 1
             currentPlayer = player_1
             enemyPlayer = player_2
+            player_id = 1
         elif msgIn_arugments[0] == 2:
             currentPlayer = player_2
             enemyPlayer = player_1
+            player_id = 2
 
         if msgIn_arugments[1] == 2:
             # packetID 1: hit, health, shield
@@ -83,7 +85,7 @@ class GameLogic:
             #bullets
             is_shoot = currentPlayer.shoot()
             currentPlayer.set_action("gun")
-        return is_shoot, self.convert_to_json(player_1, player_2)
+        return is_shoot, self.convert_to_json(player_1, player_2, player_id)
 
     def ai_logic(self, msgIn, can_see, player_1, player_2, can_reload):
         # msgIn "playerId enum"
@@ -94,11 +96,12 @@ class GameLogic:
             #player 1
             currentPlayer = player_1
             enemyPlayer = player_2
-            
+            player_id = 1
         elif args[0] == 2:
             #player 2
             currentPlayer = player_2
             enemyPlayer = player_1
+            player_id = 2
       
         if args[1] == -1: #none
             currentPlayer.set_action("none")
@@ -156,12 +159,12 @@ class GameLogic:
             currentPlayer.set_action("logout")
         else:
             currentPlayer.set_action("none")
-        return self.convert_to_json(player_1, player_2)
+        return self.convert_to_json(player_1, player_2, player_id)
     
-    def convert_to_json(self, player1, player2):
+    def convert_to_json(self, player1, player2, player_id):
         game_state_sent = {
-            "player_id": player1.get_id(),
-            "action": player1.get_action(),
+            "player_id": player_id,
+            "action": player1.get_action() if player_id == 1 else player2.get_action(),
             "game_state": {
                 'p1': player1.get_player(),
                 'p2': player2.get_player(),

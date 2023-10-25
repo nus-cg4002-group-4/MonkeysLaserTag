@@ -8,7 +8,7 @@ class RelayNode:
     def __init__(self):
         #self.server_host = 'makerslab-fpga-16.d2.comp.nus.edu.sg'
         self.server_host = 'localhost'
-        self.server_port = 26497
+        self.server_port = 26480
         self.server_pw = None
         self.conn_socket = None
         self.connection_count = 0
@@ -34,11 +34,11 @@ class RelayNode:
         self.connect_to_server()
         
         #self.receive_from_server()
-        arr = [1, 1, 1, 80, 20]
+        arr = [2, 1, 6]
         msg = str(arr)
         while True:
             self.send_to_server(str(len(msg)) + '_' + msg)
-            time.sleep(5)
+            time.sleep(3)
 
 
 relay_node = RelayNode()
