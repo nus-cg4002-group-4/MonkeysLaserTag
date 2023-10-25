@@ -20,12 +20,12 @@ class MqttClientJobs:
     #         except:
     #             break
     
-    def send_to_vis_gamestate_task(self, engine_to_vis):
+    def send_to_vis_gamestate_p1_task(self, engine_to_vis):
         try:
             time.sleep(3)
-            self.mqtt_client2.publish_to_topic(self.mqtt_client2.game_state_topic, 'test')
+            self.mqtt_client2.publish_to_topic(self.mqtt_client2.game_state_p1_topic, 'test')
             time.sleep(1)
-            self.mqtt_client2.publish_to_topic(self.mqtt_client2.game_state_topic, 'tt')
+            self.mqtt_client2.publish_to_topic(self.mqtt_client2.game_state_p1_topic, 'tt')
 
             print('Attempt mqtt test. Check on viz')
         except Exception as e:
@@ -35,7 +35,8 @@ class MqttClientJobs:
             try:
                 msg = engine_to_vis.get()
                 print('Sent gamestate to Visualizer: ')
-                self.mqtt_client2.publish_to_topic(self.mqtt_client2.game_state_topic, msg)
+                self.mqtt_client2.publish_to_topic(self.mqtt_client2.game_state_p1_topic, msg)
+                time.sleep(0.4)
             except Exception as e:
                 print(e)
                 print('Attempt Mqtt re-publish')
@@ -45,6 +46,33 @@ class MqttClientJobs:
                     print('Failed to close. Starting new without closing.')
                 self.mqtt_client2 = MqttClient()
                 self.mqtt_client2.start_client()
+                time.sleep(5)
+            except:
+                break
+            
+        try:
+            self.mqtt_client2.close_client()
+        except:
+            pass
+        print('Closed Mqtt Publish')
+    
+    def send_to_vis_gamestate_p2_task(self, engine_to_vis):
+            
+        while True:
+            try:
+                msg = engine_to_vis.get()
+                print('Sent gamestate to Visualizer: ')
+                self.mqtt_client3.publish_to_topic(self.mqtt_client3.game_state_p2_topic, msg)
+                time.sleep(0.3)
+            except Exception as e:
+                print(e)
+                print('Attempt Mqtt re-publish')
+                try:
+                    self.mqtt_client3.close_client()
+                except:
+                    print('Failed to close. Starting new without closing.')
+                self.mqtt_client3 = MqttClient()
+                self.mqtt_client3.start_client()
                 time.sleep(5)
             except:
                 break
@@ -89,7 +117,7 @@ class MqttClientJobs:
             pass
         print('Closed Mqtt Subscribe')
     
-    def mqtt_client_job(self, engine_to_vis_gamestate, vis_to_engine_p1, vis_to_engine_p2):
+    def mqtt_client_job(self, engine_to_vis_gamestate_p1, engine_to_vis_gamestate_p2, vis_to_engine_p1, vis_to_engine_p2):
         def on_message_hit_miss(client, userdata, msg):
             print(str(msg.payload), 'recv from viz')
             hit_miss = str(msg.payload)[2:-1]
@@ -101,6 +129,7 @@ class MqttClientJobs:
         try:
             self.mqtt_client1.start_client(on_message_hit_miss)
             self.mqtt_client2.start_client()
+            self.mqtt_client3.start_client()
             # self.mqtt_client3.start_client()
 
             # Thread for subscription
@@ -109,9 +138,13 @@ class MqttClientJobs:
             process_recv_hit_miss.start()
 
             
-            process_send_gamestate = Process(target=self.send_to_vis_gamestate_task, args=(engine_to_vis_gamestate,), daemon=True)
-            self.processes.append(process_send_gamestate)
-            process_send_gamestate.start()
+            process_send_gamestate_p1 = Process(target=self.send_to_vis_gamestate_p1_task, args=(engine_to_vis_gamestate_p1,), daemon=True)
+            self.processes.append(process_send_gamestate_p1)
+            process_send_gamestate_p1.start()
+
+            process_send_gamestate_p2 = Process(target=self.send_to_vis_gamestate_p2_task, args=(engine_to_vis_gamestate_p2,), daemon=True)
+            self.processes.append(process_send_gamestate_p2)
+            process_send_gamestate_p2.start()
 
             # process_send_request = Process(target=self.send_to_vis_hit_task, args=(engine_to_vis_hit,), daemon=True)
             # self.processes.append(process_send_request)

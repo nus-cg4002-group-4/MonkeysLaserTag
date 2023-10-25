@@ -32,7 +32,8 @@ class Brain:
         self.relay_server_to_ai_p2 = Queue()
         self.relay_server_to_node = Queue()
         self.relay_server_to_node_p2 = Queue()
-        self.game_engine_to_vis_gamestate = Queue()
+        self.game_engine_to_vis_gamestate_p1 = Queue()
+        self.game_engine_to_vis_gamestate_p2 = Queue()
         self.game_engine_to_vis_hit = Queue()
         self.vis_to_game_engine_p1 = Queue()
         self.vis_to_game_engine_p2 = Queue()
@@ -52,7 +53,8 @@ class Brain:
             # DEFINE PROCESSES
             # Mqtt Client Process
             self.mqtt_client_process = Process(target=self.mqtt_client_jobs.mqtt_client_job, 
-                                                args=(self.game_engine_to_vis_gamestate, 
+                                                args=(self.game_engine_to_vis_gamestate_p1, 
+                                                    self.game_engine_to_vis_gamestate_p2, 
                                                     self.vis_to_game_engine_p1,
                                                     self.vis_to_game_engine_p2))
             self.processes.append(self.mqtt_client_process)
@@ -62,7 +64,8 @@ class Brain:
             self.game_engine_process = Process(target=self.game_engine_jobs.game_engine_job, 
                                                 args=(self.eval_client_to_game_engine,
                                                     self.eval_client_to_server,
-                                                    self.game_engine_to_vis_gamestate, 
+                                                    self.game_engine_to_vis_gamestate_p1, 
+                                                    self.game_engine_to_vis_gamestate_p2, 
                                                     self.vis_to_game_engine_p1,
                                                     self.relay_server_to_engine_p1,
                                                     self.relay_server_to_node,
