@@ -150,8 +150,6 @@ class Beetle():
         getDict = json.loads(data)
 
         
-        print("getDict action: ", getDict['action'])
-
         health = int(getDict['game_state']['p2']['hp'])
         shield = int(getDict['game_state']['p2']['shield_hp'])
 
