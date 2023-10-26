@@ -21,19 +21,24 @@ class Dma:
         self.dma.sendchannel.transfer(in_buffer)
         self.dma.sendchannel.wait()
     
-    def send_to_ai_input_2d(self, data):
-        in_buffer = allocate(shape=(560,), dtype=np.float32)
+    def send_to_ai_input_2d(self, data, player_id):
+        in_buffer = allocate(shape=(561,), dtype=np.float32)
         normalize_flex = lambda i: i * (2**15 / 2**10)
         data[:,6] = np.vectorize(normalize_flex)(data[:,6])
 
         asfloat = lambda i: float(i + 2**15) / 2**15 - 1.0
         inp = np.vectorize(asfloat)(data)
-        in_buffer[:] = np.array(inp).astype(np.float32).flatten()
+        input_array = np.array(inp).astype(np.float32).flatten()
+        in_buffer[:] = np.insert(input_array, 0, struct.unpack('f', struct.pack('i', player_id))[0], axis=0)
         self.dma.sendchannel.transfer(in_buffer)
         self.dma.sendchannel.wait()
 
     def recv_from_ai(self):
         out_buffer = allocate(shape=(1,), dtype=np.int32)
+
+        self.dma.recvchannel.transfer(out_buffer)
+        self.dma.recvchannel.wait()
+        player_id = out_buffer[0]
 
         self.dma.recvchannel.transfer(out_buffer)
         self.dma.recvchannel.wait()
@@ -45,5 +50,5 @@ class Dma:
         certainty = struct.unpack('f', out_buffer[0])[0]
         print(certainty)
 
-        return (int(result), float(certainty))
+        return (int(player_id), int(result), float(certainty))
     

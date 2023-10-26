@@ -47,25 +47,23 @@ class RelayServerJobs:
                 packets.append(data_arr[1:])
 
                 count += 1
-
+                # if True:
                 if count == WINDOW:
                         # DMA stuff
                     print('80 reached ', conn_num + 1, data_arr)
-                    count = WINDOW - REMOVE
-                    self.dma.send_to_ai_input_2d(np.array(packets))
-                    ai_result, certainty = self.dma.recv_from_ai()
+                    self.dma.send_to_ai_input_2d(np.array(packets), conn_num + 1)
+                    player_id, ai_result, certainty = self.dma.recv_from_ai()
                     # ai_result, certainty = (3 if conn_num == 0 else 7, 0.5)
-                    print(actions[ai_result], ai_result, ' ',  certainty, ' certainty')
+                    print(f"player: {player_id} action: {actions[ai_result]} {ai_result} certainty: {certainty}")
                     if certainty > 0.4 and ai_result != 9:
                         relay_server_to_engine.put((1, f'{conn_num + 1} {ai_result}'))
                     packets[:] = []
-                    time.sleep(1)
+                    time.sleep(1.5)
                     try:
                         while True:
                             relay_server_to_ai.get_nowait()
                     except queue.Empty:
                         print('now empty queue.')
-
                     count = 0
             except queue.Empty:
                 count = 0
@@ -189,7 +187,7 @@ class RelayServerJobs:
                 break
     
     def initialize(self):
-        self.dma.initialize()
+        # self.dma.initialize()
         pass
     
     def relay_server_job_player(self, relay_server_to_engine, relay_server_to_node, relay_server_to_ai, relay_server_to_parser, conn_count):

@@ -7,8 +7,7 @@ import json
 class MqttClient:
     def __init__(self):
         self.hit_miss_topic = 'hit_miss'
-        self.game_state_p1_topic = 'gamestate1'
-        self.game_state_p2_topic = 'gamestate2'
+        self.game_state_topic = 'gamestate'
         self.request_topic = 'hit_miss_request'
         self.hostname = None
         self.port = None
