@@ -24,7 +24,7 @@ for file in os.listdir(dir):
         data = f.read().split(',')
 
         start_time = time.time()
-        in_buffer[:] = np.concatenate((np.array([player_id]).astype(np.int32), np.array(data).astype(np.float32)))
+        in_buffer[:] = np.concatenate((np.array([in_player_id]).astype(np.int32), np.array(data).astype(np.float32)))
         in_player_id += 1
         dma.sendchannel.transfer(in_buffer)
         dma.sendchannel.wait()
