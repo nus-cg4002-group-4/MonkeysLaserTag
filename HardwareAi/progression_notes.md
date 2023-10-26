@@ -10,15 +10,35 @@ Action should be in the middle of sample due to nature of Conv1D
 
 Enumerations:
 * Grenade
+    * Pull back with fist clenched, throw over shoulder
+    * Onset triggered on pull back
 * Shield
+    * Clench fist and hit chest, stay for 1s before returning
+    * Onset triggered on raise
 * Reload
+   * From raised gun position, pull hand towrds chest with open palm facing upwards, the return to raised gun position
+   * Onset triggered on pull back
 * Punch
+    * Throw punch straight ahead, then return to neutral position
+    * Onset triggered on punch
 * Spear
+    * Pump imaginary spear twice slowly, then throw
+    * Onset triggered on first pump
 * Hammer
+    * Swing arm in a circle clockwise on the right side of you twice, then release towards the front
+    * Onset triggered on first circle
 * Portal
+    * Make L with three fingers, then spin in circle in front of you twice, then return to neutral position
+    * Onset triggered while making the circle
 * Spider
+    * Pull your hand back towards you, then flick your wrist outwards, forming your hand into the spiderman shape
+    * Onset triggered while flicking
 * Logout
-* Idle/Aiming?
+    * Tap right shoulder twice, then return to neutal position
+    * Onset triggered on first tap
+* Raise gun
+    * From a neutral position, raise your gun and take aim
+    * Onset triggered on raise
 
 Actions which are confused:
 * Grenade and punch
