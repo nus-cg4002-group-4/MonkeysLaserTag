@@ -14,7 +14,8 @@ print('Overlay loaded.')
 dir = os.path.join(cfd, 'test_values')
 in_buffer = allocate(shape=(561,), dtype=np.float32)
 out_buffer = allocate(shape=(1,), dtype=np.int32)
-player_id = 0
+in_player_id = 0
+out_player_id = 0
 
 for file in os.listdir(dir):
     if file.endswith(".in"):
@@ -24,9 +25,13 @@ for file in os.listdir(dir):
 
         start_time = time.time()
         in_buffer[:] = np.concatenate((np.array([player_id]).astype(np.int32), np.array(data).astype(np.float32)))
-        player_id += 1
+        in_player_id += 1
         dma.sendchannel.transfer(in_buffer)
         dma.sendchannel.wait()
+
+        dma.recvchannel.transfer(out_buffer)
+        dma.recvchannel.wait()
+        out_player_id = out_buffer[0]
 
         dma.recvchannel.transfer(out_buffer)
         dma.recvchannel.wait()
@@ -37,6 +42,7 @@ for file in os.listdir(dir):
         certainty = struct.unpack('f', struct.pack('i', out_buffer[0]))[0]
         end_time = time.time()
 
+        print('Player ID:', out_player_id)
         print('Output:', result)
         print('Certainty:', certainty)
         print('Time taken:', end_time - start_time)
