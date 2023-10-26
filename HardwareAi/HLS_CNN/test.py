@@ -24,7 +24,10 @@ for file in os.listdir(dir):
         data = f.read().split(',')
 
         start_time = time.time()
-        in_buffer[:] = np.concatenate((np.array([in_player_id]).astype(np.int32), np.array(data).astype(np.float32)))
+        print(np.array(struct.unpack('f', struct.pack('i', in_player_id))[0]))
+        input_array = np.array(data).astype(np.float32)
+        input_array = np.insert(input_array, 0, struct.unpack('f', struct.pack('i', in_player_id))[0], axis=0)
+        in_buffer[:] = input_array
         in_player_id += 1
         dma.sendchannel.transfer(in_buffer)
         dma.sendchannel.wait()
