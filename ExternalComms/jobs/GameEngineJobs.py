@@ -52,7 +52,9 @@ class GameEngineJobs:
             
             try:
                 # game engine
-                signal, msg = action_to_engine.get()
+                signal, msg = 2, '1 2 6'
+                time.sleep(5)
+                # signal, msg = action_to_engine.get()
                 print('game engine ', player_id,msg)
                 hit_miss = f'{player_id} 1'
                 if signal == 2:
@@ -96,8 +98,6 @@ class GameEngineJobs:
                     if  id >= 3 and id <= 7 or id == 0: #grenades, and all skill
                         
                         print('i sent vis request ', player_id)
-                        engine_to_vis_gamestate.put('r ' + str(player_id))
-
                         engine_to_vis_gamestate.put('r ' + str(player_id))
                         try:
                             hit_miss = vis_to_engine.get(timeout=1.3)

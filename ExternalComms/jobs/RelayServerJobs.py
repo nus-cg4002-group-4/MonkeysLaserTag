@@ -58,7 +58,7 @@ class RelayServerJobs:
                     if certainty > 0.4 and ai_result != 9:
                         relay_server_to_engine.put((1, f'{conn_num + 1} {ai_result}'))
                     packets[:] = []
-                    time.sleep(1.5)
+                    time.sleep(2)
                     try:
                         while True:
                             relay_server_to_ai.get_nowait()
@@ -107,10 +107,8 @@ class RelayServerJobs:
                     # hand
                     # send to ai
                     if player_id == 1:
-                        print('send to ai 111')
                         relay_server_to_ai_p1.put(data_arr)
                     else:
-                        print('send to ai 222')
                         relay_server_to_ai_p2.put(data_arr)
                     continue
                 elif pkt_id == 2:
@@ -187,7 +185,7 @@ class RelayServerJobs:
                 break
     
     def initialize(self):
-        # self.dma.initialize()
+        self.dma.initialize()
         pass
     
     def relay_server_job_player(self, relay_server_to_engine, relay_server_to_node, relay_server_to_ai, relay_server_to_parser, conn_count):
