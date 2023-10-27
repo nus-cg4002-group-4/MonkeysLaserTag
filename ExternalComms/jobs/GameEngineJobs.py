@@ -45,26 +45,24 @@ class GameEngineJobs:
                 print('Received from eval server ', msg)
     
     
-    def gen_action_task_player(self, action_to_engine, engine_to_vis_gamestate, engine_to_eval, vis_to_engine, server_to_node, p1, p2, conn_num):
+    def gen_action_task_player(self, action_to_engine, action_engine_other, engine_to_vis_gamestate, engine_to_eval, vis_to_engine, server_to_node, p1, p2, conn_num):
         delete = False
         player_id = conn_num + 1
         while True:
             
             try:
                 # game engine
-                signal, msg = 2, '1 2 6'
-                time.sleep(5)
-                # signal, msg = action_to_engine.get()
+                signal, msg = action_to_engine.get()
                 print('game engine ', player_id,msg)
                 hit_miss = f'{player_id} 1'
                 if signal == 2:
                     # goggle then bullet
                     is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
                     try:
-                        recv_signal, recv_msg = action_to_engine.get(timeout=0.5)
+                        recv_signal, recv_msg = action_engine_other.get(timeout=0.5)
                         is_shoot, updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)
                     except queue.Empty:
-                        print('bullet timeout, regard as shot')
+                        print('bullet timeout, regard as shot', player_id)
                         delete = True
                         is_shoot, updated_game_state = self.gameLogic.relay_logic(f'{player_id} 3 6', p1, p2)
 
@@ -75,7 +73,7 @@ class GameEngineJobs:
                     recv_signal = 0
                     if is_shoot:
                         try:
-                            recv_signal, recv_msg = action_to_engine.get(timeout=0.5)
+                            recv_signal, recv_msg = action_engine_other.get(timeout=0.5)
                         except queue.Empty:
                             delete = True
                             print('goggle timeout, regard as no shot ', player_id)
@@ -120,6 +118,14 @@ class GameEngineJobs:
                         except queue.Empty:
                             print('deleted actions in the queue')
                             break
+
+                if delete:
+                    while True:
+                        try:
+                            action_engine_other.get_nowait()
+                        except queue.Empty:
+                            print('deleted actions in the queue')
+                            break
                 delete = False
                 
             except Exception as e:
@@ -136,11 +142,11 @@ class GameEngineJobs:
             self.processes.append(process_rcv_from_eval)
             process_rcv_from_eval.start()
 
-            process_gen_action_p1 = Process(target=self.gen_action_task_player, args=(action_to_engine_p1, engine_to_vis_gamestate, engine_to_eval, vis_to_engine_p1, server_to_node, self.player1, self.player2, 0), daemon=True)
+            process_gen_action_p1 = Process(target=self.gen_action_task_player, args=(action_to_engine_p1,action_to_engine_p2, engine_to_vis_gamestate, engine_to_eval, vis_to_engine_p1, server_to_node, self.player1, self.player2, 0), daemon=True)
             self.processes.append(process_gen_action_p1)
             process_gen_action_p1.start()
 
-            process_gen_action_p2 = Process(target=self.gen_action_task_player, args=(action_to_engine_p2, engine_to_vis_gamestate, engine_to_eval, vis_to_engine_p2, server_to_node, self.player1, self.player2, 1), daemon=True)
+            process_gen_action_p2 = Process(target=self.gen_action_task_player, args=(action_to_engine_p2,action_to_engine_p1, engine_to_vis_gamestate, engine_to_eval, vis_to_engine_p2, server_to_node, self.player1, self.player2, 1), daemon=True)
             self.processes.append(process_gen_action_p2)
             process_gen_action_p2.start()
             

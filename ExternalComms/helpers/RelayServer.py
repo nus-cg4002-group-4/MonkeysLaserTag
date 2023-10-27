@@ -17,7 +17,7 @@ class RelayServer:
         self.timeout = 600 
         self.conn_sockets = [None, None]
         self.listen_sockets = [None, None]
-        self.is_conncted = [False, False]
+        self.is_conncted = [True, True]
     
     async def recv_text(self, timeout, conn_socket_num):
         conn_socket = self.conn_sockets[conn_socket_num]
@@ -79,8 +79,10 @@ class RelayServer:
 
     def send_to_node(self, msg, conn_socket_num):
         # Msg has been encoded from parser
-        if self.is_conncted[conn_socket_num]:
-            self.conn_sockets[conn_socket_num].send(msg)
+        print('i need to send to node', conn_socket_num + 1)
+        #if self.is_conncted[conn_socket_num]:
+        print(conn_socket_num + 1, 'is_connected')
+        self.conn_sockets[conn_socket_num].send(msg)
         return msg
     
     def close_socket(self, conn_socket):

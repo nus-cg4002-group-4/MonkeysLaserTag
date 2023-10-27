@@ -167,6 +167,7 @@ class RelayServerJobs:
                 msg = relay_server_to_node.get()
                 if self.is_client1_connected.value:
                     self.relay_server.send_to_node(self.packet_to_len_str(msg).encode(), 0)
+                    print('send to player 1 node ', msg)
                 else:
                     print('waiting to reconnect', 'node 1')
                     new_socket = self.client1_socket_update.get()
@@ -174,6 +175,7 @@ class RelayServerJobs:
 
                 if self.is_client2_connected.value:
                     self.relay_server.send_to_node(self.packet_to_len_str(msg).encode(), 1)
+                    print('send to player 2 node', msg)
                 else:
                     print('waiting to reconnect', 'node 2')
                     new_socket = self.client2_socket_update.get()
