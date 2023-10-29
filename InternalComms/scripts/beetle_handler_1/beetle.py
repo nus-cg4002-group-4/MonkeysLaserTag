@@ -148,15 +148,18 @@ class Beetle():
 
     def try_writing_to_beetle(self, data: str):
         getDict = json.loads(data)
-
-        health = int(getDict['game_state']['p1']['hp'])
-        shield = int(getDict['game_state']['p1']['shield_hp'])
+        print(f"{bcolors.OKGREEN}{getDict}{bcolors.ENDC}")
+        health = int(getDict["game_state"]["p1"]["hp"])
+        shield = int(getDict["game_state"]["p1"]["shield_hp"])
 
         print("Received health: ", health)
         print("Received shield: ", shield)
 
-        #self.send_shield(shield)
-        if (health == 100): self.send_health(0)
+        self.send_shield(str(shield)[0])
+
+        time.sleep(0.1)
+        
+        if (health == 100): self.send_health(str(0))
         else: self.send_health(str(health)[0]) # send the first digit of the number
     
     # def try_writing_to_beetle(self):
@@ -171,20 +174,23 @@ class Beetle():
     
     def send_shield(self, value): # simulate gamestate update
         # Invoke gamestate to receive data for gamestate in beetle
+        print(f"shield_value: {value}")
         self.emit_gamestate(type=SHIELD, value=value)
         self.ack_shield_value = value
         self.sent_shield = True
 
     def send_health(self, value): # simulate gamestate update
         # Invoke gamestate to receive data for gamestate in beetle
-        print(value)
+        print(f"health_value: {value}")
         self.emit_gamestate(type=HEALTH, value=value)
         self.ack_health_value = value
         self.sent_health = True
 
     def emit_gamestate(self, type, value):
         self.characteristic.write(bytes('g', "utf-8"))
+        time.sleep(0.01)
         self.characteristic.write(bytes(str(type), "utf-8"))
+        time.sleep(0.01)
         self.characteristic.write(bytes(str(value), "utf-8"))
         self.ack_gamestate_timer = time.time()
 
@@ -395,11 +401,15 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 unprocessed_vest_data = data[:7]
 
+                # if (self.count % 10) == 0: print(unprocessed_vest_data)
+
                 # = means native with no alignment, default is @ with alignment.
                 pkt = struct.unpack('=BBBHH', unprocessed_vest_data)
                 pkt_data = VestPacket(
                     *pkt
                 )
+
+                # print(f"Received vest packet: {pkt_data}")
                 
                 crc = struct.unpack('I', data[16:])[0]
                 if crc != custom_crc32(unprocessed_vest_data):
@@ -556,7 +566,7 @@ class ReadDelegate(btle.DefaultDelegate):
 
         except Exception as e:
             print(f"Error occured: {e}")
-            self.track_corrupted_packets
+            self.track_corrupted_packets()
 
     def track_corrupted_packets(self):
         self.corrupted_packet_counter += 1
