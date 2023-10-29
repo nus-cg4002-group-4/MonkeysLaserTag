@@ -6,7 +6,7 @@ import json
 import asyncio
 from helpers.RelayServer import RelayServer, ClientDisconnectException
 from helpers.Parser import Parser
-# from helpers.Dma import Dma
+from helpers.Dma import Dma
 import sys, os
 import numpy as np
 
@@ -32,7 +32,7 @@ class RelayServerJobs:
         self.relay_server = RelayServer()
         self.parser = Parser()
         self.processes = []
-        # self.dma = Dma()
+        self.dma = Dma()
         self.is_client1_connected = Value('i', 1)
         self.is_client2_connected = Value('i', 1)
         self.client1_socket_update = Queue()
@@ -51,7 +51,7 @@ class RelayServerJobs:
                 if count == WINDOW:
                         # DMA stuff
                     print('80 reached ', conn_num + 1, data_arr)
-                    # self.dma.send_to_ai_input_2d(np.array(packets), conn_num + 1)
+                    self.dma.send_to_ai_input_2d(np.array(packets), conn_num + 1)
                     player_id, ai_result, certainty = self.dma.recv_from_ai()
                     # ai_result, certainty = (3 if conn_num == 0 else 7, 0.5)
                     print(f"player: {player_id} action: {actions[ai_result]} {ai_result} certainty: {certainty}")
@@ -177,7 +177,7 @@ class RelayServerJobs:
                 break
     
     def initialize(self):
-        # self.dma.initialize()
+        self.dma.initialize()
         pass
     
     def relay_server_job_player(self, relay_server_to_engine, relay_server_to_node, relay_server_to_ai, relay_server_to_parser, conn_num):
