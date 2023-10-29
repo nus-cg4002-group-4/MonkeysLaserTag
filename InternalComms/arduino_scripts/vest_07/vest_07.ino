@@ -29,7 +29,7 @@
 #define BASE_DMG 10
 #define GREN_DMG 30
 
-uint8_t BULLET_DMG = 0x36;
+uint8_t BULLET_DMG = 0xC9;
 
 //Declare game event values
 bool hit = false;
@@ -124,6 +124,7 @@ uint16_t convertGamestateInt(){
   if (newHp == 0) return 100;
   return newHp;
 }
+
 
 void updateGamestate(char type) {
   if (type == SHIELD) {

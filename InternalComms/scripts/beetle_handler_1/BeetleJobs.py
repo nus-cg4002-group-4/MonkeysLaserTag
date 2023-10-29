@@ -72,7 +72,7 @@ class BeetleJobs:
     async def recv_from_server(self, node_to_imu, node_to_ir):
         data = await self.relay_node.receive_from_server()
         print(f'{bcolors.OKGREEN}Received from Server: {data}{bcolors.ENDC}')
-        node_to_imu.put(data)
+        node_to_ir.put(data)
         # TODO: Decide if it's for IMU or IR
         # if data == 'imu':
         #     node_to_imu.put(data)

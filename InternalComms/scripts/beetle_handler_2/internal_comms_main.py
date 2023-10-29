@@ -1,7 +1,7 @@
 import time
 from multiprocessing import Lock, Process, Queue, current_process
 from beetle import Beetle, bcolors
-from constants import BEETLE_MACS, BEETLE1_MAC, BEETLE2_MAC, BEETLE3_MAC
+from constants import BEETLE_MACS, BEETLE1_MAC, BEETLE2_MAC, BEETLE3_MAC, BEETLE4_MAC
 import pandas as pd
 import time
 from tabulate import tabulate

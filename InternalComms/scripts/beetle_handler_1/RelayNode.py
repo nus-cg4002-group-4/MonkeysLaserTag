@@ -6,12 +6,12 @@ class RelayNode:
     def __init__(self):
         self.server_host = 'makerslab-fpga-37.d2.comp.nus.edu.sg'
         # self.server_host = 'localhost'
-        self.server_port = 26498
+        self.server_port = 26481
         self.server_pw = None
         self.conn_socket = None
         self.connection_count = 0
         self.is_running = True
-        self.timeout = 60
+        self.timeout = 600
     
     async def recv_text(self, timeout):
         text_received   = ""
