@@ -78,8 +78,7 @@ class GameLogic:
 
         if msgIn_arugments[1] == 2:
             # packetID 1: hit, health, shield
-            if currentPlayer.get_bullets() > 0:
-                currentPlayer.reduceHP(self.skillDMG)
+            currentPlayer.reduceHP(self.skillDMG)
         elif msgIn_arugments[1] == 3:
             #bullets
             is_shoot = currentPlayer.shoot()
