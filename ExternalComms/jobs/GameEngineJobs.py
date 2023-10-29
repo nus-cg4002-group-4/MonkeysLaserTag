@@ -52,6 +52,7 @@ class GameEngineJobs:
     
     def match_bullet_task_player(self, bullet_to_engine, engine_to_vis_gamestate, engine_to_eval, server_to_node_p1, server_to_node_p2, p1, p2, conn_num):
         player_id = conn_num + 1
+        other_player_id = 0 if player_id == 1 else 1
         delete = False
         while True:
             try:
@@ -68,7 +69,7 @@ class GameEngineJobs:
                     except queue.Empty:
                         print('bullet timeout, regard as shot', player_id)
                         delete = True
-                        is_shoot, updated_game_state = self.gameLogic.relay_logic(f'{player_id} 3 6', p1, p2)
+                        is_shoot, updated_game_state = self.gameLogic.relay_logic(f'{other_player_id} 3 6', p1, p2)
 
                 elif signal == 3:
                     # bullet then goggle
@@ -82,7 +83,7 @@ class GameEngineJobs:
                         except queue.Empty:
                             delete = True
                             print('goggle timeout, regard as no shot ', player_id)
-                    if recv_signal == 2:
+                    if recv_signal == 2 and is_shoot:
                         is_shoot, updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)
                 
                 print('udpated game state ', updated_game_state)
