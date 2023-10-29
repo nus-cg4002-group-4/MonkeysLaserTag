@@ -52,7 +52,7 @@ class GameEngineJobs:
     
     def match_bullet_task_player(self, bullet_to_engine, engine_to_vis_gamestate, engine_to_eval, server_to_node_p1, server_to_node_p2, p1, p2, conn_num):
         player_id = conn_num + 1
-        other_player_id = 0 if player_id == 1 else 1
+        other_player_id = 2 if player_id == 1 else 1
         delete = False
         while True:
             try:
@@ -61,15 +61,21 @@ class GameEngineJobs:
                 print(f'bullet engine player:{player_id} msg: {msg}')
                 if signal == 2:
                     # goggle then bullet
-                    is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
                     try:
                         recv_signal, recv_msg = bullet_to_engine.get(timeout=0.5)
                         is_shoot, updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)
+                        engine_to_vis_gamestate.put(updated_game_state)
+                        if is_shoot:
+                            is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
                         print(f'player {player_id} got shot')
                     except queue.Empty:
                         print('bullet timeout, regard as shot', player_id)
                         delete = True
+                     
                         is_shoot, updated_game_state = self.gameLogic.relay_logic(f'{other_player_id} 3 6', p1, p2)
+                        engine_to_vis_gamestate.put(updated_game_state)
+                        if is_shoot:
+                            is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
 
                 elif signal == 3:
                     # bullet then goggle
@@ -88,10 +94,10 @@ class GameEngineJobs:
                 
                 print('udpated game state ', updated_game_state)
                 engine_to_eval.put(updated_game_state)
-                engine_to_vis_gamestate.put(updated_game_state)
                 server_to_node_p1.put(updated_game_state)
                 server_to_node_p2.put(updated_game_state)
-
+                updated_game_state_none = self.gameLogic.convert_to_json(p1, p2, other_player_id)
+                engine_to_vis_gamestate.put(updated_game_state_none)
                 if delete:
                     while True:
                         try:
@@ -110,7 +116,7 @@ class GameEngineJobs:
     
 
         
-    def gen_action_task_player(self, action_to_engine, action_engine_other, engine_to_vis_gamestate, engine_to_eval, vis_to_engine, server_to_node_p1, server_to_node_p2, p1, p2, conn_num):
+    def gen_action_task_player(self, action_to_engine, engine_to_vis_gamestate, engine_to_eval, vis_to_engine, server_to_node_p1, server_to_node_p2, p1, p2, conn_num):
         delete = False
         player_id = conn_num + 1
         bullet_start = None
@@ -128,16 +134,9 @@ class GameEngineJobs:
                     id = int(msg[2])
                     print('id was ', player_id, id)
                     if id == 2: #reload
-                        updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2, False)
-                        engine_to_vis_gamestate.put(updated_game_state)
-                        print('udpated game state ', updated_game_state)
                         updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2, True)
-                        engine_to_eval.put(updated_game_state)
-                        server_to_node_p1.put(updated_game_state)
-                        server_to_node_p2.put(updated_game_state)
-                        continue
+
                     if  id >= 3 and id <= 7 or id == 0: #grenades, and all skill
-                        
                         print('i sent vis request ', player_id)
                         engine_to_vis_gamestate.put('r ' + str(player_id))
                         try:
@@ -147,7 +146,7 @@ class GameEngineJobs:
                             print('timeout for viz hit_miss ', player_id)
                         print(hit_miss)
 
-                    updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2, False)  
+                        updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2, False)  
                 
                 print('udpated game state ', updated_game_state)
                 engine_to_eval.put(updated_game_state)
@@ -163,13 +162,6 @@ class GameEngineJobs:
                             print('deleted actions in the queue')
                             break
 
-                if delete:
-                    while True:
-                        try:
-                            action_engine_other.get_nowait()
-                        except queue.Empty:
-                            print('deleted actions in the queue')
-                            break
                 delete = False
                 
             except Exception as e:
@@ -186,11 +178,11 @@ class GameEngineJobs:
             self.processes.append(process_rcv_from_eval)
             process_rcv_from_eval.start()
 
-            process_gen_action_p1 = Process(target=self.gen_action_task_player, args=(action_to_engine_p1,action_to_engine_p2, engine_to_vis_gamestate, engine_to_eval, vis_to_engine_p1, server_to_node_p1, server_to_node_p2, self.player1, self.player2, 0), daemon=True)
+            process_gen_action_p1 = Process(target=self.gen_action_task_player, args=(action_to_engine_p1, engine_to_vis_gamestate, engine_to_eval, vis_to_engine_p1, server_to_node_p1, server_to_node_p2, self.player1, self.player2, 0), daemon=True)
             self.processes.append(process_gen_action_p1)
             process_gen_action_p1.start()
 
-            process_gen_action_p2 = Process(target=self.gen_action_task_player, args=(action_to_engine_p2,action_to_engine_p1, engine_to_vis_gamestate, engine_to_eval, vis_to_engine_p2, server_to_node_p1, server_to_node_p2, self.player1, self.player2, 1), daemon=True)
+            process_gen_action_p2 = Process(target=self.gen_action_task_player, args=(action_to_engine_p2, engine_to_vis_gamestate, engine_to_eval, vis_to_engine_p2, server_to_node_p1, server_to_node_p2, self.player1, self.player2, 1), daemon=True)
             self.processes.append(process_gen_action_p2)
             process_gen_action_p2.start()
 

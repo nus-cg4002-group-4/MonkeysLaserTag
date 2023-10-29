@@ -79,6 +79,8 @@ class GameLogic:
         if msgIn_arugments[1] == 2:
             # packetID 1: hit, health, shield
             currentPlayer.reduceHP(self.skillDMG)
+            currentPlayer.set_action("none")
+            return is_shoot, self.convert_to_json(player_1, player_2, 1 if player_id == 2 else 2)
         elif msgIn_arugments[1] == 3:
             #bullets
             is_shoot = currentPlayer.shoot()
@@ -90,6 +92,7 @@ class GameLogic:
         # can_see "playerId hit/miss"
         args = list(map(int, msgIn.split()))
         can_see = list(map(int, can_see.split()))
+        print('args', args)
         if args[0] == 1:
             #player 1
             currentPlayer = player_1
