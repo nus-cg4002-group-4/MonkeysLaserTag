@@ -72,7 +72,7 @@ class GameEngineJobs:
                         print('bullet timeout, regard as shot', player_id)
                         delete = True
                      
-                        is_shoot, updated_game_state = self.gameLogic.relay_logic(f'{other_player_id} 3 6', p1, p2)
+                        is_shoot, updated_game_state = self.gameLogic.relay_logic(f'{player_id} 3 6', p1, p2)
                         engine_to_vis_gamestate.put(updated_game_state)
                         if is_shoot:
                             is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
@@ -96,7 +96,7 @@ class GameEngineJobs:
                 engine_to_eval.put(updated_game_state)
                 server_to_node_p1.put(updated_game_state)
                 server_to_node_p2.put(updated_game_state)
-                updated_game_state_none = self.gameLogic.convert_to_json(p1, p2, other_player_id)
+                updated_game_state_none = self.gameLogic.convert_to_json_none(p1, p2, other_player_id)
                 engine_to_vis_gamestate.put(updated_game_state_none)
                 if delete:
                     while True:

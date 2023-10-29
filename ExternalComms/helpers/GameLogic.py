@@ -172,6 +172,17 @@ class GameLogic:
             }
         }
         return json.dumps(game_state_sent)
+    
+    def convert_to_json_none(self, player1, player2, player_id):
+        game_state_sent = {
+            "player_id": player_id,
+            "action": "none",
+            "game_state": {
+                'p1': player1.get_player(),
+                'p2': player2.get_player(),
+            }
+        }
+        return json.dumps(game_state_sent)
 
 # msg = "2 1 1 60 20"
 # game = GameLogic()
