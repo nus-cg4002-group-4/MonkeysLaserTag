@@ -6,7 +6,7 @@ import json
 import asyncio
 from helpers.RelayServer import RelayServer, ClientDisconnectException
 from helpers.Parser import Parser
-from helpers.Dma import Dma
+# from helpers.Dma import Dma
 import sys, os
 import numpy as np
 
@@ -32,7 +32,7 @@ class RelayServerJobs:
         self.relay_server = RelayServer()
         self.parser = Parser()
         self.processes = []
-        self.dma = Dma()
+        # self.dma = Dma()
         self.is_client1_connected = Value('i', 1)
         self.is_client2_connected = Value('i', 1)
         self.client1_socket_update = Queue()
@@ -51,7 +51,7 @@ class RelayServerJobs:
                 if count == WINDOW:
                         # DMA stuff
                     print('80 reached ', conn_num + 1, data_arr)
-                    self.dma.send_to_ai_input_2d(np.array(packets), conn_num + 1)
+                    # self.dma.send_to_ai_input_2d(np.array(packets), conn_num + 1)
                     player_id, ai_result, certainty = self.dma.recv_from_ai()
                     # ai_result, certainty = (3 if conn_num == 0 else 7, 0.5)
                     print(f"player: {player_id} action: {actions[ai_result]} {ai_result} certainty: {certainty}")
@@ -96,13 +96,12 @@ class RelayServerJobs:
     #         except e:
     #             break
 
-    def send_from_parser(self, node_to_parser, relay_server_to_engine_p1, relay_server_to_ai_p1, relay_server_to_engine_p2, relay_server_to_ai_p2):
+    def send_from_parser(self, node_to_parser, bullet_to_engine_p1, relay_server_to_ai_p1, bullet_to_engine_p2, relay_server_to_ai_p2):
         while True:
             try:
                 player_id, data = node_to_parser.get()
                 data_arr = self.parser.convert_to_arr(data)
-                #print('data_arr', 'data arr')
-                pkt_id, msg = self.parser.decide_dest(data_arr)
+                pkt_id, msg = self.parser.decide_dest(data_arr, player_id)
                 if pkt_id == 1:
                     # hand
                     # send to ai
@@ -115,16 +114,16 @@ class RelayServerJobs:
                     # goggle
                     print('pkt ', 2)
                     if player_id == 1:
-                        relay_server_to_engine_p1.put((pkt_id, msg))
+                        bullet_to_engine_p2.put((pkt_id, msg))
                     else:
-                        relay_server_to_engine_p2.put((pkt_id, msg))
+                        bullet_to_engine_p1.put((pkt_id, msg))
                 elif pkt_id == 3:
                     # bullet
                     print('pket', 3)
                     if player_id == 1:
-                        relay_server_to_engine_p1.put((pkt_id, msg))
+                        bullet_to_engine_p1.put((pkt_id, msg))
                     else:
-                        relay_server_to_engine_p2.put((pkt_id, msg))
+                        bullet_to_engine_p2.put((pkt_id, msg))
                 
             except Exception as e:
                 print(e, 'a')
@@ -161,25 +160,16 @@ class RelayServerJobs:
         p = packet.encode()
         return str(len(p)) + '_' + p.decode()
     
-    def send_to_relay_node_task(self, relay_server_to_node):
+    def send_to_relay_node_task(self, relay_server_to_node, is_connected, socket_update, conn_num):
         while True:
             try:
                 msg = relay_server_to_node.get()
-                if self.is_client1_connected.value:
-                    self.relay_server.send_to_node(self.packet_to_len_str(msg).encode(), 0)
-                    print('send to player 1 node ', msg)
+                if is_connected.value:
+                    self.relay_server.send_to_node(self.packet_to_len_str(msg).encode(), conn_num)
                 else:
                     print('waiting to reconnect', 'node 1')
-                    new_socket = self.client1_socket_update.get()
-                    self.relay_server.conn_sockets[0] = new_socket
-
-                if self.is_client2_connected.value:
-                    self.relay_server.send_to_node(self.packet_to_len_str(msg).encode(), 1)
-                    print('send to player 2 node', msg)
-                else:
-                    print('waiting to reconnect', 'node 2')
-                    new_socket = self.client2_socket_update.get()
-                    self.relay_server.conn_sockets[1] = new_socket
+                    new_socket = socket_update.get()
+                    self.relay_server.conn_sockets[conn_num] = new_socket
             except Exception as e:
                 print(e, 'got errrr')
                 break
@@ -187,12 +177,12 @@ class RelayServerJobs:
                 break
     
     def initialize(self):
-        self.dma.initialize()
+        # self.dma.initialize()
         pass
     
-    def relay_server_job_player(self, relay_server_to_engine, relay_server_to_node, relay_server_to_ai, relay_server_to_parser, conn_count):
+    def relay_server_job_player(self, relay_server_to_engine, relay_server_to_node, relay_server_to_ai, relay_server_to_parser, conn_num):
         try:
-            process_send_to_ai = Process(target=self.send_to_ai_task, args=(relay_server_to_ai, relay_server_to_engine, conn_count), daemon=True)
+            process_send_to_ai = Process(target=self.send_to_ai_task, args=(relay_server_to_ai, relay_server_to_engine, conn_num), daemon=True)
             self.processes.append(process_send_to_ai)
             process_send_to_ai.start()
 
@@ -200,17 +190,21 @@ class RelayServerJobs:
             # self.processes.append(process_rcv_from_ai)
             # process_rcv_from_ai.start()
 
-            conn_socket = self.relay_server.start_connection(conn_count)
-            print(f'Relay node {conn_count + 1} connected')
+            conn_socket = self.relay_server.start_connection(conn_num)
+            print(f'Relay node {conn_num + 1} connected')
 
-            is_client_connected = self.is_client1_connected if conn_count == 0 else self.is_client2_connected
-            socket_update = self.client1_socket_update if conn_count == 0 else self.client2_socket_update
+            is_client_connected = self.is_client1_connected if conn_num == 0 else self.is_client2_connected
+            socket_update = self.client1_socket_update if conn_num == 0 else self.client2_socket_update
 
-            process_receive = Process(target=self.receive_from_relay_node_task, args=(conn_count, relay_server_to_parser, is_client_connected, socket_update), daemon=True)
+            process_receive = Process(target=self.receive_from_relay_node_task, args=(conn_num, relay_server_to_parser, is_client_connected, socket_update), daemon=True)
             self.processes.append(process_receive)
             process_receive.start()
 
-        except Exception as e:
+            process_send = Process(target=self.send_to_relay_node_task, args=(relay_server_to_node, is_client_connected, socket_update, conn_num), daemon=True)
+            self.processes.append(process_send)
+            process_send.start()
+
+        except Exception as e: 
             print(e)
         except:
             print('err in relay server')
@@ -220,7 +214,7 @@ class RelayServerJobs:
                 p.join()
 
         except KeyboardInterrupt: 
-            print('Terminating Relay Server Job ', conn_count)
+            print('Terminating Relay Server Job ', conn_num)
 
         self.close_job()
         return True

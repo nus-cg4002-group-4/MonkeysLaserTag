@@ -6,7 +6,10 @@ import asyncio
 import random
 from helpers.RelayServer import RelayServer, ClientDisconnectException
 from helpers.Parser import Parser
+from multiprocessing.managers import BaseManager
+from socket import *
 
+class MyManager(BaseManager): pass
 
 class bcolors:
     HEADER = '\033[95m'
@@ -34,6 +37,13 @@ class RelayTest:
 
         self.relay_node_to_parser = Queue()
         self.dummy_queue = Queue()
+
+        MyManager.register('socket', socket)
+        self.manager = MyManager()
+        self.manager.start()
+        self.conn1 = self.manager.socket(AF_INET, SOCK_STREAM)
+        self.conn2 = self.manager.socket(AF_INET, SOCK_STREAM)
+
     def send_from_parser(self, node_to_parser, relay_server_to_engine):
         while True:
             try:
@@ -59,28 +69,28 @@ class RelayTest:
                 break
     
 
-    async def receive_from_relay_node(self, conn_socket_num, node_to_parser, is_connected, dummy_q):
-        print('recv from relay node')
-        print(conn_socket_num)
+    async def receive_from_relay_node(self, conn_socket, node_to_parser, is_connected, dummy_q):
+        # print(conn_socket_num)
         try:
-            msg = await self.relay_server.receive_from_node(conn_socket_num)
+            msg = await self.relay_server.receive_from_node(conn_socket)
             if self.relay_server.is_running:
                 node_to_parser.put(msg)
                 print('Received from relay node: ', msg)
         except ClientDisconnectException:
             is_connected.value = 0
             new_socket = self.relay_server.re_accept_connection(0)
+            self.conn1.value = new_socket
             dummy_q.put(new_socket)
             is_connected.value = 1
         except Exception as e:
             print(e)
             
-    def receive_from_relay_node_task(self, conn_socket_num, relay_node_to_parser, is_connected, dummy_q):
-        print(conn_socket_num)
+    def receive_from_relay_node_task(self, conn_socket, relay_node_to_parser, is_connected, dummy_q):
+        # print(conn_socket)
         is_connected.value = 1
         while self.relay_server.is_running:
             try:
-                asyncio.run(self.receive_from_relay_node(conn_socket_num, relay_node_to_parser, is_connected, dummy_q))
+                asyncio.run(self.receive_from_relay_node(conn_socket.value, relay_node_to_parser, is_connected, dummy_q))
             except Exception as e:
                 print(e)
                 break
@@ -106,7 +116,7 @@ class RelayTest:
         p = json.dumps(packet).encode()
         return str(len(p)) + '_' + p.decode()
     
-    def send_to_relay_node_task(self, conn_socket_num, relay_server_to_node, is_connected, dummy_q):
+    def send_to_relay_node_task(self, conn_socket, relay_server_to_node, is_connected, dummy_q):
         print('start sending')
         while True:
             try:
@@ -116,53 +126,20 @@ class RelayTest:
                 if is_connected.value:
                     msg = self.get_dummy_packet()
                     print(f"{bcolors.OKGREEN}'Sent to relay node: {msg}{bcolors.ENDC}")
-                    self.relay_server.send_to_node(msg.encode(), conn_socket_num)
+                    self.relay_server.send_to_node(msg.encode(), self.relay_server.conn_sockets[0])
+                    time.sleep(5)
                 else:
                     print('waiting to reconnect')
                     new_socket = dummy_q.get()
                     self.relay_server.conn_sockets[0] = new_socket
-                time.sleep(0.1)
+                    print('send reconnected too')
+                
             except Exception as e:
                 print(e, 'got errrr')
                 break
             except:
                 break
-    # def relay_server_client1_job(self, relay_server_to_engine, relay_server_to_node):
-    #     conn_count = 0
-    #     processes = []
-    #     try:
-                
-    #             print(f'Relay node {conn_count + 1} connect')
-
-    #             process_receive = Process(target=self.receive_from_relay_node_task, args=(conn_count, relay_server_to_engine), daemon=True)
-    #             processes.append(process_receive)
-    #             process_receive.start()
-
-    #             process_send = Process(target=self.send_to_relay_node_task, args=(conn_count, relay_server_to_node), daemon=True)
-    #             processes.append(process_send)
-    #             process_send.start()
-
-    #             print('start')
-    #             try:
-    #                 for p in processes:
-    #                     p.join()
-    #             except ClientDisconnectException:
-    #                 print('client disconnected')
-
-    #             except KeyboardInterrupt: 
-    #                 print('Terminating Relay Server Job')
-
-    #     except Exception as e:
-    #         print(e, 'err')
-    #         break
-    #     except:
-    #         break
-    #     else:
-    #         conn_count += 1
-    #         time.sleep(.5)
-
-    #     self.close_job()
-    #     return True
+    
         
     def relay_server_job(self, relay_server_to_engine, relay_server_to_node):
         conn_count = 0
@@ -173,14 +150,14 @@ class RelayTest:
 
         while conn_count < 2:
             try:
-                conn_socket = self.relay_server.start_connection(conn_count)
+                self.conn1.value = self.relay_server.start_connection(conn_count)
                 print(f'Relay node {conn_count + 1} connect')
 
-                process_receive = Process(target=self.receive_from_relay_node_task, args=(conn_count, self.relay_node_to_parser, self.is_client_connected, self.dummy_queue), daemon=True)
+                process_receive = Process(target=self.receive_from_relay_node_task, args=(self.conn1, self.relay_node_to_parser, self.is_client_connected, self.dummy_queue), daemon=True)
                 processes.append(process_receive)
                 process_receive.start()
 
-                process_send = Process(target=self.send_to_relay_node_task, args=(conn_count, relay_server_to_node, self.is_client_connected, self.dummy_queue), daemon=True)
+                process_send = Process(target=self.send_to_relay_node_task, args=(self.conn1, relay_server_to_node, self.is_client_connected, self.dummy_queue), daemon=True)
                 processes.append(process_send)
                 process_send.start()
                 print('started')
