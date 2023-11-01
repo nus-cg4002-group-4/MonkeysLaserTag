@@ -96,7 +96,7 @@ class RelayServerJobs:
     #         except e:
     #             break
 
-    def send_from_parser(self, node_to_parser, bullet_to_engine_p1, relay_server_to_ai_p1, bullet_to_engine_p2, relay_server_to_ai_p2):
+    def send_from_parser(self, node_to_parser, bullet_to_engine_p1, relay_server_to_ai_p1, bullet_to_engine_p2, relay_server_to_ai_p2, is_node1_connected, is_node2_connected):
         while True:
             try:
                 player_id, data = node_to_parser.get()
@@ -107,24 +107,35 @@ class RelayServerJobs:
                     # send to ai
                     if player_id == 1:
                         relay_server_to_ai_p1.put(data_arr)
+                        is_node1_connected.value = 1
                     else:
                         relay_server_to_ai_p2.put(data_arr)
+                        is_node2_connected.value = 1
                     continue
                 elif pkt_id == 2:
                     # goggle
                     print('pkt ', 2)
                     if player_id == 1:
                         bullet_to_engine_p2.put((pkt_id, msg))
+                        is_node1_connected.value = 1
                     else:
                         bullet_to_engine_p1.put((pkt_id, msg))
+                        is_node2_connected.value = 1
                 elif pkt_id == 3:
                     # bullet
                     print('pket', 3)
                     if player_id == 1:
                         bullet_to_engine_p1.put((pkt_id, msg))
+                        is_node1_connected.value = 1
                     else:
                         bullet_to_engine_p2.put((pkt_id, msg))
-                
+                        is_node2_connected.value = 1
+                elif pkt_id == 8:
+                    if player_id == 1:
+                        is_node1_connected.value = 0
+                    else:
+                        is_node2_connected.value = 0
+        
             except Exception as e:
                 print(e, 'a')
                 break
@@ -219,52 +230,6 @@ class RelayServerJobs:
         self.close_job()
         return True
     
-    
-    # def relay_server_job(self, relay_server_to_engine, relay_server_to_node, relay_server_to_ai):
-    #     conn_count = 0
-    #     self.dma.initialize()
-    #     process_parse = Process(target=self.send_from_parser, args=(self.relay_node_to_parser, relay_server_to_engine, relay_server_to_ai), daemon=True)
-    #     self.processes.append(process_parse)
-    #     process_parse.start()
-
-    #     process_send_to_ai = Process(target=self.send_to_ai_task, args=(relay_server_to_ai,), daemon=True)
-    #     self.processes.append(process_send_to_ai)
-    #     process_send_to_ai.start()
-
-    #     process_rcv_from_ai = Process(target=self.receive_from_ai_task, args=(relay_server_to_engine,), daemon=True)
-    #     self.processes.append(process_rcv_from_ai)
-    #     process_rcv_from_ai.start()
-
-    #     while conn_count < 2:
-    #         try:
-    #             conn_socket = self.relay_server.start_connection(conn_count)
-    #             print(f'Relay node {conn_count + 1} connected')
-
-    #             process_receive = Process(target=self.receive_from_relay_node_task, args=(conn_count, self.relay_node_to_parser, self.is_client1_connected, self.client1_socket_update), daemon=True)
-    #             self.processes.append(process_receive)
-    #             process_receive.start()
-
-    #             process_send = Process(target=self.send_to_relay_node_task, args=(conn_count, relay_server_to_node, self.is_client1_connected, self.client1_socket_update), daemon=True)
-    #             self.processes.append(process_send)
-    #             process_send.start()
-    #         except Exception as e:
-    #             print(e)
-    #             break
-    #         except:
-    #             break
-    #         else:
-    #             conn_count += 1
-    #             time.sleep(.5)
-        
-    #     try:
-    #         for p in self.processes:
-    #             p.join()
-
-    #     except KeyboardInterrupt: 
-    #         print('Terminating Relay Server Job')
-
-    #     self.close_job()
-    #     return True
     
     def close_job(self):
         self.relay_server.close_connection()

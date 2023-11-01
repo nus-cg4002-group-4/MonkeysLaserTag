@@ -25,6 +25,10 @@ class Parser:
         elif pkt_id == 3:
             # bullet
             msg = str(player_id) + ' ' + ' '.join(map(str, msg_arr))
+        
+        elif pkt_id == 8:
+            # disconnect
+            msg = str(player_id) + ' 8'
             
         
         return (pkt_id, msg)

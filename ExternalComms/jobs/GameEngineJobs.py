@@ -171,26 +171,26 @@ class GameEngineJobs:
                 break
     
     
-    def game_engine_job(self, eval_to_engine, engine_to_eval, engine_to_vis_gamestate, vis_to_engine_p1, action_to_engine_p1, server_to_node_p1, bullet_to_engine_p1, vis_to_engine_p2, action_to_engine_p2, server_to_node_p2, bullet_to_engine_p2):
+    def game_engine_job(self, eval_to_engine, engine_to_eval_p1, engine_to_eval_p2, engine_to_vis_gamestate, vis_to_engine_p1, action_to_engine_p1, server_to_node_p1, bullet_to_engine_p1, vis_to_engine_p2, action_to_engine_p2, server_to_node_p2, bullet_to_engine_p2):
         
         try:
             process_rcv_from_eval = Process(target=self.receive_from_eval_task, args=(eval_to_engine, engine_to_vis_gamestate, server_to_node_p1, server_to_node_p2, self.player1, self.player2), daemon=True)
             self.processes.append(process_rcv_from_eval)
             process_rcv_from_eval.start()
 
-            process_gen_action_p1 = Process(target=self.gen_action_task_player, args=(action_to_engine_p1, engine_to_vis_gamestate, engine_to_eval, vis_to_engine_p1, server_to_node_p1, server_to_node_p2, self.player1, self.player2, 0), daemon=True)
+            process_gen_action_p1 = Process(target=self.gen_action_task_player, args=(action_to_engine_p1, engine_to_vis_gamestate, engine_to_eval_p1, vis_to_engine_p1, server_to_node_p1, server_to_node_p2, self.player1, self.player2, 0), daemon=True)
             self.processes.append(process_gen_action_p1)
             process_gen_action_p1.start()
 
-            process_gen_action_p2 = Process(target=self.gen_action_task_player, args=(action_to_engine_p2, engine_to_vis_gamestate, engine_to_eval, vis_to_engine_p2, server_to_node_p1, server_to_node_p2, self.player1, self.player2, 1), daemon=True)
+            process_gen_action_p2 = Process(target=self.gen_action_task_player, args=(action_to_engine_p2, engine_to_vis_gamestate, engine_to_eval_p2, vis_to_engine_p2, server_to_node_p1, server_to_node_p2, self.player1, self.player2, 1), daemon=True)
             self.processes.append(process_gen_action_p2)
             process_gen_action_p2.start()
 
-            process_match_bullet_p1 = Process(target=self.match_bullet_task_player, args=(bullet_to_engine_p1, engine_to_vis_gamestate, engine_to_eval, server_to_node_p1, server_to_node_p2, self.player1, self.player2, 0), daemon=True)
+            process_match_bullet_p1 = Process(target=self.match_bullet_task_player, args=(bullet_to_engine_p1, engine_to_vis_gamestate, engine_to_eval_p1, server_to_node_p1, server_to_node_p2, self.player1, self.player2, 0), daemon=True)
             self.processes.append(process_match_bullet_p1)
             process_match_bullet_p1.start()
             
-            process_match_bullet_p2 = Process(target=self.match_bullet_task_player, args=(bullet_to_engine_p2, engine_to_vis_gamestate, engine_to_eval, server_to_node_p1, server_to_node_p2, self.player1, self.player2, 1), daemon=True)
+            process_match_bullet_p2 = Process(target=self.match_bullet_task_player, args=(bullet_to_engine_p2, engine_to_vis_gamestate, engine_to_eval_p2, server_to_node_p1, server_to_node_p2, self.player1, self.player2, 1), daemon=True)
             self.processes.append(process_match_bullet_p2)
             process_match_bullet_p2.start()
 

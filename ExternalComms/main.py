@@ -1,5 +1,5 @@
 import time
-from multiprocessing import Lock, Process, Queue, current_process
+from multiprocessing import Lock, Process, Queue, Value, current_process
 import queue
 
 from jobs.EvalClientJobs import EvalClientJobs
@@ -13,7 +13,8 @@ class Brain:
     def __init__(self):
         self.processes = []
 
-        self.eval_client_process = None
+        self.eval_client_process_p1 = None
+        self.eval_client_process_p2 = None
         self.game_engine_process = None
         self.relay_server_process = None
         self.mqtt_client_process = None
@@ -24,7 +25,8 @@ class Brain:
         self.game_engine_jobs = None
         self.mqtt_client_jobs = None
 
-        self.eval_client_to_server = Queue()
+        self.eval_client_to_server_p1 = Queue()
+        self.eval_client_to_server_p2 = Queue()
         self.eval_client_to_game_engine = Queue()
         self.relay_server_to_engine_p1 = Queue()
         self.relay_server_to_engine_p2 = Queue()
@@ -39,6 +41,9 @@ class Brain:
         self.vis_to_game_engine_p1 = Queue()
         self.vis_to_game_engine_p2 = Queue()
         self.relay_server_to_parser = Queue()
+
+        self.is_node1_connected = Value('i', 1)
+        self.is_node2_connected = Value('i', 1)
 
     def start_processes(self):
         try:
@@ -63,7 +68,8 @@ class Brain:
             # Game Engine Process
             self.game_engine_process = Process(target=self.game_engine_jobs.game_engine_job, 
                                                 args=(self.eval_client_to_game_engine,
-                                                    self.eval_client_to_server,
+                                                    self.eval_client_to_server_p1,
+                                                    self.eval_client_to_server_p2,
                                                     self.game_engine_to_vis_gamestate, 
                                                     self.vis_to_game_engine_p1,
                                                     self.relay_server_to_engine_p1,
@@ -83,7 +89,9 @@ class Brain:
                                                                                         self.bullet_to_engine_p1, 
                                                                                         self.relay_server_to_ai_p1, 
                                                                                         self.bullet_to_engine_p2, 
-                                                                                        self.relay_server_to_ai_p2,), daemon=True)
+                                                                                        self.relay_server_to_ai_p2,
+                                                                                        self.is_node1_connected,
+                                                                                        self.is_node2_connected), daemon=True)
             self.processes.append(process_parse)
             process_parse.start()
             
@@ -111,10 +119,16 @@ class Brain:
             self.eval_client_jobs = EvalClientJobs()
             self.eval_client_jobs.initialize()
                  
-            self.eval_client_process = Process(target=self.eval_client_jobs.eval_client_job, 
-                                                args=(self.eval_client_to_server, self.eval_client_to_game_engine))
-            self.processes.append(self.eval_client_process)
-            self.eval_client_process.start()
+            self.eval_client_process_p1 = Process(target=self.eval_client_jobs.eval_client_job, 
+                                                args=(self.eval_client_to_server_p1, self.eval_client_to_game_engine, 0, self.is_node1_connected))
+            self.processes.append(self.eval_client_process_p1)
+            self.eval_client_process_p1.start()
+
+            self.eval_client_process_p2 = Process(target=self.eval_client_jobs.eval_client_job, 
+                                                args=(self.eval_client_to_server_p2, self.eval_client_to_game_engine, 1, self.is_node2_connected))
+            self.processes.append(self.eval_client_process_p2)
+            self.eval_client_process_p2.start()
+            
         
             for p in self.processes:
                 p.join()
