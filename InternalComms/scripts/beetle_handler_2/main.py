@@ -64,6 +64,9 @@ try:
                 getDictP2["game_state"]["p2"]["shield_hp"] -= 10
             dummy_node_to_vest.put(json.dumps(getDictP2))
             current_time = time.time()
+
+        if not queue_1.empty():
+            print(queue_1.get(timeout=0.1))
         # if not queue_1.empty():
         #     data = queue_1.get(timeout=0.1)
         #     # print(list(data.values())[0])

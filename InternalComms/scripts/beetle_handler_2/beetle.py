@@ -122,6 +122,7 @@ class Beetle():
                 self.ble_connected = True
                 return
             except btle.BTLEException as e:
+                self.node_to_server.put({'pkt_id': 8})
                 print_with_color(f"Failed to connect to {self.mac_address}", self.beetle_id)
             
     def receive_data(self, duration=3, polling_interval=INTERVAL_RATE):
@@ -248,6 +249,9 @@ class Beetle():
                     self.beetle.waitForNotifications(timeout=INTERVAL_RATE)
 
                 elif self.state == State.CONNECT:
+
+                    node_to_server.put({'pkt_id': 8}) # indicates disconnection
+
                     if self.ble_connected:
                         self.disconnect()
                     self.reset_flags()
@@ -268,6 +272,7 @@ class Beetle():
                 else:
                     # Raise error and reconnect
                     raise btle.BTLEException(message="Invalid state.")
+                
                 
                 # To simulate receiving an item in queue
                 # If event occurs and handshake is complete, try writing to beetle

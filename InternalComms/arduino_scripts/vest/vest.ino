@@ -130,7 +130,7 @@ void updateGamestate(char type) {
     uint16_t prevShield = currentShield;
     currentShield = convertGamestateInt();
 
-    if (currentShield == 30) {
+    if (prevShield != 30 && currentShield == 30) {
       hit_10 = true;
       hit_time_10 = micros();
     } else if (prevShield - currentShield == 10) {
@@ -145,7 +145,7 @@ void updateGamestate(char type) {
     uint16_t prevHealth = currentHealth;
     currentHealth = convertGamestateInt();
 
-    if (currentHealth == 100) {
+    if (prevHealth != 100 && currentHealth == 100) {
       hit_10 = true;
       hit_time_10 = micros();
     } else if (prevHealth - currentHealth == 10) {
