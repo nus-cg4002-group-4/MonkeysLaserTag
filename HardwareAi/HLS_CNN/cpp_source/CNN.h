@@ -1,6 +1,6 @@
 #pragma once
 
-#define INPUTLENGTH 80
+#define INPUTLENGTH 60
 #define INPUTAXES 7
 
 #define CONV1LENGTH 5
