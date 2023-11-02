@@ -11,8 +11,6 @@ import sys, os
 import numpy as np
 
 WINDOW = 60
-cfd = f'{sys.path[0]}/../HardwareAi/HLS_CNN'
-dir = os.path.join(cfd, 'old_values_for_testing')
 actions = {
                 0: 'grenade',
                 1: 'shield',
@@ -49,7 +47,7 @@ class RelayServerJobs:
                 # if True:
                 if count == WINDOW:
                         # DMA stuff
-                    print('80 reached ', conn_num + 1, data_arr)
+                    print('60 reached ', conn_num + 1, data_arr)
                     self.dma.send_to_ai_input_2d(np.array(packets), conn_num + 1)
                     player_id, ai_result, certainty = self.dma.recv_from_ai()
                     # ai_result, certainty = (3 if conn_num == 0 else 7, 0.5)

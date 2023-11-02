@@ -9,20 +9,20 @@ class Dma:
         self.dma = None
     
     def initialize(self):
-        cfd = f'{sys.path[0]}/../../../darren/MonkeysLaserTag/HardwareAi/HLS_CNN'
+        cfd = f'{sys.path[0]}/../../../darren/MonkeysLaserTag/HardwareAi/HLS_CNN/bitstream_60f'
         print('Loading overlay...')
         self.overlay = Overlay(os.path.join(cfd, 'design_1_wrapper.bit'))
         self.dma = self.overlay.axi_dma_0
         print('Overlay loaded.')
     
     def send_to_ai(self, data):
-        in_buffer = allocate(shape=(560,), dtype=np.float32)
+        in_buffer = allocate(shape=(420,), dtype=np.float32)
         in_buffer[:] = np.array(data).astype(np.float32)
         self.dma.sendchannel.transfer(in_buffer)
         self.dma.sendchannel.wait()
     
     def send_to_ai_input_2d(self, data, player_id):
-        in_buffer = allocate(shape=(561,), dtype=np.float32)
+        in_buffer = allocate(shape=(421,), dtype=np.float32)
         normalize_flex = lambda i: i * (2**15 / 2**10)
         data[:,6] = np.vectorize(normalize_flex)(data[:,6])
 
