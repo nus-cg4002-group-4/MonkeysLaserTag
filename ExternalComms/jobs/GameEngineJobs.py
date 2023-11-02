@@ -133,7 +133,7 @@ class GameEngineJobs:
                     #get message input from AI function format:: "player_id enum"
                     id = int(msg[2])
                     print('id was ', player_id, id)
-                    if id == 2: #reload
+                    if id == 2 or id == 1 or id == 8: #reload
                         updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2, True)
 
                     if  id >= 3 and id <= 7 or id == 0: #grenades, and all skill
@@ -148,11 +148,11 @@ class GameEngineJobs:
 
                         updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2, False)  
                 
-                print('udpated game state ', updated_game_state)
-                engine_to_eval.put(updated_game_state)
-                engine_to_vis_gamestate.put(updated_game_state)
-                server_to_node_p1.put(updated_game_state)
-                server_to_node_p2.put(updated_game_state)
+                    print('udpated game state ', updated_game_state)
+                    engine_to_eval.put(updated_game_state)
+                    engine_to_vis_gamestate.put(updated_game_state)
+                    server_to_node_p1.put(updated_game_state)
+                    server_to_node_p2.put(updated_game_state)
 
                 if delete:
                     while True:

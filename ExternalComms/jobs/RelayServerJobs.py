@@ -10,8 +10,7 @@ from helpers.Dma import Dma
 import sys, os
 import numpy as np
 
-WINDOW = 80
-REMOVE = 20
+WINDOW = 60
 cfd = f'{sys.path[0]}/../HardwareAi/HLS_CNN'
 dir = os.path.join(cfd, 'old_values_for_testing')
 actions = {
