@@ -62,7 +62,7 @@ try:
                 getDictP2["game_state"]["p2"]["shield_hp"] = 30
             else: 
                 getDictP2["game_state"]["p2"]["shield_hp"] -= 10
-            dummy_node_to_vest.put(json.dumps(getDictP2))
+            # dummy_node_to_vest.put(json.dumps(getDictP2))
             current_time = time.time()
 
         if not queue_1.empty():
