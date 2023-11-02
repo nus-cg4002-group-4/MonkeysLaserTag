@@ -87,6 +87,7 @@ class Beetle():
         self.characteristic.write(bytes(message, "utf-8"))
         self.handshake_complete = True
         print_with_color("Handshake successful!", self.beetle_id)
+        self.node_to_server.put({'pkt_id': 9})
 
     def reset_flags(self):
         self.handshake_replied = False
@@ -122,6 +123,7 @@ class Beetle():
                 self.ble_connected = True
                 return
             except btle.BTLEException as e:
+                self.node_to_server.put({'pkt_id': 8})
                 print_with_color(f"Failed to connect to {self.mac_address}", self.beetle_id)
             
     def receive_data(self, duration=3, polling_interval=INTERVAL_RATE):
@@ -248,6 +250,9 @@ class Beetle():
                     self.beetle.waitForNotifications(timeout=INTERVAL_RATE)
 
                 elif self.state == State.CONNECT:
+
+                    node_to_server.put({'pkt_id': 8}) # indicates disconnection
+
                     if self.ble_connected:
                         self.disconnect()
                     self.reset_flags()
@@ -268,6 +273,7 @@ class Beetle():
                 else:
                     # Raise error and reconnect
                     raise btle.BTLEException(message="Invalid state.")
+                
                 
                 # To simulate receiving an item in queue
                 # If event occurs and handshake is complete, try writing to beetle
@@ -514,16 +520,17 @@ class ReadDelegate(btle.DefaultDelegate):
                                 self.count += 1
                             self.add_to_queue = False
 
-                        print(self.count)
 
-                        self.beetle.node_to_server.put(AI_data) # pkt_id 1
+                        if self.count <= 60: 
+                            self.beetle.node_to_server.put(AI_data) # pkt_id 1
+                            
                         self.count += 1
 
-                        # Append the remaining 70 packets
-                        if (self.count >= 80):
+                        if (self.count >= 180):
                             self.send_to_ext = False
                             self.count = 0
-                            print("Sent 80 packets to ext comms")
+                            print("Sent 60 packets to ext comms")
+
 
             elif (pkt_id == PacketId.GAMESTATE_PKT):
                 pass

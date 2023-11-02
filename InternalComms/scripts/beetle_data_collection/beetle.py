@@ -301,7 +301,8 @@ class ReadDelegate(btle.DefaultDelegate):
                 if not self.beetle.handshake_complete:
                     # pass
                     return
-
+                
+                # print(f"Right Hand Packet received successfully: {pkt_data}")
 
                 if not self.send_to_ext: self.last_10_packets.append(pkt_data)
 
@@ -329,7 +330,7 @@ class ReadDelegate(btle.DefaultDelegate):
                     if not self.send_to_ext:
                         self.last_10_packets = []
 
-                if not self.trigger_record and pkt_data.bullets == 1: 
+                if not self.trigger_record and pkt_data.bullets: 
                     # Assuming bullets == button for recording purposes
                     print("Action window triggered. Please perform action now.")
                     self.trigger_record = True
