@@ -11,7 +11,7 @@ print('Overlay loaded.')
 
 # Begin tests
 
-dir = os.path.join(cfd, '60f_test_values')
+dir = os.path.join(cfd, 'test_values_60f')
 in_buffer = allocate(shape=(421,), dtype=np.float32)
 out_buffer = allocate(shape=(1,), dtype=np.int32)
 in_player_id = 0
