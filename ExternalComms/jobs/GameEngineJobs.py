@@ -92,20 +92,25 @@ class GameEngineJobs:
                     if recv_signal == 2 and is_shoot:
                         is_shoot, updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)
                 
-                print('udpated game state ', updated_game_state)
-                engine_to_eval.put(updated_game_state)
-                server_to_node_p1.put(updated_game_state)
-                server_to_node_p2.put(updated_game_state)
-                updated_game_state_none = self.gameLogic.convert_to_json_none(p1, p2, other_player_id)
-                engine_to_vis_gamestate.put(updated_game_state_none)
-                if delete:
-                    while True:
-                        try:
-                            bullet_to_engine.get_nowait()
-                        except queue.Empty:
-                            print('deleted actions in the queue')
-                            break
-                delete = False
+
+                if signal == 8 or signal == 9:
+                    engine_to_vis_gamestate.put(msg)
+                    print('connection state: ',msg)
+                else:
+                    print('udpated game state ', updated_game_state)
+                    engine_to_eval.put(updated_game_state)
+                    server_to_node_p1.put(updated_game_state)
+                    server_to_node_p2.put(updated_game_state)
+                    updated_game_state_none = self.gameLogic.convert_to_json_none(p1, p2, other_player_id)
+                    engine_to_vis_gamestate.put(updated_game_state_none)
+                    if delete:
+                        while True:
+                            try:
+                                bullet_to_engine.get_nowait()
+                            except queue.Empty:
+                                print('deleted actions in the queue')
+                                break
+                    delete = False
                 
             except Exception as e:
                 print(e, 'at game engine')

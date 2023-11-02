@@ -28,7 +28,11 @@ class Parser:
         
         elif pkt_id == 8:
             # disconnect
-            msg = str(player_id) + ' 8'
+            msg = 'disconnect ' + str(player_id)
+
+        elif pkt_id == 9:
+            # disconnect
+            msg = 'connect ' + str(player_id)
             
         
         return (pkt_id, msg)
