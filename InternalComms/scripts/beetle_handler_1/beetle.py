@@ -1,5 +1,4 @@
 from bluepy import btle
-import keyboard
 
 from packet import PacketId, VestPacket, RHandDataPacket
 from state import State
@@ -140,11 +139,6 @@ class Beetle():
 
     def on_keypress(self, key: str, fn):
         current_time = time.time()
-        if keyboard.is_pressed(key):
-            if current_time - self.last_press_time >= 1:
-                print(f'{key} pressed!')
-                self.last_press_time = current_time
-                fn() # execute fn
 
     def try_writing_to_beetle(self, data: str):
         getDict = json.loads(data)
@@ -278,13 +272,6 @@ class Beetle():
                     if not node_from_server.empty():
                         data = node_from_server.get()
                         self.try_writing_to_beetle(data)
-
-                    if keyboard.is_pressed("h") and flag and self.beetle_id == 2:
-                        getDict = {"player_id": 1, "action": "gun", "game_state": {"p1": {"hp": 100, "bullets": 0, "grenades": 2, "shield_hp": 0, "deaths": 0, "shields": 3}, "p2": {"hp": 99, "bullets": 6, "grenades": 2, "shield_hp": 0, "deaths": 1, "shields": 3}}}
-                        health = int(getDict['game_state']['p2']['hp'])
-                        print("Sending health", health)
-                        self.send_health(health)
-                        flag = False
 
                     # Simulate if shield, health or reload is not updated properly
                     # self.check_gamestate_sent(current_time)
