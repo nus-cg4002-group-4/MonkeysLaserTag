@@ -55,7 +55,7 @@ class RelayServerJobs:
                     if certainty > 0.4 and ai_result != 9:
                         relay_server_to_engine.put((1, f'{conn_num + 1} {ai_result}'))
                     packets[:] = []
-                    time.sleep(2)
+                    time.sleep(1)
                     try:
                         while True:
                             relay_server_to_ai.get_nowait()
