@@ -55,9 +55,10 @@ class Player:
             self.shieldHP = self.maxShieldHP
             self.shieldCount -= 1
 
-    def shoot(self):
+    def shoot(self, is_update):
         if (self.bullets > 0):
-            self.bullets -= 1
+            if is_update:
+                self.bullets -= 1
             return True
         return False
 

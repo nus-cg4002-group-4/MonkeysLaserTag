@@ -127,6 +127,7 @@ class RelayServerJobs:
                         bullet_to_engine_p2.put((pkt_id, msg))
                         is_node2_connected.value = 1
                 elif pkt_id == 8:
+                    print('pket', 8)
                     if player_id == 1:
                         is_node1_connected.value = 0
                         bullet_to_engine_p1.put((pkt_id, msg))
