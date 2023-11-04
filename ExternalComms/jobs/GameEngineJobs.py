@@ -79,15 +79,19 @@ class GameEngineJobs:
 
                 elif signal == 3:
                     # bullet then goggle
-                    is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
-                    engine_to_vis_gamestate.put(updated_game_state)
+                    is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2, False)
+                    # engine_to_vis_gamestate.put(updated_game_state)
                     recv_signal = 0
                     if is_shoot:
                         try:
                             recv_signal, recv_msg = bullet_to_engine.get(timeout=0.5)
+                            is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2, True)
+                            engine_to_vis_gamestate.put(updated_game_state)
                             print(f'player {player_id} successfully sent bullet')
                         except queue.Empty:
                             delete = True
+                            is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2, True)
+                            engine_to_vis_gamestate.put(updated_game_state)
                             print('goggle timeout, regard as no shot ', player_id)
                     if recv_signal == 2 and is_shoot:
                         is_shoot, updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)

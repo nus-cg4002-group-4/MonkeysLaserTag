@@ -27,7 +27,7 @@ class EvalClientJobs:
                     print('Send to eval server: ', 'to_send')
                     eval_client_to_game_engine.put(response)
 
-                    time.sleep(0.5)
+                    time.sleep(1)
                     while True:
                         try:
                             eval_client_to_server.get_nowait()
@@ -49,7 +49,7 @@ class EvalClientJobs:
                         print('Send to eval server: ', to_send)
                         eval_client_to_game_engine.put(response)
 
-                        time.sleep(0.5)
+                        time.sleep(1)
                         while True:
                             try:
                                 eval_client_to_server.get_nowait()

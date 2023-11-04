@@ -56,7 +56,7 @@ class GameLogic:
 
     
 
-    def relay_logic(self, msgIn, player_1, player_2):
+    def relay_logic(self, msgIn, player_1, player_2, is_update = True):
         #decode msgIn
         #msgIn: 
         # playerID, packetID, hit, health, shield
@@ -82,7 +82,7 @@ class GameLogic:
             return is_shoot, self.convert_to_json(player_1, player_2, 1 if player_id == 2 else 2)
         elif msgIn_arugments[1] == 3:
             #bullets
-            is_shoot = currentPlayer.shoot()
+            is_shoot = currentPlayer.shoot(is_update)
             currentPlayer.set_action("gun")
         return is_shoot, self.convert_to_json(player_1, player_2, player_id)
 
