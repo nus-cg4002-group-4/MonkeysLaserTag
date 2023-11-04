@@ -26,6 +26,14 @@ class EvalClientJobs:
                 if self.eval_client.is_running and response:
                     print('Send to eval server: ', 'to_send')
                     eval_client_to_game_engine.put(response)
+
+                    time.sleep(0.5)
+                    while True:
+                        try:
+                            eval_client_to_server.get_nowait()
+                        except queue.Empty:
+                            print('deleted actions in the queue for eval')
+                            break
             except queue.Empty:
                 try:
                     if is_node_connected.value:
@@ -40,6 +48,7 @@ class EvalClientJobs:
                         last_recvd = response
                         print('Send to eval server: ', to_send)
                         eval_client_to_game_engine.put(response)
+
                     else:
                         print('Time out from game engine but beetles are still disconnected for player ', player_id)
                 except Exception as e:

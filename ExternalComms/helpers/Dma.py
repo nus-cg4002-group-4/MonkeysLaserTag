@@ -46,9 +46,7 @@ class Dma:
 
         self.dma.recvchannel.transfer(out_buffer)
         self.dma.recvchannel.wait()
-        print(out_buffer)
         certainty = struct.unpack('f', out_buffer[0])[0]
-        print(certainty)
 
         return (int(player_id), int(result), float(certainty))
     

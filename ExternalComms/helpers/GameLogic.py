@@ -20,7 +20,6 @@ class GameLogic:
     def actionHandler(self, dataIn):
         self.playerId = dataIn[0]
         self.playerAction = dataIn[1]
-        pass
 
     def visualHandler(self, dataIn):
         pass
