@@ -91,7 +91,8 @@ class Brain:
                                                                                         self.bullet_to_engine_p2, 
                                                                                         self.relay_server_to_ai_p2,
                                                                                         self.is_node1_connected,
-                                                                                        self.is_node2_connected), daemon=True)
+                                                                                        self.is_node2_connected,
+                                                                                        self.game_engine_to_vis_gamestate), daemon=True)
             self.processes.append(process_parse)
             process_parse.start()
             

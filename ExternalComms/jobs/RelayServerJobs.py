@@ -92,7 +92,7 @@ class RelayServerJobs:
     #         except e:
     #             break
 
-    def send_from_parser(self, node_to_parser, bullet_to_engine_p1, relay_server_to_ai_p1, bullet_to_engine_p2, relay_server_to_ai_p2, is_node1_connected, is_node2_connected):
+    def send_from_parser(self, node_to_parser, bullet_to_engine_p1, relay_server_to_ai_p1, bullet_to_engine_p2, relay_server_to_ai_p2, is_node1_connected, is_node2_connected, engine_to_vis):
         while True:
             try:
                 player_id, data = node_to_parser.get()
@@ -130,17 +130,17 @@ class RelayServerJobs:
                     print('pket', 8)
                     if player_id == 1:
                         is_node1_connected.value = 0
-                        bullet_to_engine_p1.put((pkt_id, msg))
+                        engine_to_vis.put(msg)
                     else:
                         is_node2_connected.value = 0
-                        bullet_to_engine_p2.put((pkt_id, msg))
+                        engine_to_vis.put(msg)
                 elif pkt_id == 9:
                     if player_id == 1:
                         is_node1_connected.value = 1
-                        bullet_to_engine_p1.put((pkt_id, msg))
+                        engine_to_vis.put(msg)
                     else:
                         is_node2_connected.value = 1
-                        bullet_to_engine_p2.put((pkt_id, msg))
+                        engine_to_vis.put(msg)
         
             except Exception as e:
                 print(e, 'a')
