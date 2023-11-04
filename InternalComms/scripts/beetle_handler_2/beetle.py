@@ -375,12 +375,17 @@ class ReadDelegate(btle.DefaultDelegate):
             self.beetle.start_timer = time.time()
             self.bullets = 6
 
-        self.beetle.receive_timer = time.time() # Update current time
-
         self.total_calls += 1
         
         # Append data to buffer
         self.packet_buffer += data
+
+        # Reset packet buffer after 1s since thrs no fragmented data coming in
+        # May be remnants from the past few packet fragmentation
+        if time.time() - self.beetle.receive_timer > 1 and len(self.packet_buffer) < 20:
+            self.packet_buffer = b"" 
+
+        self.beetle.receive_timer = time.time() # Update current time
 
         if self.is_packet_complete(self.packet_buffer):
             # take out first 20 bytes of packet
@@ -577,6 +582,7 @@ class ReadDelegate(btle.DefaultDelegate):
             print("Packets jumbled and sequence is messed up. Re-handshaking...")
             self.corrupted_packet_counter = 0
             self.beetle.set_to_connect()
+            self.packet_buffer = b"" # Clear buffer
 
     def is_packet_complete(self, data):
         return len(data) >= 20
