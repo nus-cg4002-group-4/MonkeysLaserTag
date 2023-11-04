@@ -27,6 +27,8 @@ Adafruit_MPU6050 mpu;
 const uint8_t sCommand = 0x36;//sensor value to be sent
 const uint8_t sRepeats = 0;
 
+int resetCounter = 0;
+
 //Declare game state values
 int bullets = 6; // track remaining bullets, initialised to 6 according to requirement
 
@@ -270,6 +272,10 @@ void waitForHandshakeAck(){
   ack_msg = Serial.read();
 
   if (ack_msg != 'd') {
+    resetCounter += 1;
+    if (resetCounter > 4) {
+      resetFunc();
+    }
     resetFlags();
     return;
   }
@@ -328,3 +334,4 @@ float getAccel() {
 }
 
 // end internal comms
+void(* resetFunc) (void) = 0;

@@ -87,6 +87,7 @@ class Beetle():
         self.characteristic.write(bytes(message, "utf-8"))
         self.handshake_complete = True
         print_with_color("Handshake successful!", self.beetle_id)
+        self.node_to_server.put({'pkt_id': 9})
 
     def reset_flags(self):
         self.handshake_replied = False
@@ -122,6 +123,7 @@ class Beetle():
                 self.ble_connected = True
                 return
             except btle.BTLEException as e:
+                self.node_to_server.put({'pkt_id': 8}) # indicates disconnection
                 print_with_color(f"Failed to connect to {self.mac_address}", self.beetle_id)
             
     def receive_data(self, duration=3, polling_interval=INTERVAL_RATE):
@@ -248,6 +250,7 @@ class Beetle():
                     self.beetle.waitForNotifications(timeout=INTERVAL_RATE)
 
                 elif self.state == State.CONNECT:
+                    node_to_server.put({'pkt_id': 8}) # indicates disconnection
                     if self.ble_connected:
                         self.disconnect()
                     self.reset_flags()
@@ -364,17 +367,23 @@ class ReadDelegate(btle.DefaultDelegate):
         self.send_to_ext = False
         self.add_to_queue = False
 
+        self.send_timer_cooldown = time.time()
+
     def handleNotification(self, cHandle, data):
         if self.total_calls == 0: 
             self.beetle.start_timer = time.time()
             self.bullets = 6
 
-        self.beetle.receive_timer = time.time() # Update current time
 
         self.total_calls += 1
         
         # Append data to buffer
         self.packet_buffer += data
+
+        # Reset packet buffer after 1s since thrs no fragmented data coming in
+        # May be remnants from the past few packet fragmentation
+            
+        self.beetle.receive_timer = time.time() # Update current time
 
         if self.is_packet_complete(self.packet_buffer):
             # take out first 20 bytes of packet
@@ -383,12 +392,6 @@ class ReadDelegate(btle.DefaultDelegate):
             self.packet_buffer = self.packet_buffer[20:]
 
     def process_packet(self, data):
-
-        # Statistics/debugging purposes
-        # self.count += 1 # Number of packets processed
-        self.fragmented_count = self.total_calls - self.count # Number of fragmented packets
-
-        # if self.beetle.beetle_id == 2: print("Received packet " + str(struct.unpack('B', data[1:2])) + ":" + str(repr(data)))
 
         try:
             # Check packet id
@@ -518,16 +521,17 @@ class ReadDelegate(btle.DefaultDelegate):
                                 self.count += 1
                             self.add_to_queue = False
 
-                        print(self.count)
-
-                        self.beetle.node_to_server.put(AI_data) # pkt_id 1
+                        if self.count <= 60: 
+                            self.beetle.node_to_server.put(AI_data) # pkt_id 1self.beetle.node_to_server.put(AI_data) # pkt_id 1
                         self.count += 1
 
-                        # Append the remaining 70 packets
-                        if (self.count >= 80):
+                        # Next 120 packets cooldown
+                        if (self.count >= 180):
                             self.send_to_ext = False
                             self.count = 0
-                            print("Sent 80 packets to ext comms")
+                            print("Sent 60 packets to ext comms")
+
+
 
             elif (pkt_id == PacketId.GAMESTATE_PKT):
                 pass
@@ -556,6 +560,8 @@ class ReadDelegate(btle.DefaultDelegate):
             # If there are 5 consecutive packets that do not match the CRC/Packet ID, 
             # we assume that the packets are jumbled and we need to re-handshake
             self.track_corrupted_packets()
+
+            
         except DuplicateException as e:
             print(f"Duplicated packet is dropped.")
             self.track_corrupted_packets()
@@ -574,6 +580,7 @@ class ReadDelegate(btle.DefaultDelegate):
             print("Packets jumbled and sequence is messed up. Re-handshaking...")
             self.corrupted_packet_counter = 0
             self.beetle.set_to_connect()
+            self.packet_buffer = b""
 
     def is_packet_complete(self, data):
         return len(data) >= 20

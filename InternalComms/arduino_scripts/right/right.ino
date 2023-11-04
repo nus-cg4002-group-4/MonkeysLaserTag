@@ -328,3 +328,4 @@ float getAccel() {
 }
 
 // end internal comms
+void(* resetFunc) (void) = 0;
