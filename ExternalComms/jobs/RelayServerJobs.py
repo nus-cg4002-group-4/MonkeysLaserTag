@@ -21,7 +21,8 @@ actions = {
                 5: 'hammer',
                 4: 'spear',
                 8: 'logout',
-                9: 'raise hand'
+                9: 'raise hand',
+                10: 'lower hand'
         }
 
 class RelayServerJobs:
@@ -51,7 +52,7 @@ class RelayServerJobs:
                     player_id, ai_result, certainty = self.dma.recv_from_ai()
                     # ai_result, certainty = (3 if conn_num == 0 else 7, 0.5)
                     print(f"player: {player_id} action: {actions[ai_result]} {ai_result} certainty: {certainty}")
-                    if certainty > 0.4 and ai_result != 9:
+                    if certainty > 0.4 and ai_result != 9 and ai_result != 10:
                         relay_server_to_engine.put((1, f'{conn_num + 1} {ai_result}'))
                     packets[:] = []
                     time.sleep(1)
