@@ -46,6 +46,7 @@ class Brain:
         self.is_node2_connected = Value('i', 1)
         self.eval_track_p1 = Value('i', 0)
         self.eval_track_p2 = Value('i', 0)
+        self.is_using = Value('i', 0)
 
     def start_processes(self):
         try:
@@ -125,12 +126,12 @@ class Brain:
             self.eval_client_jobs.initialize()
                  
             self.eval_client_process_p1 = Process(target=self.eval_client_jobs.eval_client_job, 
-                                                args=(self.eval_client_to_server_p1, self.eval_client_to_game_engine, 0, self.is_node1_connected, self.is_node2_connected, self.eval_track_p1, self.eval_track_p2))
+                                                args=(self.eval_client_to_server_p1, self.eval_client_to_game_engine, 0, self.is_node1_connected, self.is_node2_connected, self.eval_track_p1, self.eval_track_p2, self.is_using))
             self.processes.append(self.eval_client_process_p1)
             self.eval_client_process_p1.start()
 
             self.eval_client_process_p2 = Process(target=self.eval_client_jobs.eval_client_job, 
-                                                args=(self.eval_client_to_server_p2, self.eval_client_to_game_engine, 1, self.is_node1_connected, self.is_node2_connected, self.eval_track_p1, self.eval_track_p2))
+                                                args=(self.eval_client_to_server_p2, self.eval_client_to_game_engine, 1, self.is_node1_connected, self.is_node2_connected, self.eval_track_p1, self.eval_track_p2, self.is_using))
             self.processes.append(self.eval_client_process_p2)
             self.eval_client_process_p2.start()
             

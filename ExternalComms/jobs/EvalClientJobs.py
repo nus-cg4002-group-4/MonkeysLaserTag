@@ -144,10 +144,10 @@ class EvalClientJobs:
         
         return True
     
-    def eval_client_job(self, eval_client_to_server, eval_client_to_game_engine, conn_num, is_node_connected_p1, is_node_connected_p2, eval_track_p1, eval_track_p2):
+    def eval_client_job(self, eval_client_to_server, eval_client_to_game_engine, conn_num, is_node_connected_p1, is_node_connected_p2, eval_track_p1, eval_track_p2, is_using):
         while self.eval_client.is_running:
             try:
-                asyncio.run(self.eval_client_task(eval_client_to_server, eval_client_to_game_engine, conn_num + 1, is_node_connected_p1, is_node_connected_p2, eval_track_p1, eval_track_p2))
+                asyncio.run(self.eval_client_task(eval_client_to_server, eval_client_to_game_engine, conn_num + 1, is_node_connected_p1, is_node_connected_p2, eval_track_p1, eval_track_p2, is_using))
             except Exception as e:
                 print(e, 'error at eval client')
             except:
