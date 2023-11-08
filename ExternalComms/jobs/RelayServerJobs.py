@@ -69,7 +69,7 @@ class RelayServerJobs:
             except queue.Empty:
                 count = 0
                 packets[:] = []
-                self.print(f"Discarded relay packets", conn_num + 1)
+                print(f"Discarded relay packets")
             except Exception as e:
                 print(e)
                 break

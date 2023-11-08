@@ -117,7 +117,6 @@ class GameEngineJobs:
                     engine_to_vis_gamestate.put(msg)
                     self.print(f'connection state: {msg}', player_id)
                         
-                    print('connection state: ',msg)
                 else:
                     self.print(f'updated game state: {updated_game_state}', player_id)
                     engine_to_eval.put(updated_game_state)
@@ -152,7 +151,7 @@ class GameEngineJobs:
             try:
                 # game engine
                 signal, msg = action_to_engine.get()
-                print('game engine ', player_id,msg)
+                self.print(f'game engine {player_id}:', player_id)
                 hit_miss = f'{player_id} 1'
                 if signal == 1:
                     # ai nodes
@@ -168,12 +167,12 @@ class GameEngineJobs:
                             hit_miss = vis_to_engine.get(timeout=1.3)
                             print('recv from viz ', player_id, hit_miss)
                         except queue.Empty:
-                            print('timeout for viz hit_miss ', player_id)
+                            self.print(f'timeout for viz hit_miss {player_id}', player_id)
                         print(hit_miss)
 
                         updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2, False)  
                 
-                    print('udpated game state ', updated_game_state)
+                    self.print(f'udpated game state {updated_game_state}', player_id)
                     engine_to_eval.put(updated_game_state)
                     engine_to_vis_gamestate.put(updated_game_state)
                     server_to_node_p1.put(updated_game_state)
