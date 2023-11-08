@@ -94,10 +94,10 @@ class EvalClientJobs:
                 
                 if perf_counter() - start_time_p2 >= self.timeout:
                     # send dummy to eval
-                    print('Time out from game engine. Sending random game state for player ', 1)
-                    if eval_track_p1.value:
+                    print('Time out from game engine. Sending random game state for player ', 2)
+                    if eval_track_p2.value:
                         start_time_p2 = perf_counter()
-                        self.print(f'player 2 received twice for eval, discarding...', 1)
+                        self.print(f'player 2 received twice for eval, discarding...', 2)
                         continue
 
                     to_send = self.get_dummy(last_recvd, 2)
@@ -126,6 +126,9 @@ class EvalClientJobs:
                 print(e)
                 break
             except:
+                self.eval_client.close_client()
+                self.eval_client.is_running = False
+                print('Terminating Eval Client Job')
                 break
     
     def eval_timeout_job(self, eval_client_to_game_engine, latest_to_eval_timeout, is_node_connected_p1, is_node_connected_p2, eval_track_p1, eval_track_p2, is_using):
@@ -134,6 +137,7 @@ class EvalClientJobs:
                 asyncio.run(self.eval_timeout_task(eval_client_to_game_engine, latest_to_eval_timeout, is_node_connected_p1, is_node_connected_p2, eval_track_p1, eval_track_p2, is_using))
             except Exception as e:
                 print(e, 'error at eval timeout')
+                break
             except:
                 break
             
