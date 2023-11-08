@@ -44,7 +44,8 @@ class Brain:
 
         self.is_node1_connected = Value('i', 1)
         self.is_node2_connected = Value('i', 1)
-        self.eval_turn = Value('i', 0)
+        self.eval_track_p1 = Value('i', 0)
+        self.eval_track_p2 = Value('i', 0)
 
     def start_processes(self):
         try:

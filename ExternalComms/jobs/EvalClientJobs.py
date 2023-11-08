@@ -72,7 +72,14 @@ class EvalClientJobs:
                 try:
                     if is_node_connected_p1.value and is_node_connected_p2.value:
                         print('Time out from game engine. Sending random game state for player ', player_id)
-
+                        if player_id == 1:
+                            if eval_track_p1.value:
+                                self.print(f'player {player_id} received twice for eval, discarding...', player_id)
+                                continue
+                        else:
+                            if eval_track_p2.value:
+                                self.print(f'player {player_id} received twice for eval, discarding...', player_id)
+                                continue
                         p1 = Player(1)
                         p2 = Player(2)
                         prev = self.game_logic.subscribeFromEval(last_recvd, p1, p2)
