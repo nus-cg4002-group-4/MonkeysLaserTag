@@ -568,6 +568,7 @@ class ReadDelegate(btle.DefaultDelegate):
             self.corrupted_packet_counter = 0
             self.beetle.set_to_connect()
             self.packet_buffer = b""
+            self.count = 0
 
     def is_packet_complete(self, data):
         return len(data) >= 20
