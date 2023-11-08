@@ -102,6 +102,7 @@ class Brain:
                                                     self.relay_server_to_node_p1,
                                                     self.relay_server_to_ai_p1,
                                                     self.relay_server_to_parser,
+                                                    self.game_engine_to_vis_gamestate,
                                                     0))
             self.processes.append(relay_server_process_p1)
             relay_server_process_p1.start()
@@ -111,6 +112,7 @@ class Brain:
                                                     self.relay_server_to_node_p2,
                                                     self.relay_server_to_ai_p2,
                                                     self.relay_server_to_parser,
+                                                    self.game_engine_to_vis_gamestate,
                                                     1))
             self.processes.append(relay_server_process_p2)
             relay_server_process_p2.start()
@@ -121,12 +123,12 @@ class Brain:
             self.eval_client_jobs.initialize()
                  
             self.eval_client_process_p1 = Process(target=self.eval_client_jobs.eval_client_job, 
-                                                args=(self.eval_client_to_server_p1, self.eval_client_to_game_engine, 0, self.is_node1_connected))
+                                                args=(self.eval_client_to_server_p1, self.eval_client_to_game_engine, 0, self.is_node1_connected, self.is_node2_connected))
             self.processes.append(self.eval_client_process_p1)
             self.eval_client_process_p1.start()
 
             self.eval_client_process_p2 = Process(target=self.eval_client_jobs.eval_client_job, 
-                                                args=(self.eval_client_to_server_p2, self.eval_client_to_game_engine, 1, self.is_node2_connected))
+                                                args=(self.eval_client_to_server_p2, self.eval_client_to_game_engine, 1, self.is_node2_connected, self.is_node1_connected))
             self.processes.append(self.eval_client_process_p2)
             self.eval_client_process_p2.start()
             
