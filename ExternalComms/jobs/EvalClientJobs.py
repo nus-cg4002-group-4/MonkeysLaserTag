@@ -25,7 +25,7 @@ class EvalClientJobs:
         self.eval_client = EvalClient()
 
         self.eval_client_process = None
-        self.timeout = 10
+        self.timeout = 50
         self.game_logic = GameLogic()
         
     
@@ -70,7 +70,7 @@ class EvalClientJobs:
                         self.print(f'player 1 received twice for eval, discarding...', 1)
                         continue
                     
-                    if not is_node_connected_p1.value and not is_node_connected_p2.value:
+                    if not is_node_connected_p1.value or not is_node_connected_p2.value:
                         start_time_p2 = perf_counter()
                         continue
 
@@ -98,7 +98,7 @@ class EvalClientJobs:
                     start_time_p2 = perf_counter()
 
                     print('Time out from game engine. Sending random game state for player ', 2)
-                    if not is_node_connected_p1.value and not is_node_connected_p2.value:
+                    if not is_node_connected_p1.value or not is_node_connected_p2.value:
                         start_time_p1 = perf_counter()
                         continue
                     
