@@ -24,7 +24,7 @@ class EvalClientJobs:
         self.eval_client = EvalClient()
 
         self.eval_client_process = None
-        self.timeout = 5
+        self.timeout = 50
         self.game_logic = GameLogic()
     
     def print(self, msg, player_id):
