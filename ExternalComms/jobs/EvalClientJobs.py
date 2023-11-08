@@ -61,10 +61,8 @@ class EvalClientJobs:
                     pass
                 
                 # update start time based on conn state
-                if not is_node_connected_p1.value:
+                if not is_node_connected_p1.value or not is_node_connected_p1.value:
                     start_time_p1 = perf_counter()
-                
-                if not is_node_connected_p2.value:
                     start_time_p2 = perf_counter()
                 
                 if perf_counter() - start_time_p1 >= self.timeout:
@@ -82,7 +80,7 @@ class EvalClientJobs:
 
                     to_send = self.get_dummy(last_recvd, 1)
                     while is_using.value:
-                        time.sleep(0.2)
+                        time.sleep(0.05)
 
                     is_using.value = 1
                     response = await self.eval_client.send_to_server_w_res(to_send)
@@ -114,7 +112,7 @@ class EvalClientJobs:
 
                     to_send = self.get_dummy(last_recvd, 2)
                     while is_using.value:
-                        time.sleep(0.2)
+                        time.sleep(0.05)
 
                     is_using.value = 1
                     response = await self.eval_client.send_to_server_w_res(to_send)
@@ -172,7 +170,7 @@ class EvalClientJobs:
                         continue
                 
                 while is_using.value:
-                    time.sleep(0.2)
+                    time.sleep(0.05)
 
                 is_using.value = 1
                 response = await self.eval_client.send_to_server_w_res(to_send)
