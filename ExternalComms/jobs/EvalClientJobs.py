@@ -30,7 +30,7 @@ class EvalClientJobs:
     def print(self, msg, player_id):
         print(f"{bcolors.WARNING if player_id == 1 else bcolors.FAIL} {msg} {bcolors.ENDC}")
     
-    async def eval_client_task(self, eval_client_to_server, eval_client_to_game_engine, player_id, is_node_connected_p1, is_node_connected_p2, eval_track_p1, eval_track_p2):
+    async def eval_client_task(self, eval_client_to_server, eval_client_to_game_engine, player_id, is_node_connected_p1, is_node_connected_p2, eval_track_p1, eval_track_p2, is_using):
         last_recvd = EvalClient.get_dummy_eval_state_str()
         while True:
             try:
@@ -44,7 +44,13 @@ class EvalClientJobs:
                         self.print(f'player {player_id} received twice for eval, discarding...', player_id)
                         continue
                 
+                while is_using.value:
+                    time.sleep(0.2)
+
+                is_using.value = 1
                 response = await self.eval_client.send_to_server_w_res(to_send)
+                is_using.value = 0
+
                 if player_id == 1:
                     if eval_track_p2.value:
                         eval_track_p2.value = 0
@@ -86,7 +92,12 @@ class EvalClientJobs:
                         msg = str(player_id) + ' ' + str(random.choice([7, 6, 3, 5, 4]))
                         hit_miss = str(player_id) + ' 1'
                         to_send = self.game_logic.ai_logic(msg, hit_miss, p1, p2, False)
+
+                        while is_using.value:
+                            time.sleep(0.2)
+                        is_using.value = 1
                         response = await self.eval_client.send_to_server_w_res(to_send)
+                        is_using.value = 0
 
                         if player_id == 1:
                             if eval_track_p2.value:
