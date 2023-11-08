@@ -5,14 +5,14 @@ import numpy as np
 cfd = sys.path[0]
 
 print('Loading overlay...')
-overlay = Overlay(os.path.join(cfd, 'design_1_wrapper.bit'))
+overlay = Overlay(os.path.join(cfd, 'bitstream_60f_lowergun', 'design_1_wrapper.bit'))
 dma = overlay.axi_dma_0
 print('Overlay loaded.')
 
 # Begin tests
 
-dir = os.path.join(cfd, 'test_values')
-in_buffer = allocate(shape=(561,), dtype=np.float32)
+dir = os.path.join(cfd, 'test_values_60f_lowergun')
+in_buffer = allocate(shape=(421,), dtype=np.float32)
 out_buffer = allocate(shape=(1,), dtype=np.int32)
 in_player_id = 0
 out_player_id = 0
@@ -24,7 +24,6 @@ for file in os.listdir(dir):
         data = f.read().split(',')
 
         start_time = time.time()
-        print(np.array(struct.unpack('f', struct.pack('i', in_player_id))[0]))
         input_array = np.array(data).astype(np.float32)
         input_array = np.insert(input_array, 0, struct.unpack('f', struct.pack('i', in_player_id))[0], axis=0)
         in_buffer[:] = input_array
