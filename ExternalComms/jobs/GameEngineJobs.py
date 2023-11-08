@@ -55,6 +55,7 @@ class GameEngineJobs:
             else:
 
                 print(f"{bcolors.OKGREEN} Received from eval server: {msg} {bcolors.ENDC}")
+                print('------------------------------------------------------------------------------------------')
     
     def is_bullet_timeout(self, prev_time):
         if not prev_time:
@@ -151,7 +152,7 @@ class GameEngineJobs:
             try:
                 # game engine
                 signal, msg = action_to_engine.get()
-                self.print(f'game engine {player_id}:', player_id)
+                print(f'game engine {player_id}: {msg}')
                 hit_miss = f'{player_id} 1'
                 if signal == 1:
                     # ai nodes
@@ -167,7 +168,7 @@ class GameEngineJobs:
                             hit_miss = vis_to_engine.get(timeout=1.3)
                             print('recv from viz ', player_id, hit_miss)
                         except queue.Empty:
-                            self.print(f'timeout for viz hit_miss {player_id}', player_id)
+                            print(f'timeout for viz hit_miss {player_id}')
                         print(hit_miss)
 
                         updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2, False)  
