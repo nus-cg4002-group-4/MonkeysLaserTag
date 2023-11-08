@@ -41,6 +41,7 @@ class Brain:
         self.vis_to_game_engine_p1 = Queue()
         self.vis_to_game_engine_p2 = Queue()
         self.relay_server_to_parser = Queue()
+        self.latest_to_eval_timeout = Queue()
 
         self.is_node1_connected = Value('i', 1)
         self.is_node2_connected = Value('i', 1)
@@ -126,15 +127,19 @@ class Brain:
             self.eval_client_jobs.initialize()
                  
             self.eval_client_process_p1 = Process(target=self.eval_client_jobs.eval_client_job, 
-                                                args=(self.eval_client_to_server_p1, self.eval_client_to_game_engine, 0, self.is_node1_connected, self.is_node2_connected, self.eval_track_p1, self.eval_track_p2, self.is_using))
+                                                args=(self.eval_client_to_server_p1, self.eval_client_to_game_engine, self.latest_to_eval_timeout, 0, self.eval_track_p1, self.eval_track_p2, self.is_using))
             self.processes.append(self.eval_client_process_p1)
             self.eval_client_process_p1.start()
 
             self.eval_client_process_p2 = Process(target=self.eval_client_jobs.eval_client_job, 
-                                                args=(self.eval_client_to_server_p2, self.eval_client_to_game_engine, 1, self.is_node1_connected, self.is_node2_connected, self.eval_track_p1, self.eval_track_p2, self.is_using))
+                                                args=(self.eval_client_to_server_p2, self.eval_client_to_game_engine, self.latest_to_eval_timeout, 1, self.eval_track_p1, self.eval_track_p2, self.is_using))
             self.processes.append(self.eval_client_process_p2)
             self.eval_client_process_p2.start()
-            
+
+            eval_timeout_process = Process(target=self.eval_client_jobs.eval_timeout_job, 
+                                                args=(self.eval_client_to_game_engine, self.latest_to_eval_timeout, self.is_node1_connected, self.is_node2_connected, self.eval_track_p1, self.eval_track_p2, self.is_using))
+            self.processes.append(eval_timeout_process)
+            eval_timeout_process.start()
         
             for p in self.processes:
                 p.join()
