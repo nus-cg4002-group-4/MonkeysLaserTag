@@ -29,7 +29,7 @@
 #define BASE_DMG 10
 #define GREN_DMG 30
 
-uint8_t BULLET_DMG = 0xC9;
+uint8_t BULLET_DMG = 0x11;
 
 //Declare game event values
 bool hit = false;
@@ -37,6 +37,7 @@ bool hit_10 = false;
 bool skill_hit = false;
 bool grenade_hit = false;
 bool shield = false;
+bool prevHit = false;
 
 bool shield_active = false;
 bool dead = false;
@@ -49,6 +50,8 @@ int shield_health = 0;
 unsigned long hit_time = 0;
 unsigned long hit_time_10 = 0;
 unsigned long grenade_hit_time = 0;
+
+int freqArray[] = {392, 494, 523, 587, 650, 698, 784, 880, 988, 1047};
 
 // hardware code end
 
@@ -95,6 +98,7 @@ uint16_t currentShield;
 vestDataPacket prevPacket;
 
 unsigned long send_timer;
+unsigned long packetSent;
 
 String numericPart = "";
 char gamestateType = 'x';
@@ -125,37 +129,40 @@ uint16_t convertGamestateInt(){
   return newHp;
 }
 
-
 void updateGamestate(char type) {
   if (type == SHIELD) {
     uint16_t prevShield = currentShield;
     currentShield = convertGamestateInt();
 
-    if (prevShield != 30 && currentShield == 30) {
+    if (prevShield != currentShield) {
       hit_10 = true;
       hit_time_10 = micros();
-    } else if (prevShield - currentShield == 10) {
-      hit_time_10 = micros();
-      hit_10 = true;
-    } else if (prevShield - currentShield == 30) {
-      grenade_hit_time = micros();
-      grenade_hit = true;
     }
+
+    // if (prevShield != 30 && currentShield == 30) {
+    //   hit_10 = true;
+    //   hit_time_10 = micros();
+    // } else if (prevShield - currentShield == 10) {
+    //   hit_time_10 = micros();
+    //   hit_10 = true;
+    // } 
     // break;
   } else if (type == HEALTH) {
     uint16_t prevHealth = currentHealth;
     currentHealth = convertGamestateInt();
 
-    if (prevHealth != 100 && currentHealth == 100) {
+    if (prevHealth != currentHealth) {
       hit_10 = true;
       hit_time_10 = micros();
-    } else if (prevHealth - currentHealth == 10) {
-      hit_time_10 = micros();
-      hit_10 = true;
-    } else if (prevHealth - currentHealth == 30) {
-      grenade_hit_time = micros();
-      grenade_hit = true;
     }
+
+    // if (prevHealth != 100 && currentHealth == 100) {
+    //   hit_10 = true;
+    //   hit_time_10 = micros();
+    // } else if (prevHealth - currentHealth >= 10) {
+    //   hit_time_10 = micros();
+    //   hit_10 = true;
+    // } 
   }
 }
 
@@ -240,6 +247,8 @@ void resetFlags() {
   isTimeout = false;
   currentHealth = 100;
   currentShield = 0;
+  packetSent = millis();
+  prevHit = false;
   delay(50);
 }
 
@@ -291,7 +300,7 @@ void sendDummyVestDataPacket(){
     vestDataPacket pkt;
     pkt.id = VEST_PKT;
     pkt.seq_no = seqNum++;
-    pkt.ir_rcv = hit;
+    pkt.ir_rcv = prevHit ? 1 : 0;
     pkt.health = currentHealth;
     pkt.shield = currentShield;
     pkt.padding_1 = 0;
@@ -299,8 +308,18 @@ void sendDummyVestDataPacket(){
     pkt.crc = calculateGvCrc32(&pkt);
     prevPacket = pkt;
     ackReceived = false;
-    Serial.write((uint8_t *)&pkt, sizeof(pkt)); 
-    delay(50);
+
+    if (hit) {
+      prevHit = true;
+    }
+
+    if (millis() - packetSent > 50 && sentHandshakeAck) {
+      Serial.write((uint8_t *)&pkt, sizeof(pkt));
+      packetSent = millis();
+      prevHit = false;
+    }
+    // Serial.write((uint8_t *)&pkt, sizeof(pkt)); 
+    // delay(50);
   // }
 }
 
@@ -414,24 +433,34 @@ void receiver_handler()
 //Handles gun and skill (exlcuding grenade) damage event 
 void dmg_10_beeper()
 {
-  unsigned long frequency = 5000;
-  if (currentShield > 0) frequency = 300;
+  unsigned long frequency = freqArray[(currentHealth/10)-1];
+
+  // Duration of beep
   unsigned long wait = 150000; // microseconds
+
+  // Microseconds before beep stops
   unsigned long timeDiff = micros() - hit_time_10;
 
-  // Gun and skill dmg
-  if (hit_10 && timeDiff < wait) {
-  // if (hit && timeDiff < wait) {
-    if (timeDiff/(1000000/frequency/2)%2 == 0) {
-      digitalWrite(BUZZER_PIN, HIGH);
-    } else {
-      digitalWrite(BUZZER_PIN, LOW);
-    }
+  // // Gun and skill dmg
+  // if (hit_10 && timeDiff < wait) {
+  // // if (hit && timeDiff < wait) {
+  //   float halfPeriod = (1.0f / (2.0f * (float)frequency)) * 1000000.0f;
+  //   float localPeriod = (float)timeDiff / (2.0f * halfPeriod);
+  //   if (localPeriod <= halfPeriod) {
+  //     digitalWrite(BUZZER_PIN, HIGH);
+  //   } else {
+  //     digitalWrite(BUZZER_PIN, LOW);
+  //   }
+  // }
+
+  if (hit_10) {
+    tone(BUZZER_PIN, freqArray[(currentHealth/10)-1], timeDiff/1000);
   }
+
 
   if (hit_10 && timeDiff > wait) {
   // if (hit && timeDiff > wait) {
-    digitalWrite(BUZZER_PIN, LOW);
+    // digitalWrite(BUZZER_PIN, LOW);
     hit_10 = false;
   }
 }
