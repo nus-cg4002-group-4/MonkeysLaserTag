@@ -49,8 +49,14 @@ class EvalClientJobs:
             try:
                 # get the latest game state
                 try:
-                    new_recvd = latest_to_eval_timeout.get_nowait()
-                    last_recvd = new_recvd
+                    signal, new_recvd = latest_to_eval_timeout.get_nowait()
+                    if signal == 0:
+                        last_recvd = new_recvd
+                    elif signal == 1:
+                        start_time_p1 = perf_counter()
+                    elif signal == 2:
+                        start_time_p2 = perf_counter()
+
                 except queue.Empty:
                     pass
                 
@@ -101,7 +107,7 @@ class EvalClientJobs:
                     if not is_node_connected_p1.value and not is_node_connected_p2.value:
                         start_time_p1 = perf_counter()
                         continue
-                    
+
                     if eval_track_p2.value:
                         self.print(f'player 2 received twice for eval, discarding...', 2)
                         continue
@@ -185,7 +191,9 @@ class EvalClientJobs:
                     else:
                         eval_track_p2.value = 1
 
-                latest_to_eval_timeout.put(response)
+                latest_to_eval_timeout.put((0, response))
+                latest_to_eval_timeout.put((player_id, ''))
+
                 if self.eval_client.is_running and response:
                     eval_client_to_game_engine.put(response)
                     time.sleep(1)
