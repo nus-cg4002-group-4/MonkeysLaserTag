@@ -73,7 +73,12 @@ class GameEngineJobs:
         while True:
             try:
                 # game engine
-                signal, msg = bullet_to_engine.get()
+                if player_id == 1:
+                    signal, msg = bullet_to_engine.get()
+                else:
+                    time.sleep(5)
+                    signal, msg = 2, '2 2 1'
+
                 print(f'bullet engine player:{player_id} msg: {msg}')
                 if signal == 2:
                     # goggle then bullet

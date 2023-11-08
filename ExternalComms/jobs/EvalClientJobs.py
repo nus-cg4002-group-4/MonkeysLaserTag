@@ -16,7 +16,7 @@ class EvalClientJobs:
         self.timeout = 60
         self.game_logic = GameLogic()
     
-    async def eval_client_task(self, eval_client_to_server, eval_client_to_game_engine, player_id, is_node_connected):
+    async def eval_client_task(self, eval_client_to_server, eval_client_to_game_engine, player_id, is_node_connected_p1, is_node_connected_p2):
         last_recvd = EvalClient.get_dummy_eval_state_str()
         while True:
             try:
@@ -34,7 +34,7 @@ class EvalClientJobs:
                             break
             except queue.Empty:
                 try:
-                    if is_node_connected.value:
+                    if is_node_connected_p1.value and is_node_connected_p2.value:
                         print('Time out from game engine. Sending random game state for player ', player_id)
                         p1 = Player(1)
                         p2 = Player(2)
@@ -58,12 +58,15 @@ class EvalClientJobs:
                     else:
                         print('Time out from game engine but beetles are still disconnected for player ', player_id)
                 except EvalDisconnectException:
-                    print('EVAL ERROR, RETRY')
+                    print('EVAL ERROR FOR DISCONN, RETRY')
                 except Exception as e:
                     print(e)
-                    break
+                    print('EVAL ERROR, RETRY')
             except EvalDisconnectException:
                     print('EVAL ERROR, RETRY')
+            except Exception as e:
+                print(e)
+                print('EVAL ERROR, RETRY')
             except:
                 self.eval_client.close_client()
                 self.eval_client.is_running = False
@@ -72,10 +75,10 @@ class EvalClientJobs:
         
         return True
     
-    def eval_client_job(self, eval_client_to_server, eval_client_to_game_engine, conn_num, is_node_connected):
+    def eval_client_job(self, eval_client_to_server, eval_client_to_game_engine, conn_num, is_node_connected_p1, is_node_connected_p2):
         while self.eval_client.is_running:
             try:
-                asyncio.run(self.eval_client_task(eval_client_to_server, eval_client_to_game_engine, conn_num + 1, is_node_connected))
+                asyncio.run(self.eval_client_task(eval_client_to_server, eval_client_to_game_engine, conn_num + 1, is_node_connected_p1, is_node_connected_p2))
             except Exception as e:
                 print(e, 'error at eval client')
             except:

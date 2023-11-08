@@ -40,7 +40,7 @@ class RelayServerJobs:
     def print(self, msg, player_id):
         print(f"{bcolors.OKBLUE if player_id == 1 else bcolors.OKCYAN} {msg} {bcolors.ENDC}")
     
-    def send_to_ai_task(self, relay_server_to_ai, relay_server_to_engine, conn_num):
+    def send_to_ai_task(self, relay_server_to_ai, relay_server_to_engine, engine_to_vis, conn_num):
         packets = []
         count = 0
         while True:
@@ -58,6 +58,8 @@ class RelayServerJobs:
                     self.print(f"player: {player_id} action: {actions[ai_result]} {ai_result} certainty: {certainty}", conn_num + 1)
                     if certainty > 0.4 and ai_result != 9 and ai_result != 10:
                         relay_server_to_engine.put((1, f'{conn_num + 1} {ai_result}'))
+                    else:
+                        engine_to_vis.put(f'idle {conn_num + 1}')
                     packets[:] = []
                     time.sleep(1)
                     try:
@@ -181,9 +183,9 @@ class RelayServerJobs:
         self.dma.initialize()
         pass
     
-    def relay_server_job_player(self, relay_server_to_engine, relay_server_to_node, relay_server_to_ai, relay_server_to_parser, conn_num):
+    def relay_server_job_player(self, relay_server_to_engine, relay_server_to_node, relay_server_to_ai, relay_server_to_parser, engine_to_vis, conn_num):
         try:
-            process_send_to_ai = Process(target=self.send_to_ai_task, args=(relay_server_to_ai, relay_server_to_engine, conn_num), daemon=True)
+            process_send_to_ai = Process(target=self.send_to_ai_task, args=(relay_server_to_ai, relay_server_to_engine, engine_to_vis, conn_num), daemon=True)
             self.processes.append(process_send_to_ai)
             process_send_to_ai.start()
 
