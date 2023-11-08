@@ -141,7 +141,6 @@ class GameEngineJobs:
                     #dummy ai input
                     #get message input from AI function format:: "player_id enum"
                     id = int(msg[2])
-                    print('id was ', player_id, id)
                     if id == 2 or id == 1 or id == 8: #reload
                         updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2, True)
 
