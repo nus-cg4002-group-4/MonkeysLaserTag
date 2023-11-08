@@ -91,7 +91,7 @@ class GameLogic:
         # can_see "playerId hit/miss"
         args = list(map(int, msgIn.split()))
         can_see = list(map(int, can_see.split()))
-        print('args', args)
+      
         if args[0] == 1:
             #player 1
             currentPlayer = player_1
@@ -125,7 +125,6 @@ class GameLogic:
                 currentPlayer.reload()
             
         elif args[1] == 7: #web
-            print("player 2 activate skill")
             currentPlayer.set_action("web")
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
@@ -137,17 +136,14 @@ class GameLogic:
             
         elif args[1] == 3: #punch
             currentPlayer.set_action("punch")
-            print('enemy was')
             enemyPlayer.print()
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
             
         elif args[1] == 5: #hammer
             currentPlayer.set_action("hammer")
-            print('enemy was')
             if can_see[1]:
                 enemyPlayer.reduceHP(self.skillDMG)
-                print('enemy later')
                 enemyPlayer.print()
             
         elif args[1] == 4: #spear

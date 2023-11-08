@@ -7,6 +7,7 @@ import asyncio
 from helpers.RelayServer import RelayServer, ClientDisconnectException
 from helpers.Parser import Parser
 from helpers.Dma import Dma
+from jobs.GameEngineJobs import bcolors
 import sys, os
 import numpy as np
 
@@ -36,6 +37,9 @@ class RelayServerJobs:
         self.client1_socket_update = Queue()
         self.client2_socket_update = Queue()
     
+    def print(self, msg, player_id):
+        print(f"{bcolors.OKBLUE if player_id == 1 else bcolors.OKCYAN} {msg} {bcolors.ENDC}")
+    
     def send_to_ai_task(self, relay_server_to_ai, relay_server_to_engine, conn_num):
         packets = []
         count = 0
@@ -51,7 +55,7 @@ class RelayServerJobs:
                     self.dma.send_to_ai_input_2d(np.array(packets), conn_num + 1)
                     player_id, ai_result, certainty = self.dma.recv_from_ai()
                     # ai_result, certainty = (3 if conn_num == 0 else 7, 0.5)
-                    print(f"player: {player_id} action: {actions[ai_result]} {ai_result} certainty: {certainty}")
+                    self.print(f"player: {player_id} action: {actions[ai_result]} {ai_result} certainty: {certainty}", conn_num + 1)
                     if certainty > 0.4 and ai_result != 9 and ai_result != 10:
                         relay_server_to_engine.put((1, f'{conn_num + 1} {ai_result}'))
                     packets[:] = []
@@ -60,38 +64,17 @@ class RelayServerJobs:
                         while True:
                             relay_server_to_ai.get_nowait()
                     except queue.Empty:
-                        print('now empty queue.')
+                        self.print(f"now empty queue", conn_num + 1)
                     count = 0
             except queue.Empty:
                 count = 0
                 packets[:] = []
-                print('Discarded relay packets', conn_num + 1)
+                self.print(f"Discarded relay packets", conn_num + 1)
             except Exception as e:
                 print(e)
                 break
             except e:
                 break
-    
-    # def receive_from_ai_task(self, relay_server_to_engine):
-    #     recents = [-1] * 3
-        
-    #     while True:
-    #         try:
-    #             ai_result, certainty = self.dma.recv_from_ai()
-    #             print(actions[ai_result], ai_result, ' ',  certainty, ' certainty')
-    #             if certainty > 0.4 and ai_result != 9:
-    #                 relay_server_to_engine.put((1, '1 ' + str(ai_result)))
-    #             #recents.pop(0)
-    #             #recents.append(ai_result)
-    #             # relay_server_to_engine.put((1, '1 3'))
-    #             # time.sleep(60)
-    #             # print('put')
-            
-    #         except Exception as e:
-    #             print(e)
-    #             break
-    #         except e:
-    #             break
 
     def send_from_parser(self, node_to_parser, bullet_to_engine_p1, relay_server_to_ai_p1, bullet_to_engine_p2, relay_server_to_ai_p2, is_node1_connected, is_node2_connected, engine_to_vis):
         while True:

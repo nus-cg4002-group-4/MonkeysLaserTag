@@ -56,7 +56,7 @@ class Player:
             self.shieldCount -= 1
 
     def shoot(self, is_update):
-        if (self.bullets > 0):
+        if self.bullets > 0:
             if is_update:
                 self.bullets -= 1
             return True

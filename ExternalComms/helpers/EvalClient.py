@@ -9,6 +9,10 @@ from Crypto import Random
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 
+class EvalDisconnectException(Exception):
+    "Raised when eval client has disconnected from server"
+    pass
+
 class EvalClient:
     def __init__(self):
         self.hostname = None
@@ -52,8 +56,9 @@ class EvalClient:
                         data += _d
                     if len(data) == 0:
                         print('recv_text: Eval server disconnected')
-                        self.close_client()
-                        self.is_running = False
+                        raise EvalDisconnectException
+                        # self.close_client()
+                        # self.is_running = False
                         break
                     data = data.decode("utf-8")
                     length = int(data[:-1])
@@ -69,16 +74,19 @@ class EvalClient:
                         data += _d
                     if len(data) == 0:
                         print('recv_text: Eval server disconnected with length of', length)
-                        self.close_client()
+                        raise EvalDisconnectException
+                        # self.close_client()
                         break
                     text_received = data.decode("utf8")  # Decode raw bytes to UTF-8
                     success = True
                     break
             except ConnectionResetError:
                 print('recv_text: Connection Reset for Eval Server')
-                self.close_client()
+                raise EvalDisconnectException
+                # self.close_client()
             except asyncio.TimeoutError:
                 print('recv_text: Timeout while receiving data from Eval Server')
+                raise EvalDisconnectException
                 timeout = -1
         else:
             timeout = -1

@@ -2,7 +2,7 @@ import time
 from multiprocessing import Lock, Process, Queue, current_process
 import queue
 import asyncio
-from helpers.EvalClient import EvalClient
+from helpers.EvalClient import EvalClient, EvalDisconnectException
 from helpers.PlayerClass import Player
 from helpers.GameLogic import GameLogic
 import random
@@ -24,9 +24,7 @@ class EvalClientJobs:
                 response = await self.eval_client.send_to_server_w_res(to_send)
                 last_recvd = response
                 if self.eval_client.is_running and response:
-                    print('Send to eval server: ', 'to_send')
                     eval_client_to_game_engine.put(response)
-
                     time.sleep(1)
                     while True:
                         try:
@@ -59,10 +57,15 @@ class EvalClientJobs:
 
                     else:
                         print('Time out from game engine but beetles are still disconnected for player ', player_id)
+                except EvalDisconnectException:
+                    print('EVAL ERROR, RETRY')
                 except Exception as e:
                     print(e)
                     break
+            except EvalDisconnectException:
+                    print('EVAL ERROR, RETRY')
             except:
+                self.eval_client.close_client()
                 self.eval_client.is_running = False
                 print('Terminating Eval Client Job')
                 break

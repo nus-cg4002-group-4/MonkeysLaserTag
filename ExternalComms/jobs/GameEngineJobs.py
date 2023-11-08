@@ -11,6 +11,17 @@ from datetime import datetime
 
 class MyManager(BaseManager): pass
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 class GameEngineJobs:
 
     # Attributes
@@ -42,13 +53,17 @@ class GameEngineJobs:
             except:
                 break
             else:
-                print('Received from eval server ', msg)
+
+                print(f"{bcolors.OKGREEN} Received from eval server: {msg} {bcolors.ENDC}")
     
     def is_bullet_timeout(self, prev_time):
         if not prev_time:
             return False
         time_delta = (prev_time - datetime.now()).total_seconds()
         return time_delta > 0.5
+    
+    def print(self, msg, player_id):
+        print(f"{bcolors.OKBLUE if player_id == 1 else bcolors.OKCYAN} {msg} {bcolors.ENDC}")
     
     def match_bullet_task_player(self, bullet_to_engine, engine_to_vis_gamestate, engine_to_eval, server_to_node_p1, server_to_node_p2, p1, p2, conn_num):
         player_id = conn_num + 1
@@ -67,9 +82,9 @@ class GameEngineJobs:
                         engine_to_vis_gamestate.put(updated_game_state)
                         if is_shoot:
                             is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2)
-                        print(f'player {player_id} got shot')
+                        self.print(f'player {player_id} got shot', player_id)
                     except queue.Empty:
-                        print('bullet timeout, regard as shot', player_id)
+                        self.print(f'bullet timeout, regard as shot {player_id}', player_id)
                         delete = True
                      
                         is_shoot, updated_game_state = self.gameLogic.relay_logic(f'{player_id} 3 6', p1, p2)
@@ -87,21 +102,24 @@ class GameEngineJobs:
                             recv_signal, recv_msg = bullet_to_engine.get(timeout=0.5)
                             is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2, True)
                             engine_to_vis_gamestate.put(updated_game_state)
-                            print(f'player {player_id} successfully sent bullet')
+                            self.print(f'player {player_id} successfully sent bullet', player_id)
                         except queue.Empty:
                             delete = True
                             is_shoot, updated_game_state = self.gameLogic.relay_logic(msg, p1, p2, True)
                             engine_to_vis_gamestate.put(updated_game_state)
-                            print('goggle timeout, regard as no shot ', player_id)
+                            self.print(f'goggle timeout, regard as no shot {player_id}', player_id)
+                            
                     if recv_signal == 2 and is_shoot:
                         is_shoot, updated_game_state = self.gameLogic.relay_logic(recv_msg, p1, p2)
                 
 
                 if signal == 8 or signal == 9:
                     engine_to_vis_gamestate.put(msg)
+                    self.print(f'connection state: {msg}', player_id)
+                        
                     print('connection state: ',msg)
                 else:
-                    print('udpated game state ', updated_game_state)
+                    self.print(f'updated game state: {updated_game_state}', player_id)
                     engine_to_eval.put(updated_game_state)
                     server_to_node_p1.put(updated_game_state)
                     server_to_node_p2.put(updated_game_state)
@@ -145,7 +163,6 @@ class GameEngineJobs:
                         updated_game_state = self.gameLogic.ai_logic(msg, hit_miss, p1, p2, True)
 
                     if  id >= 3 and id <= 7 or id == 0: #grenades, and all skill
-                        print('i sent vis request ', player_id)
                         engine_to_vis_gamestate.put('r ' + str(player_id))
                         try:
                             hit_miss = vis_to_engine.get(timeout=1.3)
