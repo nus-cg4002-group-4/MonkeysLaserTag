@@ -69,7 +69,6 @@ class EvalClientJobs:
                     # send dummy to eval
 
                     start_time_p1 = perf_counter()
-                    print('Time out from game engine. Sending random game state for player ', 1)
                     if eval_track_p1.value:
                         self.print(f'player 1 received twice for eval, discarding...', 1)
                         continue
@@ -78,6 +77,7 @@ class EvalClientJobs:
                         start_time_p2 = perf_counter()
                         continue
 
+                    print('Time out from game engine. Sending random game state for player ', 1)
                     to_send = self.get_dummy(last_recvd, 1)
                     while is_using.value:
                         time.sleep(0.05)
@@ -101,7 +101,6 @@ class EvalClientJobs:
                     # send dummy to eval
                     start_time_p2 = perf_counter()
 
-                    print('Time out from game engine. Sending random game state for player ', 2)
                     if not is_node_connected_p1.value or not is_node_connected_p2.value:
                         start_time_p1 = perf_counter()
                         continue
@@ -109,6 +108,7 @@ class EvalClientJobs:
                     if eval_track_p2.value:
                         self.print(f'player 2 received twice for eval, discarding...', 2)
                         continue
+                    print('Time out from game engine. Sending random game state for player ', 2)
 
                     to_send = self.get_dummy(last_recvd, 2)
                     while is_using.value:
