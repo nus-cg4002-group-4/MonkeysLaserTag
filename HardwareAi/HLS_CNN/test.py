@@ -5,13 +5,13 @@ import numpy as np
 cfd = sys.path[0]
 
 print('Loading overlay...')
-overlay = Overlay(os.path.join(cfd, 'bitstream_60f_lowergun', 'design_1_wrapper.bit'))
+overlay = Overlay(os.path.join(cfd, 'bitstream_60f_twist', 'design_1_wrapper.bit'))
 dma = overlay.axi_dma_0
 print('Overlay loaded.')
 
 # Begin tests
 
-dir = os.path.join(cfd, 'test_values_60f_lowergun')
+dir = os.path.join(cfd, 'test_values_60f_twist')
 in_buffer = allocate(shape=(421,), dtype=np.float32)
 out_buffer = allocate(shape=(1,), dtype=np.int32)
 in_player_id = 0
