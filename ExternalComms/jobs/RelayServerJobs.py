@@ -23,7 +23,9 @@ actions = {
                 4: 'spear',
                 8: 'logout',
                 9: 'raise hand',
-                10: 'lower hand'
+                10: 'lower hand',
+                11: 'twist',
+                12: 'march'
         }
 
 class RelayServerJobs:
@@ -45,10 +47,11 @@ class RelayServerJobs:
         count = 0
         while True:
             try:
-                data_arr = relay_server_to_ai.get(timeout=20)
+                data_arr = relay_server_to_ai.get(timeout=4)
+                packets.append(data_arr[1:])
                 packets.append(data_arr[1:])
 
-                count += 1
+                count += 2
                 # if True:
                 if count == WINDOW:
                         # DMA stuff
@@ -56,7 +59,7 @@ class RelayServerJobs:
                     player_id, ai_result, certainty = self.dma.recv_from_ai()
                     # ai_result, certainty = (3 if conn_num == 0 else 7, 0.5)
                     self.print(f"player: {player_id} action: {actions[ai_result]} {ai_result} certainty: {certainty}", conn_num + 1)
-                    if certainty > 0.4 and ai_result != 9 and ai_result != 10:
+                    if certainty > 0.4 and ai_result < 9:
                         relay_server_to_engine.put((1, f'{conn_num + 1} {ai_result}'))
                     else:
                         engine_to_vis.put(f'idle {conn_num + 1}')

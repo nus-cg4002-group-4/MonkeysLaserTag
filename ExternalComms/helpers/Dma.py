@@ -9,7 +9,7 @@ class Dma:
         self.dma = None
     
     def initialize(self):
-        cfd = f'{sys.path[0]}/../../../darren/MonkeysLaserTag/HardwareAi/HLS_CNN/bitstream_60f_lowergun'
+        cfd = f'{sys.path[0]}/../../../darren/MonkeysLaserTag/HardwareAi/HLS_CNN/bitstream_60f_twist'
         print('Loading overlay...')
         self.overlay = Overlay(os.path.join(cfd, 'design_1_wrapper.bit'))
         self.dma = self.overlay.axi_dma_0
