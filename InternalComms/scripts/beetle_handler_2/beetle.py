@@ -159,7 +159,7 @@ class Beetle():
         print("Received shield: ", shield)
 
         self.send_shield(str(shield)[0])
-
+        time.sleep(0.01)
         self.send_shield(str(shield)[0])
         if (health == 100): self.send_health(0)
         else: self.send_health(str(health)[0]) # send the first digit of the number
@@ -263,7 +263,7 @@ class Beetle():
                         self.set_to_handshake()
 
                 elif self.state == State.HANDSHAKE:
-                    
+                    node_to_server.put({'pkt_id': 8}) # indicates disconnection
                     self.handshake()
 
                     # Redundant check but hopefully it will prevent unforeseen errors
@@ -285,12 +285,12 @@ class Beetle():
                         data = node_from_server.get()
                         self.try_writing_to_beetle(data)
 
-                    if keyboard.is_pressed("h") and flag and self.beetle_id == 2:
-                        getDict = {"player_id": 1, "action": "gun", "game_state": {"p1": {"hp": 100, "bullets": 0, "grenades": 2, "shield_hp": 0, "deaths": 0, "shields": 3}, "p2": {"hp": 99, "bullets": 6, "grenades": 2, "shield_hp": 0, "deaths": 1, "shields": 3}}}
-                        health = int(getDict['game_state']['p2']['hp'])
-                        print("Sending health", health)
-                        self.send_health(health)
-                        flag = False
+                    # if keyboard.is_pressed("h") and flag and self.beetle_id == 2:
+                    #     getDict = {"player_id": 1, "action": "gun", "game_state": {"p1": {"hp": 100, "bullets": 0, "grenades": 2, "shield_hp": 0, "deaths": 0, "shields": 3}, "p2": {"hp": 99, "bullets": 6, "grenades": 2, "shield_hp": 0, "deaths": 1, "shields": 3}}}
+                    #     health = int(getDict['game_state']['p2']['hp'])
+                    #     print("Sending health", health)
+                    #     self.send_health(health)
+                    #     flag = False
 
                     # Simulate if shield, health or reload is not updated properly
                     # self.check_gamestate_sent(current_time)
@@ -583,6 +583,7 @@ class ReadDelegate(btle.DefaultDelegate):
             self.corrupted_packet_counter = 0
             self.beetle.set_to_connect()
             self.packet_buffer = b"" # Clear buffer
+            self.count = 0 # Reset count
 
     def is_packet_complete(self, data):
         return len(data) >= 20

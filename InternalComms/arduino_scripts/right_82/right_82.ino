@@ -273,9 +273,9 @@ void waitForHandshakeAck(){
 
   if (ack_msg != 'd') {
     resetCounter += 1;
-    if (resetCounter > 4) {
-      resetFunc();
-    }
+    // if (resetCounter > 4) {
+    //   resetFunc();
+    // }
     resetFlags();
     return;
   }
@@ -334,4 +334,3 @@ float getAccel() {
 }
 
 // end internal comms
-void(* resetFunc) (void) = 0;

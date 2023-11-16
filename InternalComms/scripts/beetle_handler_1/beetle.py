@@ -122,6 +122,7 @@ class Beetle():
                 self.ble_connected = True
                 return
             except btle.BTLEException as e:
+                print(e)
                 self.node_to_server.put({'pkt_id': 8}) # indicates disconnection
                 print_with_color(f"Failed to connect to {self.mac_address}", self.beetle_id)
             
@@ -255,7 +256,7 @@ class Beetle():
                         self.set_to_handshake()
 
                 elif self.state == State.HANDSHAKE:
-                    
+                    node_to_server.put({'pkt_id': 8}) # indicates disconnection
                     self.handshake()
 
                     # Redundant check but hopefully it will prevent unforeseen errors

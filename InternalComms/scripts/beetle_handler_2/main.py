@@ -5,6 +5,7 @@ import pandas as pd
 import time
 from tabulate import tabulate
 import json
+
             # 'Connected': f"{bcolors.OKGREEN}Connected{bcolors.ENDC}" if self.ble_connected else f"{bcolors.WARNING}Disconnected{bcolors.ENDC}",
 
 statistics = {
@@ -47,26 +48,29 @@ processes.append(process_2)
 # beetle = Beetle(BEETLE3_MAC, beetle_id=1)
 # process_2 = Process(target=beetle.initiate_program, args=(queue_1, dummy_node_to_imu))
 # processes.append(process_2)
-getDictP2 = {"player_id": 1, "action": "gun", "game_state": {"p1": {"hp": 100, "bullets": 0, "grenades": 2, "shield_hp": 0, "deaths": 0, "shields": 3}, "p2": {"hp": 100, "bullets": 6, "grenades": 2, "shield_hp": 0, "deaths": 1, "shields": 3}}}
+
+getDictP1 = {"player_id": 1, "action": "gun", "game_state": {"p1": {"hp": 100, "bullets": 0, "grenades": 2, "shield_hp": 30, "deaths": 0, "shields": 3}, "p2": {"hp": 99, "bullets": 6, "grenades": 2, "shield_hp": 0, "deaths": 1, "shields": 3}}}
 
 try:
-    process_1.start()
+    # process_1.start()
     process_2.start()
-    current_time = time.time()
 
+    current_time = time.time()
 
     while True:
 
-        if time.time() - current_time > 3:
-            if (getDictP2["game_state"]["p2"]["shield_hp"]) <= 0: 
-                getDictP2["game_state"]["p2"]["shield_hp"] = 30
-            else: 
-                getDictP2["game_state"]["p2"]["shield_hp"] -= 10
-            # dummy_node_to_vest.put(json.dumps(getDictP2))
-            current_time = time.time()
 
-        if not queue_1.empty():
-            print(queue_1.get(timeout=0.1))
+
+        if time.time() - current_time > 3:
+            hp = "shield_hp"
+
+            if (getDictP1["game_state"]["p2"]["shield_hp"] <= 0): hp = "hp"
+            # if (getDictP1["game_state"]["p1"]["shield_hp"]) <= 0: 
+            #     getDictP1["game_state"]["p1"]["shield_hp"] = 30
+            # else: 
+            getDictP1["game_state"]["p2"][hp] -= 10
+            dummy_node_to_vest.put(json.dumps(getDictP1))
+            current_time = time.time()
         # if not queue_1.empty():
         #     data = queue_1.get(timeout=0.1)
         #     # print(list(data.values())[0])
@@ -79,6 +83,7 @@ try:
 
         # print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
         # if not dummy_node_to_imu.empty(): print(dummy_node_to_imu.get(timeout=0.1))
+
 
 except KeyboardInterrupt:
     print("Terminating processes...")
