@@ -123,8 +123,7 @@ class Beetle():
                 self.ble_connected = True
                 return
             except btle.BTLEException as e:
-                print(e)
-                self.node_to_server.put({'pkt_id': 8}) # indicates disconnection
+                self.node_to_server.put({'pkt_id': 8})
                 print_with_color(f"Failed to connect to {self.mac_address}", self.beetle_id)
             
     def receive_data(self, duration=3, polling_interval=INTERVAL_RATE):
@@ -151,24 +150,17 @@ class Beetle():
 
     def try_writing_to_beetle(self, data: str):
         getDict = json.loads(data)
+
         print(f"{bcolors.OKGREEN}{getDict}{bcolors.ENDC}")
-        health = int(getDict["game_state"]["p1"]["hp"])
-        shield = int(getDict["game_state"]["p1"]["shield_hp"])
+        health = int(getDict['game_state']['p1']['hp'])
+        shield = int(getDict['game_state']['p1']['shield_hp'])
 
         print("Received health: ", health)
         print("Received shield: ", shield)
-
         self.send_shield(str(shield)[0])
-
-        time.sleep(0.1)
-        
-        if (health == 100): self.send_health(str(0))
+        time.sleep(0.01)
+        if (health == 100): self.send_health(0)
         else: self.send_health(str(health)[0]) # send the first digit of the number
-    
-    # def try_writing_to_beetle(self):
-    #     self.on_keypress("h", self.send_health)
-    #     self.on_keypress("j", self.send_shield)
-    #     self.on_keypress("r", self.send_reload)
 
     def send_reload(self): # simulate reload action
         print(f"{bcolors.OKBLUE}Reloading for {self.beetle_id}{bcolors.ENDC}")
@@ -177,14 +169,14 @@ class Beetle():
     
     def send_shield(self, value): # simulate gamestate update
         # Invoke gamestate to receive data for gamestate in beetle
-        print(f"shield_value: {value}")
+        print(value)
         self.emit_gamestate(type=SHIELD, value=value)
         self.ack_shield_value = value
         self.sent_shield = True
 
     def send_health(self, value): # simulate gamestate update
         # Invoke gamestate to receive data for gamestate in beetle
-        print(f"health_value: {value}")
+        print(value)
         self.emit_gamestate(type=HEALTH, value=value)
         self.ack_health_value = value
         self.sent_health = True
@@ -251,7 +243,9 @@ class Beetle():
                     self.beetle.waitForNotifications(timeout=INTERVAL_RATE)
 
                 elif self.state == State.CONNECT:
+
                     node_to_server.put({'pkt_id': 8}) # indicates disconnection
+
                     if self.ble_connected:
                         self.disconnect()
                     self.reset_flags()
@@ -273,25 +267,18 @@ class Beetle():
                     # Raise error and reconnect
                     raise btle.BTLEException(message="Invalid state.")
                 
+                
                 # To simulate receiving an item in queue
                 # If event occurs and handshake is complete, try writing to beetle
                 if self.handshake_complete:
 
                     # Attempt to event to beetle
-                    # item = node_from_server.get_nowait()
                     if not node_from_server.empty():
                         data = node_from_server.get()
                         self.try_writing_to_beetle(data)
 
-                    if keyboard.is_pressed("h") and flag and self.beetle_id == 2:
-                        getDict = {"player_id": 1, "action": "gun", "game_state": {"p1": {"hp": 100, "bullets": 0, "grenades": 2, "shield_hp": 0, "deaths": 0, "shields": 3}, "p2": {"hp": 99, "bullets": 6, "grenades": 2, "shield_hp": 0, "deaths": 1, "shields": 3}}}
-                        health = int(getDict['game_state']['p2']['hp'])
-                        print("Sending health", health)
-                        self.send_health(health)
-                        flag = False
-
-                    # Simulate if shield, health or reload is not updated properly
-                    # self.check_gamestate_sent(current_time)
+                    # If shield, health or reload is not updated properly
+                    self.check_gamestate_sent(current_time)
 
             except HandshakeException as e:
                 print(f"{e}")
@@ -362,19 +349,16 @@ class ReadDelegate(btle.DefaultDelegate):
         self.prev_button_press = 0
         self.prev_hit = 0
 
-        self.last_10_packets = []
+        self.last_5_packets = []
         self.accel_sums: list(int) = [0, 0, 0] # ax, ay, az
         self.old_accel_sums = [0, 0, 0]
         self.send_to_ext = False
         self.add_to_queue = False
 
-        self.send_timer_cooldown = time.time()
-
     def handleNotification(self, cHandle, data):
         if self.total_calls == 0: 
             self.beetle.start_timer = time.time()
             self.bullets = 6
-
 
         self.total_calls += 1
         
@@ -383,7 +367,9 @@ class ReadDelegate(btle.DefaultDelegate):
 
         # Reset packet buffer after 1s since thrs no fragmented data coming in
         # May be remnants from the past few packet fragmentation
-            
+        if time.time() - self.beetle.receive_timer > 1 and len(self.packet_buffer) < 20:
+            self.packet_buffer = b"" 
+
         self.beetle.receive_timer = time.time() # Update current time
 
         if self.is_packet_complete(self.packet_buffer):
@@ -393,6 +379,11 @@ class ReadDelegate(btle.DefaultDelegate):
             self.packet_buffer = self.packet_buffer[20:]
 
     def process_packet(self, data):
+
+        # Statistics/debugging purposes
+        # self.count += 1 # Number of packets processed
+        self.fragmented_count = self.total_calls - self.count # Number of fragmented packets
+
 
         try:
             # Check packet id
@@ -405,15 +396,11 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 unprocessed_vest_data = data[:7]
 
-                # if (self.count % 10) == 0: print(unprocessed_vest_data)
-
                 # = means native with no alignment, default is @ with alignment.
                 pkt = struct.unpack('=BBBHH', unprocessed_vest_data)
                 pkt_data = VestPacket(
                     *pkt
                 )
-
-                # print(f"Received vest packet: {pkt_data}")
                 
                 crc = struct.unpack('I', data[16:])[0]
                 if crc != custom_crc32(unprocessed_vest_data):
@@ -433,8 +420,9 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 # # Update sequence number afterwards to send ack
                 self.seq_no = pkt_data.seq_no
-                # if self.beetle.handshake_complete:
-                #     self.beetle.send_ack(self.seq_no)
+
+                if self.beetle.handshake_complete:
+                    self.beetle.send_ack(self.seq_no)
 
                 # Check if packet received for Beetle() gamestate emissions
                 self.shield = pkt_data.shield
@@ -480,11 +468,11 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 if self.beetle.handshake_complete:
 
-                    self.last_10_packets.append(pkt_dict)
+                    self.last_5_packets.append(pkt_dict)
 
-                    if len(self.last_10_packets) >= 10:
+                    if len(self.last_5_packets) >= 5:
 
-                        for pkt in self.last_10_packets:
+                        for pkt in self.last_5_packets:
                             self.accel_sums[0] += pkt['ax']
                             self.accel_sums[1] += pkt['ay']
                             self.accel_sums[2] += pkt['az']
@@ -507,13 +495,13 @@ class ReadDelegate(btle.DefaultDelegate):
 
                         # do not reset the 10 packets if sending to ext comms, cos u wanna append it
                         if not self.add_to_queue:
-                            self.last_10_packets = []
+                            self.last_5_packets = []
 
                     if self.send_to_ext:
 
                         # Append the first 10 packets that is the start of the action
                         if self.add_to_queue:
-                            for pkt in self.last_10_packets:
+                            for pkt in self.last_5_packets:
 
                                 prev_10_ai_data = { 
                                     key: value for key, value in pkt.items() if key != 'button_press' and key != 'seq_no'
@@ -522,16 +510,15 @@ class ReadDelegate(btle.DefaultDelegate):
                                 self.count += 1
                             self.add_to_queue = False
 
-                        if self.count <= 60: 
-                            self.beetle.node_to_server.put(AI_data) # pkt_id 1self.beetle.node_to_server.put(AI_data) # pkt_id 1
+                        if self.count <= 30: 
+                            self.beetle.node_to_server.put(AI_data) # pkt_id 1
+                            
                         self.count += 1
 
-                        # Next 120 packets cooldown
-                        if (self.count >= 180):
+                        if (self.count >= 90):
                             self.send_to_ext = False
                             self.count = 0
                             print("Sent 60 packets to ext comms")
-
 
 
             elif (pkt_id == PacketId.GAMESTATE_PKT):
@@ -561,8 +548,6 @@ class ReadDelegate(btle.DefaultDelegate):
             # If there are 5 consecutive packets that do not match the CRC/Packet ID, 
             # we assume that the packets are jumbled and we need to re-handshake
             self.track_corrupted_packets()
-
-            
         except DuplicateException as e:
             print(f"Duplicated packet is dropped.")
             self.track_corrupted_packets()
@@ -581,8 +566,8 @@ class ReadDelegate(btle.DefaultDelegate):
             print("Packets jumbled and sequence is messed up. Re-handshaking...")
             self.corrupted_packet_counter = 0
             self.beetle.set_to_connect()
-            self.packet_buffer = b""
-            self.count = 0
+            self.packet_buffer = b"" # Clear buffer
+            self.count = 0 # Reset count
 
     def is_packet_complete(self, data):
         return len(data) >= 20

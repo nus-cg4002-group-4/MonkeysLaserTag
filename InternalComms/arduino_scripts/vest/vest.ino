@@ -52,7 +52,7 @@ unsigned long hit_time = 0;
 unsigned long hit_time_10 = 0;
 unsigned long grenade_hit_time = 0;
 
-int freqArray[] = {392, 494, 523, 587, 650, 698, 784, 880, 988, 1047};
+int freqArray[] = {523, 587, 650, 698, 784, 880, 988, 1047, 1150, 1230};
 
 // hardware code end
 
@@ -139,15 +139,6 @@ void updateGamestate(char type) {
       hit_10 = true;
       hit_time_10 = micros();
     }
-
-    // if (prevShield != 30 && currentShield == 30) {
-    //   hit_10 = true;
-    //   hit_time_10 = micros();
-    // } else if (prevShield - currentShield == 10) {
-    //   hit_time_10 = micros();
-    //   hit_10 = true;
-    // } 
-    // break;
   } else if (type == HEALTH) {
     uint16_t prevHealth = currentHealth;
     currentHealth = convertGamestateInt();
@@ -156,14 +147,6 @@ void updateGamestate(char type) {
       hit_10 = true;
       hit_time_10 = micros();
     }
-
-    // if (prevHealth != 100 && currentHealth == 100) {
-    //   hit_10 = true;
-    //   hit_time_10 = micros();
-    // } else if (prevHealth - currentHealth >= 10) {
-    //   hit_time_10 = micros();
-    //   hit_10 = true;
-    // } 
   }
 }
 
@@ -218,13 +201,13 @@ void loop() {
         waitForHandshakeAck();
         setStateToSend();
         break;
-      // case STATE_ACK:
-      //   waitForAck();
-      //   if (ackReceived || isTimeout) {
-      //     setStateToSend();
-      //     isTimeout = false;
-      //   }
-      //   break;
+      case STATE_ACK:
+        waitForAck();
+        if (ackReceived || isTimeout) {
+          setStateToSend();
+          isTimeout = false;
+        }
+        break;
       default:
         resetFlags();
         break;
@@ -293,11 +276,14 @@ void waitForAck() {
   }
 }
 
-void sendDummyVestDataPacket(){
-  // if ((isTimeout) && (sentHandshakeAck && prevPacket.id != NULL)) {
-  //   Serial.write((uint8_t *)&prevPacket, sizeof(prevPacket));
-  //   delay(50);
-  // } else {
+void sendDummyVestDataPacket() {
+  if ((isTimeout) && (sentHandshakeAck && prevPacket.id != NULL)) {
+    if (millis() - packetSent > 50 && sentHandshakeAck) {
+      Serial.write((uint8_t *)&prevPacket, sizeof(prevPacket));
+      packetSent = millis();
+      prevHit = false;
+    }
+  } else {
     vestDataPacket pkt;
     pkt.id = VEST_PKT;
     pkt.seq_no = seqNum++;
@@ -319,9 +305,7 @@ void sendDummyVestDataPacket(){
       packetSent = millis();
       prevHit = false;
     }
-    // Serial.write((uint8_t *)&pkt, sizeof(pkt)); 
-    // delay(50);
-  // }
+  }
 }
 
 int randomint(int min, int max) {
@@ -449,7 +433,7 @@ void dmg_10_beeper()
   // }
 
   if (hit_10) {
-    tone(BUZZER_PIN, freqArray[(currentHealth/10)-1], timeDiff/1000);
+    tone(BUZZER_PIN, freqArray[(currentHealth/10)-1], (timeDiff-4000)/1000);
   }
 
   if (hit_10 && timeDiff > wait) {
