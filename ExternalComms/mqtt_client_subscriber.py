@@ -16,8 +16,8 @@ def on_message(client, userdata, msg):
 # Read connection details
 f = open('info.json')
 data = json.load(f)
-hostname, port = data['hostname'], data['port']
-username, pw = data['username'], data['password']
+hostname, port = data['mqtt']['hostname'], data['mqtt']['port']
+username, pw = data['mqtt']['username'], data['mqtt']['password']
 f.close()
 
 # Connect
@@ -32,5 +32,5 @@ client.connect(host=hostname, port=port)
 print('START')
 
 # Subscribe
-client.subscribe('gamestate', qos=1)
+client.subscribe('hit_miss_request', qos=1)
 client.loop_forever()

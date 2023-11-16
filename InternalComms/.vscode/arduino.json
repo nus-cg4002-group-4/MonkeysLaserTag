@@ -1,0 +1,5 @@
+{
+    "board": "arduino:avr:uno",
+    "sketch": "arduino_scripts/right/right.ino",
+    "port": "/dev/ttyACM0"
+}

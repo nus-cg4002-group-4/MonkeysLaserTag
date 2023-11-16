@@ -1,7 +1,7 @@
 import time
 from multiprocessing import Lock, Process, Queue, current_process
 import queue
-
+import asyncio
 from helpers.EvalClient import EvalClient
 
 
@@ -10,22 +10,39 @@ class EvalClientJobs:
         self.eval_client = EvalClient()
 
         self.eval_client_process = None
+        self.timeout = 50
     
-    def eval_client_job(self, eval_client_to_server, eval_client_to_game_engine):
+    async def eval_client_task(self, eval_client_to_server, eval_client_to_game_engine):
         while True:
             try:
-                to_send = eval_client_to_server.get()
-                response = self.eval_client.send_to_server_w_res(to_send)
-
-                print('i sent it')
-
-                print('Send to game engine: ', 'response')
+                to_send = eval_client_to_server.get(timeout=self.timeout)
+                response = await self.eval_client.send_to_server_w_res(to_send)
+                if self.eval_client.is_running and response:
+                    print('Send to eval server: ', 'to_send')
+                    eval_client_to_game_engine.put(response)
+            except queue.Empty:
+                print('Time out from game engine. Sending random game state')
+                to_send = EvalClient.get_dummy_eval_state_str()
+                response = await self.eval_client.send_to_server_w_res(to_send)
+                print('Send to eval server: ', 'to_send')
                 eval_client_to_game_engine.put(response)
-                time.sleep(3)
             except:
+                self.eval_client.is_running = False
                 print('Terminating Eval Client Job')
                 break
         
+        return True
+    
+    def eval_client_job(self, eval_client_to_server, eval_client_to_game_engine):
+
+        while self.eval_client.is_running:
+            try:
+                asyncio.run(self.eval_client_task(eval_client_to_server, eval_client_to_game_engine))
+            except Exception as e:
+                print(e)
+            except:
+                break
+            
         self.close_job()
         return True
     
