@@ -77,9 +77,9 @@ struct rightHandDataPacket {
 	int16_t gx; // h
 	int16_t gy; // h
 	int16_t gz; // h
-  uint16_t flex; // H
-  uint8_t button_press; // B
-  uint8_t padding; 
+	uint16_t flex; // H
+	uint8_t button_press; // B
+	uint8_t bullets;
 
 	uint16_t crc; // Assign it to 0 H
 };
@@ -241,7 +241,7 @@ void sendRightHandPacket(float ax, float ay, float az, float gx, float gy, float
 
     pkt.button_press = button_prev; // For actual data
     pkt.flex = flex;
-    pkt.padding = 0;
+    pkt.bullets = bullets;
     pkt.crc = calculateRightHandCrc16(&pkt);
     // Send packet
     Serial.write((uint8_t *)&pkt, sizeof(pkt)); 
