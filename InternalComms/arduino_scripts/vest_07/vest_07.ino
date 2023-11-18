@@ -277,7 +277,7 @@ void waitForAck() {
 
 void sendDummyVestDataPacket(){
   if ((isTimeout) && (sentHandshakeAck && prevPacket.id != NULL)) {
-    if (millis() - packetSent > 50 && sentHandshakeAck) {
+    if (millis() - packetSent > 100 && sentHandshakeAck) {
       Serial.write((uint8_t *)&prevPacket, sizeof(prevPacket));
       packetSent = millis();
       prevHit = false;
@@ -299,7 +299,7 @@ void sendDummyVestDataPacket(){
       prevHit = true;
     }
 
-    if (millis() - packetSent > 50 && sentHandshakeAck) {
+    if (millis() - packetSent > 100 && sentHandshakeAck) {
       Serial.write((uint8_t *)&pkt, sizeof(pkt));
       packetSent = millis();
       prevHit = false;
@@ -390,17 +390,6 @@ uint32_t custom_crc32(const uint8_t *data, size_t len) {
 
 void receiver_handler()
 {
-  // if (!IrReceiver.decode()) {
-  //   if (millis() - hit_time > 50) hit = false;
-  //   return;
-  // }
-
-  // IrReceiver.resume();
-  // if (IrReceiver.decodedIRData.command == BUL_DMG_CODE) {
-  //   hit = true;
-  //   hit_time = millis();
-  //   currentHealth -= 10;
-  // }
 
   if (IrReceiver.decode()) {
     IrReceiver.resume();
@@ -425,17 +414,6 @@ void dmg_10_beeper()
   // Microseconds before beep stops
   unsigned long timeDiff = micros() - hit_time_10;
 
-  // // Gun and skill dmg
-  // if (hit_10 && timeDiff < wait) {
-  // // if (hit && timeDiff < wait) {
-  //   float halfPeriod = (1.0f / (2.0f * (float)frequency)) * 1000000.0f;
-  //   float localPeriod = (float)timeDiff / (2.0f * halfPeriod);
-  //   if (localPeriod <= halfPeriod) {
-  //     digitalWrite(BUZZER_PIN, HIGH);
-  //   } else {
-  //     digitalWrite(BUZZER_PIN, LOW);
-  //   }
-  // }
 
   if (hit_10) {
     tone(BUZZER_PIN, freqArray[(currentHealth/10)-1], timeDiff/1000);
@@ -494,52 +472,18 @@ int grenade_dmg_handler()
   return 0;
 }
 
-//Calculates total damage at current cycle
-// int dmg_handler()
-// {
-//   return gun_dmg_beeper() + skill_dmg_handler() + grenade_dmg_handler();
-// }
-
 //Handles shield deployment
 void shield_handler()
 {
   if(shield) {
     if (shields > 0) {
       shield_active = true;
-      // Serial.println("shield active");
       shield_health = 30;
       shields -= 1;
-      // Serial.print("shields remaining: ");
-      // Serial.println(shields);
-      // shield = false;
     }
   }
 }
 
-//calculate remaining health at current cycle
-// void health_calc() {
-//   int total_dmg = dmg_handler();
-//   shield_handler();
-//   if (total_dmg > 0) {
-//     if (shield_active) {
-//       if (shield_health > 0) {
-//         shield_health -= total_dmg;
-//       }
-//       if (shield_health <= 0) {
-//         health += shield_health;
-//         shield_active = false;
-//         shield_health = 0;
-//       }
-//     } else {
-//       health -= total_dmg;
-//     }
-//     // Serial.println("");
-//     // Serial.print("health remaining:");
-//     // Serial.println(health);
-//     // Serial.print("current shield health: ");
-//     // Serial.println(shield_health);
-//   }
-// }
 
 //Check if player is dead
 void death_handler()
