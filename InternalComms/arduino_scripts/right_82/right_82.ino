@@ -24,7 +24,7 @@ IRsend irsend;
 Adafruit_MPU6050 mpu;
 
 //Define IR inputs
-const uint8_t sCommand = 0x11;//sensor value to be sent
+const uint8_t sCommand = 0xC9;//sensor value to be sent
 const uint8_t sRepeats = 0;
 
 //Declare game state values
