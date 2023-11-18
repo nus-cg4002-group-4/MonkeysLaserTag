@@ -24,7 +24,7 @@ Inside each `/scripts/beetle_handler_<x>/` folder contains the following:
 
 ## Beetles 
 
-The logic for each relay node reside in the folder `/arduino_scripts/<component>/`
+The logic for each beetle reside in the folder `/arduino_scripts/<component>/`
 
 Used in evaluation: 
 - `/right/` (P1)
@@ -42,4 +42,4 @@ Used in evaluation:
 1. Wait for external comms to set up her socket server in Ultra96.
 2. Ensure you are connected to SOC network
 3. Run `sudo nice -20 python3 internal_comms_main.py` to get the process to be prioritised higher than the rest of the system processes.
-4. If connection is refused, check the RelayNode.py's port numbers to ensure they are aligned with websocket servers. 2648x for P1 and 2659x for P2.
+4. If connection is refused, check the RelayNode.py's port numbers to ensure they are aligned with websocket servers. 2648x for P1 and 2658x for P2.
