@@ -17,7 +17,7 @@
 #define STATE_HANDSHAKE_ACK 'd'
 #define STATE_SEND 's'
 
-#define INTERVAL 40
+#define INTERVAL 50
 
 //Initialise IR and IMU
 IRsend irsend;
