@@ -13,7 +13,7 @@ Each job definition is located under the jobs folder. Helper functions are locat
 
 
 ## Pre-requisites
-1. Ensure that __pycrypto__, __pyscrptodome__, and __paho-mqtt__ python packages are installed. If not, install like this:
+1. Ensure that __pycrypto__, __pycryptodome__, __bluepy__ and __paho-mqtt__ python packages are installed. If not, install like this:
 ```
 $ pip3 install pycrypto
 ```
