@@ -20,7 +20,9 @@ class Player:
         self.enemyDetected: int = 0
         self.action = "none"
         self.death: int = 0
-        self.kill = 0
+    
+    def print(self):
+        print(f'hp: {self.hp} bullets: {self.bullets} ')
 
     def updateState(self, action, visibility):
         self.action = action
@@ -53,13 +55,18 @@ class Player:
             self.shieldHP = self.maxShieldHP
             self.shieldCount -= 1
 
-    def shoot(self):
-        if (self.bullets > 0):
-            self.bullets -= 1
+    def shoot(self, is_update):
+        if self.bullets > 0:
+            if is_update:
+                self.bullets -= 1
+            return True
+        return False
 
     def grenadeThrow(self):
         if (self.grenades > 0):
             self.grenades -= 1
+            return True
+        return False
 
     def reload(self):
         if (self.bullets <= 0):
@@ -73,6 +80,38 @@ class Player:
             self.bullets = self.maxbullets
             self.grenades = self.maxGrenades
             self.death += 1
+    
+    def get_player(self):
+        return {
+                    'hp': self.hp,
+                    'bullets': self.bullets,
+                    'grenades': self.grenades,
+                    'shield_hp': self.shieldHP,
+                    'deaths': self.death,
+                    'shields': self.shieldCount
+                }
+    def get_id(self):
+        return self.id
+
+    def get_action(self):
+        return self.action
+
+    def set_action(self, act):
+        self.action = act
+    
+    def set_bullets(self, bullets):
+        self.bullets = bullets
+
+    def get_bullets(self):
+        return self.bullets
+
+    def set_state(self, state):
+        self.hp = state["hp"]
+        self.bullets = state["bullets"]
+        self.grenades = state["grenades"]
+        self.shieldHP = state["shield_hp"]
+        self.death = state["deaths"]
+        self.shieldCount = state["shields"]
         
 
 class GestureID(Enum):

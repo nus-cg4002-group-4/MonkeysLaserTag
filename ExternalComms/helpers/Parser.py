@@ -10,20 +10,29 @@ class Parser:
     def convert_to_arr(self, packet):
         return list(map(int,packet[1:-1].split(', ')))
         
-    def decide_dest(self, msg_arr):
+    def decide_dest(self, msg_arr, player_id):
         pkt_id = int(msg_arr[0])
-        to_viz = '1 '
         if pkt_id == 1:
             # hand
             msg = 'test'
             
         elif pkt_id == 2:
             # goggle
-            msg = to_viz + ' '.join(map(str, msg_arr))
+            # TODO: Change for 2 player game
+            msg = str(player_id) + ' ' + ' '.join(map(str, msg_arr))
+            print('msg was ',  msg)
             
         elif pkt_id == 3:
             # bullet
-            msg = to_viz + ' '.join(map(str, msg_arr))
+            msg = str(player_id) + ' ' + ' '.join(map(str, msg_arr))
+        
+        elif pkt_id == 8:
+            # disconnect
+            msg = 'disconnect ' + str(player_id)
+
+        elif pkt_id == 9:
+            # disconnect
+            msg = 'connect ' + str(player_id)
             
         
         return (pkt_id, msg)

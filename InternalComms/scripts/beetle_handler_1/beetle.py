@@ -1,5 +1,4 @@
 from bluepy import btle
-import keyboard
 
 from packet import PacketId, VestPacket, RHandDataPacket
 from state import State
@@ -142,11 +141,6 @@ class Beetle():
 
     def on_keypress(self, key: str, fn):
         current_time = time.time()
-        if keyboard.is_pressed(key):
-            if current_time - self.last_press_time >= 1:
-                print(f'{key} pressed!')
-                self.last_press_time = current_time
-                fn() # execute fn
 
     def try_writing_to_beetle(self, data: str):
         getDict = json.loads(data)

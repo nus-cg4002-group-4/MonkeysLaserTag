@@ -17,11 +17,15 @@ class MqttClient:
         self.is_subscribed = False
     
     def on_connect(self, client, userdata, flags, rc):
-        print('CONNACK received with code %d.' % (rc))
+        print('\nCONNACK received with code %d.' % (rc))
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
         print("Subscribed: "+str(mid)+" "+str(granted_qos))
         self.is_subscribed = True
+
+    def on_disconnect(self, client, userdata, rc):
+        if rc != 0:
+            print("Unexpected MQTT disconnection.")
 
     def on_message(self, client, userdata, msg):
         print(msg.topic+" "+str(msg.qos)+" "+str(msg.payload))
@@ -38,6 +42,7 @@ class MqttClient:
         self.client = paho.Client()
         self.client.on_connect = self.on_connect
         self.client.on_subscribe = self.on_subscribe
+        self.client.on_disconnect = self.on_disconnect
         self.client.on_message = on_message_custom if on_message_custom else self.on_message
 
         self.client.tls_set(certifi.where())
@@ -46,7 +51,7 @@ class MqttClient:
     
     def subscribe_to_topic(self, topic):
         self.client.subscribe(topic, qos=0)
-        self.client.loop_start()
+        self.client.loop_forever()
 
     def publish_to_topic(self, topic, msg):
         self.client.publish(topic, msg, qos=0)

@@ -9,13 +9,17 @@ from Crypto import Random
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 
+class EvalDisconnectException(Exception):
+    "Raised when eval client has disconnected from server"
+    pass
+
 class EvalClient:
     def __init__(self):
         self.hostname = None
         self.port = None
         self.secret_key = None
         self.client_socket = None
-        self.timeout = 60
+        self.timeout = 600
         self.is_running = True
     
     def encrypt_and_format(self, msg):
@@ -52,8 +56,9 @@ class EvalClient:
                         data += _d
                     if len(data) == 0:
                         print('recv_text: Eval server disconnected')
-                        self.close_client()
-                        self.is_running = False
+                        raise EvalDisconnectException
+                        # self.close_client()
+                        # self.is_running = False
                         break
                     data = data.decode("utf-8")
                     length = int(data[:-1])
@@ -68,17 +73,20 @@ class EvalClient:
                             break
                         data += _d
                     if len(data) == 0:
-                        print('recv_text: Eval server disconnected')
-                        self.close_client()
+                        print('recv_text: Eval server disconnected with length of', length)
+                        raise EvalDisconnectException
+                        # self.close_client()
                         break
                     text_received = data.decode("utf8")  # Decode raw bytes to UTF-8
                     success = True
                     break
             except ConnectionResetError:
                 print('recv_text: Connection Reset for Eval Server')
-                self.close_client()
+                raise EvalDisconnectException
+                # self.close_client()
             except asyncio.TimeoutError:
                 print('recv_text: Timeout while receiving data from Eval Server')
+                raise EvalDisconnectException
                 timeout = -1
         else:
             timeout = -1
@@ -126,7 +134,7 @@ class EvalClient:
     def get_dummy_eval_state_json():
         state = {
             'player_id': 1,
-            'action': random.choice(['grenade']),
+            'action': random.choice(['grenade', 'punch', 'spear', 'web', 'hammer', 'portal', 'shield']),
             'game_state': {
                 'p1': EvalClient.get_dummy_game_state_json(),
                 'p2': EvalClient.get_dummy_game_state_json()
@@ -134,7 +142,7 @@ class EvalClient:
         }   
         return state
     
-    def get_dummy_response_from_eval_str(self):
+    def get_dummy_response_from_eval_str():
         state = {
             'p1': EvalClient.get_dummy_game_state_json(),
             'p2': EvalClient.get_dummy_game_state_json()
@@ -143,11 +151,19 @@ class EvalClient:
 
     
     def get_dummy_game_state_json():
+        # state = {
+        #             'hp': random.choice(range(101)),
+        #             'bullets': random.choice(range(7)),
+        #             'grenades': 2,
+        #             'shield_hp': random.choice(range(31)),
+        #             'deaths': 0,
+        #             'shields': random.choice(range(4))
+        #         }
         state = {
-                    'hp': random.choice(range(101)),
-                    'bullets': random.choice(range(7)),
+                    'hp':100,
+                    'bullets': 6,
                     'grenades': 2,
-                    'shield_hp': random.choice(range(31)),
+                    'shield_hp': 0,
                     'deaths': 0,
                     'shields': random.choice(range(4))
                 }
@@ -156,3 +172,4 @@ class EvalClient:
 EvalClient.get_dummy_eval_state_str = staticmethod(EvalClient.get_dummy_eval_state_str)    
 EvalClient.get_dummy_eval_state_json = staticmethod(EvalClient.get_dummy_eval_state_json)
 EvalClient.get_dummy_game_state_json = staticmethod(EvalClient.get_dummy_game_state_json)
+EvalClient.get_dummy_response_from_eval_str = staticmethod(EvalClient.get_dummy_response_from_eval_str)
