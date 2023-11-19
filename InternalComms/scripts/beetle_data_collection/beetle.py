@@ -306,7 +306,7 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 if not self.send_to_ext: self.last_10_packets.append(pkt_data)
 
-                if len(self.last_10_packets) >= 10:
+                if len(self.last_10_packets) >= 5:
 
                     for pkt in self.last_10_packets:
                         self.accel_sums[0] += pkt.ax
@@ -321,7 +321,7 @@ class ReadDelegate(btle.DefaultDelegate):
 
                     if dp < 0.5 and self.trigger_record:
                         self.send_to_ext = True
-                        self.beetle.packet_window = self.last_10_packets
+                        self.beetle.packet_window = [x for x in self.last_10_packets for _ in range(2)]
                         print("Triggered")
                     
                     #reset
@@ -342,12 +342,14 @@ class ReadDelegate(btle.DefaultDelegate):
                     current_length = len(self.beetle.packet_window)
 
                     # print(f"Right Hand Packet received successfully: {pkt_data}")
-                    if current_length == 10:
+                    if current_length == 5:
                         self.timer = time.time()
                     
                     if current_length <= RECORD_PACKETS_LIMIT:
-                        self.beetle.packet_window.append(pkt_data)
-                        print(current_length)
+                        if pkt_data not in self.beetle.packet_window:
+                            self.beetle.packet_window.append(pkt_data)
+                            self.beetle.packet_window.append(pkt_data)
+                        # print(current_length)
                         # print(f"Packet window length: {len(self.beetle.packet_window)}")
                         # Record 80 packets into a csv file
                         if current_length >= RECORD_PACKETS_LIMIT - 1: 

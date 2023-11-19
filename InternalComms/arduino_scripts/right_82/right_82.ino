@@ -5,7 +5,7 @@
 #include <limits.h>
 #include <cppQueue.h>
 #define IR_PIN 3
-#define BUZZER_PIN 4
+#define BUZZER_PIN 5
 #define SAMPLE_WINDOW 60
 
 /* Internal Comms */
@@ -17,17 +17,15 @@
 #define STATE_HANDSHAKE_ACK 'd'
 #define STATE_SEND 's'
 
-#define INTERVAL 20
+#define INTERVAL 50
 
 //Initialise IR and IMU
 IRsend irsend;
 Adafruit_MPU6050 mpu;
 
 //Define IR inputs
-const uint8_t sCommand = 0x36;//sensor value to be sent
+const uint8_t sCommand = 0xC9;//sensor value to be sent
 const uint8_t sRepeats = 0;
-
-int resetCounter = 0;
 
 //Declare game state values
 int bullets = 6; // track remaining bullets, initialised to 6 according to requirement
@@ -79,9 +77,9 @@ struct rightHandDataPacket {
 	int16_t gx; // h
 	int16_t gy; // h
 	int16_t gz; // h
-  uint16_t flex; // H
-  uint8_t button_press; // B
-  uint8_t padding; 
+	uint16_t flex; // H
+	uint8_t button_press; // B
+	uint8_t bullets;
 
 	uint16_t crc; // Assign it to 0 H
 };
@@ -243,7 +241,7 @@ void sendRightHandPacket(float ax, float ay, float az, float gx, float gy, float
 
     pkt.button_press = button_prev; // For actual data
     pkt.flex = flex;
-    pkt.padding = 0;
+    pkt.bullets = bullets;
     pkt.crc = calculateRightHandCrc16(&pkt);
     // Send packet
     Serial.write((uint8_t *)&pkt, sizeof(pkt)); 
@@ -272,10 +270,6 @@ void waitForHandshakeAck(){
   ack_msg = Serial.read();
 
   if (ack_msg != 'd') {
-    resetCounter += 1;
-    // if (resetCounter > 4) {
-    //   resetFunc();
-    // }
     resetFlags();
     return;
   }
@@ -334,3 +328,4 @@ float getAccel() {
 }
 
 // end internal comms
+void(* resetFunc) (void) = 0;

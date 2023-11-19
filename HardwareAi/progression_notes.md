@@ -1,7 +1,7 @@
 # Data collection
 
-* Sample rate: 20 Hz
-* Window size: 40 samples (2s)
+* Sample rate: 40 Hz
+* Window size: 80 samples (2s)
 * Stride: ?? (some groups have 10 samples/0.5s)
 
 Rate of data output = ?? (Once every 10 samples/0.5s if above stride is taken)
@@ -10,15 +10,39 @@ Action should be in the middle of sample due to nature of Conv1D
 
 Enumerations:
 * Grenade
+    * Pull back with fist clenched, throw over shoulder
+    * Onset triggered on pull back
 * Shield
+    * Clench fist and hit chest, stay for 1s before returning
+    * Onset triggered on raise
 * Reload
+   * From raised gun position, pull hand towrds chest with open palm facing upwards, the return to raised gun position
+   * Onset triggered on pull back
 * Punch
+    * Throw punch straight ahead, then return to neutral position
+    * Onset triggered on punch
 * Spear
+    * Pump imaginary spear twice slowly, then throw
+    * Onset triggered on first pump
 * Hammer
+    * Swing arm in a circle clockwise on the right side of you twice, then release towards the front
+    * Onset triggered on first circle
 * Portal
+    * Make L with three fingers, then spin in circle in front of you twice, then return to neutral position
+    * Onset triggered while making the circle
 * Spider
+    * Pull your hand back towards you, then flick your wrist outwards, forming your hand into the spiderman shape
+    * Onset triggered while flicking
 * Logout
-* Idle/Aiming?
+    * Tap right shoulder twice, then return to neutal position
+    * Onset triggered on first tap
+* Raise gun
+    * From a neutral position, raise your gun and take aim
+    * Onset triggered on raise
+
+Actions which are confused:
+* Grenade and punch
+* Portal and hammer
 
 ## CSV
 
@@ -26,14 +50,6 @@ Headers of the CSV file:
 ```csv
 [ax],[ay],[az],[gx],[gy],[gz],[flex]
 ```
-
-Name of CSV file: 
-```
-[activity]_[name of person]_[id].csv
-```
-For example `punch_darren_1.csv` and `spear_weida_54.csv`. 
-
-All filenames should be **unique** and should contain **only one underscore**.
 
 # Preprocessing
 
@@ -126,12 +142,17 @@ $$
 
 Maybe send several windows over and confirm if all windows return the same output?
 
+**Idea**: Use two neural networks, one to check if window is a move and the second for move idenification
+
+Since accelerometer essentially measures forces, take average of 10 vectors and use for calculations between windows
+* $\cos \theta = \frac{A\cdot B}{\lvert A\rvert\lvert B\rvert}$
+
 # Porting to HLS
 
 https://www.youtube.com/watch?v=EjjzIimyiM0
 
 Quantization-aware training
-xczu3eg-sbva484-1-i with 150MHz clock
+xczu3eg-sbva484-2-i with 150MHz clock
 
 ## Working With HLS
 
@@ -139,4 +160,6 @@ Apparently Vivado 2022.2 cannot synthesize/has bugs with AXI stream, so switched
 
 Initially values were integrated as part of BRAM, but Vivado 2019.1 takes extremely long time to synthesize (around 10 hours), and there is not enough area for implementation. 
 
-Switched to loading values into IP using AXI stream, synthesis now takes 10 mins, enough area for implementation.
+~~Switched to loading values into IP using AXI stream, synthesis now takes 10 mins, enough area for implementation.~~
+
+Bad idea, nightmare to initialize. Reduce network size to fit onto FPGA.

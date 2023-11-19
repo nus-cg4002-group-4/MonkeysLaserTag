@@ -159,15 +159,11 @@ class Beetle():
         print("Received shield: ", shield)
 
         self.send_shield(str(shield)[0])
+
         time.sleep(0.01)
-        self.send_shield(str(shield)[0])
         if (health == 100): self.send_health(0)
         else: self.send_health(str(health)[0]) # send the first digit of the number
-    
-    # def try_writing_to_beetle(self):
-    #     self.on_keypress("h", self.send_health)
-    #     self.on_keypress("j", self.send_shield)
-    #     self.on_keypress("r", self.send_reload)
+
 
     def send_reload(self): # simulate reload action
         print(f"{bcolors.OKBLUE}Reloading for {self.beetle_id}{bcolors.ENDC}")
@@ -280,20 +276,12 @@ class Beetle():
                 if self.handshake_complete:
 
                     # Attempt to event to beetle
-                    # item = node_from_server.get_nowait()
                     if not node_from_server.empty():
                         data = node_from_server.get()
                         self.try_writing_to_beetle(data)
 
-                    # if keyboard.is_pressed("h") and flag and self.beetle_id == 2:
-                    #     getDict = {"player_id": 1, "action": "gun", "game_state": {"p1": {"hp": 100, "bullets": 0, "grenades": 2, "shield_hp": 0, "deaths": 0, "shields": 3}, "p2": {"hp": 99, "bullets": 6, "grenades": 2, "shield_hp": 0, "deaths": 1, "shields": 3}}}
-                    #     health = int(getDict['game_state']['p2']['hp'])
-                    #     print("Sending health", health)
-                    #     self.send_health(health)
-                    #     flag = False
-
-                    # Simulate if shield, health or reload is not updated properly
-                    # self.check_gamestate_sent(current_time)
+                    # If shield, health or reload is not updated properly
+                    self.check_gamestate_sent(current_time)
 
             except HandshakeException as e:
                 print(f"{e}")
@@ -364,7 +352,7 @@ class ReadDelegate(btle.DefaultDelegate):
         self.prev_button_press = 0
         self.prev_hit = 0
 
-        self.last_10_packets = []
+        self.last_5_packets = []
         self.accel_sums: list(int) = [0, 0, 0] # ax, ay, az
         self.old_accel_sums = [0, 0, 0]
         self.send_to_ext = False
@@ -436,8 +424,9 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 # # Update sequence number afterwards to send ack
                 self.seq_no = pkt_data.seq_no
-                # if self.beetle.handshake_complete:
-                #     self.beetle.send_ack(self.seq_no)
+
+                if self.beetle.handshake_complete:
+                    self.beetle.send_ack(self.seq_no)
 
                 # Check if packet received for Beetle() gamestate emissions
                 self.shield = pkt_data.shield
@@ -483,11 +472,11 @@ class ReadDelegate(btle.DefaultDelegate):
 
                 if self.beetle.handshake_complete:
 
-                    self.last_10_packets.append(pkt_dict)
+                    self.last_5_packets.append(pkt_dict)
 
-                    if len(self.last_10_packets) >= 10:
+                    if len(self.last_5_packets) >= 5:
 
-                        for pkt in self.last_10_packets:
+                        for pkt in self.last_5_packets:
                             self.accel_sums[0] += pkt['ax']
                             self.accel_sums[1] += pkt['ay']
                             self.accel_sums[2] += pkt['az']
@@ -510,13 +499,13 @@ class ReadDelegate(btle.DefaultDelegate):
 
                         # do not reset the 10 packets if sending to ext comms, cos u wanna append it
                         if not self.add_to_queue:
-                            self.last_10_packets = []
+                            self.last_5_packets = []
 
                     if self.send_to_ext:
 
                         # Append the first 10 packets that is the start of the action
                         if self.add_to_queue:
-                            for pkt in self.last_10_packets:
+                            for pkt in self.last_5_packets:
 
                                 prev_10_ai_data = { 
                                     key: value for key, value in pkt.items() if key != 'button_press' and key != 'seq_no'
@@ -526,12 +515,12 @@ class ReadDelegate(btle.DefaultDelegate):
                             self.add_to_queue = False
 
 
-                        if self.count <= 60: 
+                        if self.count <= 30: 
                             self.beetle.node_to_server.put(AI_data) # pkt_id 1
                             
                         self.count += 1
 
-                        if (self.count >= 180):
+                        if (self.count >= 90):
                             self.send_to_ext = False
                             self.count = 0
                             print("Sent 60 packets to ext comms")
